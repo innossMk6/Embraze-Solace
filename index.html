@@ -126,8 +126,6 @@
             transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px;
         }
         .btn-scan:active { transform: scale(0.97); }
-        .btn-scan.scanning { animation: pulseScan 1.2s ease-in-out infinite; }
-        @keyframes pulseScan { 0%, 100% { box-shadow: 0 0 20px rgba(168,85,247,0.2); } 50% { box-shadow: 0 0 60px rgba(168,85,247,0.6); } }
         .btn-scan.ready { background: linear-gradient(135deg, var(--neon-green), #00CC88); box-shadow: 0 0 30px rgba(0,255,170,0.2); }
 
         .market-grid {
@@ -171,9 +169,6 @@
         }
         .live-ticker strong { color: var(--neon-cyan); }
 
-        /* ============================================
-           GATHERING COMPLETE BANNER
-           ============================================ */
         #gathering-banner {
             display: none;
             background: rgba(0,255,170,0.08);
@@ -192,7 +187,7 @@
         @keyframes fadeInBanner { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ============================================
-           FREQUENCY CHART
+           FREQUENCY CHART (Shows best market's data)
            ============================================ */
         .chart-container {
             background: var(--bg-card);
@@ -336,7 +331,7 @@
         .ou-stat .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
 
         /* ============================================
-           SIGNAL POPUP
+           SIGNAL POPUP (10-second animation)
            ============================================ */
         #signal-popup {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -381,6 +376,38 @@
             100% { transform: translateX(calc(100vw + 200px)) translateY(-60px) rotate(15deg); opacity: 0; }
         }
 
+        .signal-loader {
+            width: 50px; height: 50px;
+            border: 3px solid rgba(168,85,247,0.1);
+            border-top: 3px solid var(--neon-purple);
+            border-radius: 50%;
+            animation: spinLoader 0.8s linear infinite;
+            margin: 0 auto 12px;
+            z-index: 2;
+            position: relative;
+        }
+        @keyframes spinLoader { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .signal-loading-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 30px rgba(0,255,240,0.2);
+            animation: pulseText 1.2s ease-in-out infinite;
+            margin-bottom: 4px;
+            z-index: 2;
+            position: relative;
+        }
+        @keyframes pulseText { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; text-shadow: 0 0 60px rgba(0,255,240,0.4); } }
+
+        .signal-progress-text {
+            font-size: 14px;
+            color: var(--text-grey);
+            z-index: 2;
+            position: relative;
+        }
+
         .text-glow { text-shadow: 0 0 20px rgba(0,255,240,0.1); }
         .mt-8 { margin-top: 8px; }
         .mb-8 { margin-bottom: 8px; }
@@ -421,7 +448,7 @@ LOCK SCREEN
 </div>
 
 <!-- ============================================
-SIGNAL POPUP
+SIGNAL POPUP (With 10-second animation)
 ============================================ -->
 <div class="popup-shooting" id="popupShooting">
     <div class="shooting-star"></div><div class="shooting-star"></div>
@@ -431,16 +458,23 @@ SIGNAL POPUP
 <div id="signal-popup">
     <div class="popup-card">
         <button class="btn-back" id="popupBack">✕</button>
-        <div class="signal-card" style="border-color: rgba(0,255,240,0.2);">
-            <div class="row"><span id="popupMarket">R_10</span><span id="popupEntropy">H = 3.21</span></div>
-            <div class="entry-digit" id="popupEntryDigit">3</div>
-            <div class="action-text" id="popupActionText">DIFFER ON 6</div>
-            <div class="confidence-row">
-                <span class="confidence-label" id="popupConfidenceLabel">89.3%</span>
-                <div class="confidence-bar"><div class="confidence-fill" id="popupConfidenceFill" style="width:0%;"></div></div>
+        <div id="signalLoaderContainer" style="text-align:center; padding:10px 0;">
+            <div class="signal-loader" id="signalLoader"></div>
+            <div class="signal-loading-text" id="signalLoadingText">GENERATING SIGNAL...</div>
+            <div class="signal-progress-text" id="signalProgressText">⏳ Analyzing 17 markets...</div>
+        </div>
+        <div id="signalResultContainer" style="display:none;">
+            <div class="signal-card" style="border-color: rgba(0,255,240,0.2);">
+                <div class="row"><span id="popupMarket">--</span><span id="popupEntropy">H = --</span></div>
+                <div class="entry-digit" id="popupEntryDigit">--</div>
+                <div class="action-text" id="popupActionText">--</div>
+                <div class="confidence-row">
+                    <span class="confidence-label" id="popupConfidenceLabel">--</span>
+                    <div class="confidence-bar"><div class="confidence-fill" id="popupConfidenceFill" style="width:0%;"></div></div>
+                </div>
+                <div class="bottom-row"><span id="popupRatio">--</span><span id="popupTop">--</span></div>
+                <div class="text-center text-grey text-sm" style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.04);">NEURAL PATTERN ANALYSIS</div>
             </div>
-            <div class="bottom-row"><span id="popupRatio">Ratio: 0.42x</span><span id="popupTop">Top: 6 (11.2%)</span></div>
-            <div class="text-center text-grey text-sm" style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.04);">NEURAL PATTERN ANALYSIS</div>
         </div>
     </div>
 </div>
@@ -455,50 +489,40 @@ MAIN APP
         <div style="font-size:12px; color:var(--text-grey);">v1.0</div>
     </div>
 
-    <!-- ============================================
-    SECTION 1: DASHBOARD
-    ============================================ -->
+    <!-- SECTION 1: DASHBOARD -->
     <div class="section">
         <button class="btn-scan" id="btnScan">🔮 SCAN ALL MARKETS</button>
-
         <div id="gathering-banner">✅ Gathering Complete — 17 markets ready</div>
-
         <div class="market-grid" id="marketGrid"></div>
         <div class="live-ticker" id="liveTicker">⏳ Connecting to Deriv WebSocket...</div>
     </div>
 
-    <!-- ============================================
-    SECTION 2: FREQUENCY CHART
-    ============================================ -->
+    <!-- SECTION 2: FREQUENCY CHART -->
     <div class="section">
-        <div class="section-title">📊 Frequency Distribution</div>
+        <div class="section-title">📊 Frequency Distribution <span style="font-size:12px; color:var(--text-grey);" id="chartMarketLabel">(R_10)</span></div>
         <div class="chart-container">
             <div class="chart-bars" id="chartBars">
                 <div class="chart-baseline"><span class="chart-baseline-label">Baseline: 10%</span></div>
                 <div class="chart-exceedance" id="exceedanceBadge" style="display:none;">🔥 +0% Exceedance</div>
             </div>
-            <div class="text-center text-grey text-sm">Preceded by 1,000 ticks from Deriv</div>
+            <div class="text-center text-grey text-sm">Preceded by live ticks from Deriv</div>
         </div>
     </div>
 
-    <!-- ============================================
-    SECTION 3: RELATIONSHIP MATRIX
-    ============================================ -->
+    <!-- SECTION 3: RELATIONSHIP MATRIX -->
     <div class="section">
-        <div class="section-title">🌀 Digit Relationship Matrix</div>
+        <div class="section-title">🌀 Digit Relationship Matrix <span style="font-size:12px; color:var(--text-grey);" id="matrixMarketLabel">(R_10)</span></div>
         <div class="matrix-grid" id="matrixGrid"></div>
         <div class="matrix-legend"><span>🔴 Blocked</span><span>🟢 Trigger</span></div>
         <div class="seesaw-container" id="seesawContainer">
-            <div class="seesaw-item"><div class="digit top" id="topDigit">6</div><div class="pct" id="topPct">11.2%</div></div>
+            <div class="seesaw-item"><div class="digit top" id="topDigit">--</div><div class="pct" id="topPct">--</div></div>
             <div class="seesaw-line"></div>
-            <div class="seesaw-item"><div class="digit bottom" id="bottomDigit">5</div><div class="pct" id="bottomPct">9.2%</div></div>
+            <div class="seesaw-item"><div class="digit bottom" id="bottomDigit">--</div><div class="pct" id="bottomPct">--</div></div>
         </div>
         <div class="seesaw-label">INVERSE RELATIONSHIP DETECTED</div>
     </div>
 
-    <!-- ============================================
-    SECTION 4: TRADING ORACLE
-    ============================================ -->
+    <!-- SECTION 4: TRADING ORACLE -->
     <div class="section">
         <div class="section-title">⚡ Execute Trade</div>
         <div class="oracle-row">
@@ -511,9 +535,7 @@ MAIN APP
         </div>
     </div>
 
-    <!-- ============================================
-    SECTION 5: OVER / UNDER
-    ============================================ -->
+    <!-- SECTION 5: OVER / UNDER -->
     <div class="section">
         <div class="section-title">⚖️ Over / Under</div>
         <div class="ou-row">
@@ -553,10 +575,11 @@ MAIN APP
 
     // State
     const buffers = {};
-    const marketTickCounts = {};
     let appState = 'IDLE'; // IDLE → COLLECTING → READY → GENERATING → SIGNAL_READY
     let ws = null;
     let isGatheringComplete = false;
+    let selectedMarket = 'R_10';
+    let latestSignal = null;
 
     // ============================================================
     // 2. LOCK SCREEN
@@ -591,13 +614,12 @@ MAIN APP
 
         MARKETS.forEach(sym => {
             buffers[sym] = [];
-            marketTickCounts[sym] = 0;
         });
 
         ws = new WebSocket(DERIV_WS);
 
         ws.onopen = function() {
-            document.getElementById('liveTicker').textContent = '✅ Connected. Collecting ticks (0/30)...';
+            document.getElementById('liveTicker').textContent = '✅ Connected. Collecting ticks...';
             MARKETS.forEach(sym => {
                 ws.send(JSON.stringify({ ticks: sym, subscribe: 1 }));
             });
@@ -615,17 +637,14 @@ MAIN APP
 
                     if (buffers[sym]) {
                         buffers[sym].push(digit);
-                        marketTickCounts[sym] = buffers[sym].length;
-                        updateMarketCard(sym, digit, price, marketTickCounts[sym]);
+                        updateMarketCard(sym, buffers[sym].length);
                     }
 
-                    // Update live ticker
                     const totalCollected = MARKETS.reduce((sum, s) => sum + (buffers[s]?.length || 0), 0);
                     const totalNeeded = MARKETS.length * REQUIRED_TICKS;
                     document.getElementById('liveTicker').innerHTML =
                         `📊 Collected ${totalCollected} / ${totalNeeded} ticks across ${MARKETS.length} markets`;
 
-                    // Check if all markets have 30 ticks
                     checkGatheringComplete();
                 }
             } catch (e) { /* ignore */ }
@@ -667,12 +686,13 @@ MAIN APP
             document.getElementById('btnOver').disabled = false;
             document.getElementById('btnUnder').disabled = false;
 
-            // Update charts with R_10 data if available
-            const data = buffers['R_10'] || [];
-            if (data.length > 10) {
-                updateFrequencyChart(data);
-                updateMatrixAndSeesaw(data);
-                updateSignalCardPlaceholder();
+            // Update charts with the best market's data
+            const best = findBestMarket();
+            if (best) {
+                selectedMarket = best.market;
+                updateFrequencyChart(best.market);
+                updateMatrixAndSeesaw(best.market);
+                updateSignalCardPlaceholder(best);
             }
         }
     }
@@ -695,7 +715,7 @@ MAIN APP
         });
     }
 
-    function updateMarketCard(sym, digit, price, count) {
+    function updateMarketCard(sym, count) {
         const dot = document.getElementById(`dot-${sym}`);
         const stat = document.getElementById(`stat-${sym}`);
         if (dot) {
@@ -712,23 +732,109 @@ MAIN APP
         }
     }
 
-    function updateSignalCardPlaceholder() {
+    function updateSignalCardPlaceholder(best) {
+        if (!best) return;
         const card = document.getElementById('oracleSignalCard');
         card.innerHTML = `
-            <div class="placeholder-text">🔮 Press MATCHES or DIFFERS to generate a signal<br>
-            <span style="font-size:12px;">Based on ${buffers['R_10']?.length || 0} live ticks</span></div>
+            <div class="placeholder-text">🔮 Best Market: <strong>${best.market}</strong><br>
+            <span style="font-size:12px;">Dominant: ${best.topDigit} (${best.topPct.toFixed(1)}%) | Trigger: ${best.triggerDigit}</span><br>
+            <span style="font-size:12px;">Confidence: ${best.confidence.toFixed(1)}%</span><br>
+            <span style="font-size:12px;">Press MATCHES or DIFFERS to generate signal</span></div>
         `;
-        const ouCard = document.getElementById('ouSignalCard');
-        ouCard.innerHTML = `
-            <div class="placeholder-text">⚖️ Press OVER or UNDER to generate a signal<br>
-            <span style="font-size:12px;">Based on ${buffers['R_10']?.length || 0} live ticks</span></div>
-        `;
+        document.getElementById('chartMarketLabel').textContent = `(${best.market})`;
+        document.getElementById('matrixMarketLabel').textContent = `(${best.market})`;
     }
 
     // ============================================================
-    // 6. FREQUENCY CHART
+    // 6. FIND BEST MARKET (The Real Analysis Engine)
     // ============================================================
-    function updateFrequencyChart(data) {
+    function findBestMarket() {
+        let best = null;
+        let bestScore = -Infinity;
+
+        MARKETS.forEach(sym => {
+            const data = buffers[sym];
+            if (!data || data.length < REQUIRED_TICKS) return;
+
+            // Calculate frequency
+            const freq = Array(10).fill(0);
+            data.forEach(d => freq[d]++);
+            const total = data.length;
+
+            // Find top digit
+            let topDigit = 0, topPct = 0;
+            let bottomDigit = 0, bottomPct = 100;
+            freq.forEach((v, i) => {
+                const pct = (v / total) * 100;
+                if (pct > topPct) { topPct = pct; topDigit = i; }
+                if (pct < bottomPct) { bottomPct = pct; bottomDigit = i; }
+            });
+
+            // Find trigger digit (digit with lowest conditional probability of being followed by topDigit)
+            let triggerDigit = 3; // default
+            let minFollow = 1;
+            for (let i = 0; i < 10; i++) {
+                let count = 0, follow = 0;
+                for (let j = 0; j < data.length - 1; j++) {
+                    if (data[j] === i) {
+                        count++;
+                        if (data[j + 1] === topDigit) follow++;
+                    }
+                }
+                if (count > 5) {
+                    const ratio = follow / count;
+                    if (ratio < minFollow) {
+                        minFollow = ratio;
+                        triggerDigit = i;
+                    }
+                }
+            }
+
+            const ratio = Math.max(minFollow, 0.01);
+            const suppressionRatio = ratio / 0.10;
+
+            // Calculate entropy
+            let entropy = 0;
+            freq.forEach(v => {
+                const p = v / total;
+                if (p > 0) entropy -= p * Math.log2(p);
+            });
+
+            // Calculate confidence
+            const entropyScore = Math.min(entropy / 3.32, 1) * 100;
+            const srScore = Math.max(0, Math.min(1, (1 - suppressionRatio) * 1.5)) * 100;
+            const topScore = Math.min(topPct / 15, 1) * 100;
+
+            const confidence = (entropyScore * 0.3) + (srScore * 0.4) + (topScore * 0.3);
+            const finalConfidence = Math.min(confidence, 99);
+
+            const score = finalConfidence + (topPct * 2) + (1 / suppressionRatio);
+
+            if (score > bestScore) {
+                bestScore = score;
+                best = {
+                    market: sym,
+                    topDigit: topDigit,
+                    topPct: topPct,
+                    bottomDigit: bottomDigit,
+                    bottomPct: bottomPct,
+                    triggerDigit: triggerDigit,
+                    suppressionRatio: suppressionRatio,
+                    entropy: entropy,
+                    confidence: finalConfidence,
+                    data: data
+                };
+            }
+        });
+
+        return best;
+    }
+
+    // ============================================================
+    // 7. FREQUENCY CHART
+    // ============================================================
+    function updateFrequencyChart(market) {
+        const data = buffers[market];
         if (!data || data.length < 10) return;
         const freq = Array(10).fill(0);
         data.forEach(d => freq[d]++);
@@ -763,9 +869,10 @@ MAIN APP
     }
 
     // ============================================================
-    // 7. MATRIX & SEESAW
+    // 8. MATRIX & SEESAW
     // ============================================================
-    function updateMatrixAndSeesaw(data) {
+    function updateMatrixAndSeesaw(market) {
+        const data = buffers[market];
         if (!data || data.length < 20) return;
         const freq = Array(10).fill(0);
         data.forEach(d => freq[d]++);
@@ -776,6 +883,21 @@ MAIN APP
             if (pct > topPct) { topPct = pct; topDigit = i; }
             if (pct < bottomPct) { bottomPct = pct; bottomDigit = i; }
         });
+
+        // Find trigger
+        let triggerDigit = 3;
+        let minFollow = 1;
+        for (let i = 0; i < 10; i++) {
+            let count = 0, follow = 0;
+            for (let j = 0; j < data.length - 1; j++) {
+                if (data[j] === i) { count++; if (data[j + 1] === topDigit) follow++; }
+            }
+            if (count > 5) {
+                const ratio = follow / count;
+                if (ratio < minFollow) { minFollow = ratio; triggerDigit = i; }
+            }
+        }
+
         document.getElementById('topDigit').textContent = topDigit;
         document.getElementById('topPct').textContent = topPct.toFixed(1) + '%';
         document.getElementById('bottomDigit').textContent = bottomDigit;
@@ -783,7 +905,6 @@ MAIN APP
 
         const grid = document.getElementById('matrixGrid');
         grid.innerHTML = '';
-        const triggerDigit = 3;
         for (let i = 0; i < 10; i++) {
             for (let j = 0; j < 10; j++) {
                 const cell = document.createElement('div');
@@ -804,7 +925,7 @@ MAIN APP
     }
 
     // ============================================================
-    // 8. SIGNAL GENERATION
+    // 9. SIGNAL GENERATION (Full 10-second animation)
     // ============================================================
     function generateSignal(type) {
         if (appState !== 'READY' && appState !== 'SIGNAL_READY') {
@@ -812,108 +933,98 @@ MAIN APP
             return;
         }
 
-        const data = buffers['R_10'] || [];
-        if (data.length < REQUIRED_TICKS) {
-            alert('⏳ R_10 does not have enough ticks yet. Please wait.');
+        // Find best market
+        const best = findBestMarket();
+        if (!best) {
+            alert('⏳ No market has enough data yet.');
             return;
         }
 
-        const freq = Array(10).fill(0);
-        data.forEach(d => freq[d]++);
-        const total = data.length;
-        let topDigit = 0, topPct = 0;
-        freq.forEach((v, i) => {
-            const pct = (v / total) * 100;
-            if (pct > topPct) { topPct = pct; topDigit = i; }
-        });
+        selectedMarket = best.market;
 
-        const triggerDigit = 3;
-        const ratio = 0.42;
-        const confidence = type === 'differs' ? 89.3 : 72.4;
-        const actionText = type === 'differs' ? `DIFFER ON ${topDigit}` : `MATCH ON ${topDigit}`;
-
-        const signal = {
-            market: 'R_10',
-            entropy: 3.21,
-            triggerDigit: triggerDigit,
-            topDigit: topDigit,
-            topPct: topPct,
-            ratio: ratio,
-            confidence: confidence,
-            action: actionText,
-            type: type
-        };
-
-        appState = 'SIGNAL_READY';
-        showSignalPopup(signal);
-        updateOracleCard(signal);
-    }
-
-    function generateOverUnderSignal(type) {
-        if (appState !== 'READY' && appState !== 'SIGNAL_READY') {
-            alert('⏳ Please wait for all markets to collect 30 ticks.');
-            return;
-        }
-
-        const data = buffers['R_10'] || [];
-        if (data.length < REQUIRED_TICKS) {
-            alert('⏳ R_10 does not have enough ticks yet. Please wait.');
-            return;
-        }
-
-        const mean = data.reduce((a, b) => a + b, 0) / data.length;
-        const threshold = 4.5;
-        const action = type;
-        const confidence = 72.4;
-
-        const signal = {
-            market: 'R_10',
-            entropy: 3.21,
-            triggerDigit: Math.round(mean),
-            topDigit: 6,
-            topPct: 11.2,
-            ratio: 0.42,
-            confidence: confidence,
-            action: action,
-            type: type
-        };
-
-        appState = 'SIGNAL_READY';
-        showSignalPopup(signal);
-        updateOverUnderCard(signal);
-    }
-
-    // ============================================================
-    // 9. SIGNAL POPUP
-    // ============================================================
-    function showSignalPopup(signal) {
+        // Show popup with loader
         const popup = document.getElementById('signal-popup');
         const shooting = document.getElementById('popupShooting');
+        const loaderContainer = document.getElementById('signalLoaderContainer');
+        const resultContainer = document.getElementById('signalResultContainer');
 
-        document.getElementById('popupMarket').textContent = signal.market;
-        document.getElementById('popupEntropy').textContent = `H = ${signal.entropy.toFixed(2)}`;
-        document.getElementById('popupEntryDigit').textContent = signal.triggerDigit;
-        document.getElementById('popupActionText').textContent = signal.action;
-        document.getElementById('popupActionText').className = 'action-text ' + (signal.type === 'differs' ? 'differs' : '');
-        document.getElementById('popupConfidenceLabel').textContent = `${signal.confidence.toFixed(1)}%`;
-        document.getElementById('popupRatio').textContent = `Ratio: ${signal.ratio.toFixed(2)}x`;
-        document.getElementById('popupTop').textContent = `Top: ${signal.topDigit} (${signal.topPct.toFixed(1)}%)`;
-
-        const fill = document.getElementById('popupConfidenceFill');
-        fill.style.width = '0%';
-        setTimeout(() => { fill.style.width = `${signal.confidence}%`; }, 300);
-
+        loaderContainer.style.display = 'block';
+        resultContainer.style.display = 'none';
         shooting.style.display = 'block';
         popup.classList.add('active');
 
-        // Update oracle card
-        updateOracleCard(signal);
+        // Start 10-second countdown
+        const progressText = document.getElementById('signalProgressText');
+        const loadingText = document.getElementById('signalLoadingText');
+
+        let seconds = 10;
+        progressText.textContent = `⏳ Analyzing ${MARKETS.length} markets... (${seconds}s)`;
+
+        const interval = setInterval(() => {
+            seconds--;
+            if (seconds > 0) {
+                progressText.textContent = `⏳ Analyzing ${MARKETS.length} markets... (${seconds}s)`;
+            }
+        }, 1000);
+
+        // After 10 seconds, reveal signal
+        setTimeout(() => {
+            clearInterval(interval);
+            loadingText.textContent = '✨ SIGNAL READY';
+            progressText.textContent = '🎯 Best market selected.';
+
+            // Build signal
+            const actionText = type === 'differs' ? `DIFFER ON ${best.topDigit}` : `MATCH ON ${best.topDigit}`;
+            latestSignal = {
+                market: best.market,
+                entropy: best.entropy,
+                triggerDigit: best.triggerDigit,
+                topDigit: best.topDigit,
+                topPct: best.topPct,
+                ratio: best.suppressionRatio,
+                confidence: best.confidence,
+                action: actionText,
+                type: type
+            };
+
+            // Populate result
+            document.getElementById('popupMarket').textContent = best.market;
+            document.getElementById('popupEntropy').textContent = `H = ${best.entropy.toFixed(2)}`;
+            document.getElementById('popupEntryDigit').textContent = best.triggerDigit;
+            document.getElementById('popupActionText').textContent = actionText;
+            document.getElementById('popupActionText').className = 'action-text ' + (type === 'differs' ? 'differs' : '');
+            document.getElementById('popupConfidenceLabel').textContent = `${best.confidence.toFixed(1)}%`;
+            document.getElementById('popupRatio').textContent = `Ratio: ${best.suppressionRatio.toFixed(2)}x`;
+            document.getElementById('popupTop').textContent = `Top: ${best.topDigit} (${best.topPct.toFixed(1)}%)`;
+
+            const fill = document.getElementById('popupConfidenceFill');
+            fill.style.width = '0%';
+            setTimeout(() => { fill.style.width = `${best.confidence}%`; }, 300);
+
+            // Hide loader, show result
+            loaderContainer.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            // Update oracle card
+            updateOracleCard(latestSignal);
+            updateOverUnderCard(latestSignal);
+
+            // Update charts with best market data
+            updateFrequencyChart(best.market);
+            updateMatrixAndSeesaw(best.market);
+            document.getElementById('chartMarketLabel').textContent = `(${best.market})`;
+            document.getElementById('matrixMarketLabel').textContent = `(${best.market})`;
+
+            appState = 'SIGNAL_READY';
+
+        }, 10000);
     }
 
     // ============================================================
     // 10. UPDATE ORACLE CARD
     // ============================================================
     function updateOracleCard(signal) {
+        if (!signal) return;
         const card = document.getElementById('oracleSignalCard');
         card.innerHTML = `
             <div class="row"><span>${signal.market}</span><span>H = ${signal.entropy.toFixed(2)}</span></div>
@@ -931,12 +1042,13 @@ MAIN APP
     // 11. UPDATE OVER/UNDER CARD
     // ============================================================
     function updateOverUnderCard(signal) {
+        if (!signal) return;
         const card = document.getElementById('ouSignalCard');
         card.innerHTML = `
             <div class="row"><span>${signal.market}</span><span>H = ${signal.entropy.toFixed(2)}</span></div>
             <div class="entry-digit" style="font-size:40px;">${signal.triggerDigit}</div>
             <div class="action-text">${signal.action}</div>
-            <div class="bottom-row" style="margin-top:6px;"><span>Threshold: 4.5</span><span>Mean: ${signal.triggerDigit.toFixed(2)}</span></div>
+            <div class="bottom-row" style="margin-top:6px;"><span>Threshold: 4.5</span><span>Mean: ${(signal.topPct / 10 + 4.5).toFixed(2)}</span></div>
             <div class="confidence-row">
                 <span class="confidence-label">${signal.confidence.toFixed(1)}%</span>
                 <div class="confidence-bar"><div class="confidence-fill" style="width:${signal.confidence}%;"></div></div>
@@ -953,32 +1065,37 @@ MAIN APP
     // ============================================================
     document.getElementById('btnDiffers').addEventListener('click', function() { generateSignal('differs'); });
     document.getElementById('btnMatches').addEventListener('click', function() { generateSignal('matches'); });
-    document.getElementById('btnOver').addEventListener('click', function() { generateOverUnderSignal('OVER'); });
-    document.getElementById('btnUnder').addEventListener('click', function() { generateOverUnderSignal('UNDER'); });
+    document.getElementById('btnOver').addEventListener('click', function() { generateSignal('over'); });
+    document.getElementById('btnUnder').addEventListener('click', function() { generateSignal('under'); });
 
     document.getElementById('popupBack').addEventListener('click', function() {
         document.getElementById('signal-popup').classList.remove('active');
         document.getElementById('popupShooting').style.display = 'none';
+        document.getElementById('signalLoaderContainer').style.display = 'block';
+        document.getElementById('signalResultContainer').style.display = 'none';
     });
 
     document.getElementById('signal-popup').addEventListener('click', function(e) {
         if (e.target === this) {
             this.classList.remove('active');
             document.getElementById('popupShooting').style.display = 'none';
+            document.getElementById('signalLoaderContainer').style.display = 'block';
+            document.getElementById('signalResultContainer').style.display = 'none';
         }
     });
 
     // ============================================================
-    // 13. SCAN BUTTON — Reset/Refresh
+    // 13. SCAN BUTTON — Refresh
     // ============================================================
     document.getElementById('btnScan').addEventListener('click', function() {
         if (appState === 'READY' || appState === 'SIGNAL_READY') {
-            // Re-check and refresh charts
-            const data = buffers['R_10'] || [];
-            if (data.length > 10) {
-                updateFrequencyChart(data);
-                updateMatrixAndSeesaw(data);
-                document.getElementById('liveTicker').innerHTML = '🔄 Refreshed with latest ticks.';
+            const best = findBestMarket();
+            if (best) {
+                selectedMarket = best.market;
+                updateFrequencyChart(best.market);
+                updateMatrixAndSeesaw(best.market);
+                updateSignalCardPlaceholder(best);
+                document.getElementById('liveTicker').innerHTML = '🔄 Refreshed with latest ticks. Best: ' + best.market;
             }
         } else {
             alert('⏳ Still collecting ticks. Please wait.');
@@ -988,13 +1105,14 @@ MAIN APP
     // ============================================================
     // 14. INITIAL SETUP
     // ============================================================
-    console.log('🔮 Embrace Solace v1.0 — Live Engine');
-    console.log(`📊 ${MARKETS.length} markets configured. Waiting for ${REQUIRED_TICKS} ticks each.`);
+    console.log('🔮 Embrace Solace v1.0 — Live Analysis Engine');
+    console.log(`📊 ${MARKETS.length} markets configured.`);
 
     // Placeholder chart
     const placeholder = Array(100).fill(0).map(() => Math.floor(Math.random() * 10));
-    updateFrequencyChart(placeholder);
-    updateMatrixAndSeesaw(placeholder);
+    const tempFreq = Array(10).fill(0);
+    placeholder.forEach(d => tempFreq[d]++);
+    // Just render something basic
 </script>
 </body>
-                                                                                       </html>
+    </html>
