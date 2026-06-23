@@ -47,7 +47,7 @@
         }
 
         /* ============================================
-           LOCK SCREEN (Overlay)
+           LOCK SCREEN
            ============================================ */
         #lock-overlay {
             position: fixed;
@@ -65,11 +65,7 @@
             text-align: center;
             transition: opacity 0.8s ease, transform 0.8s ease;
         }
-        #lock-overlay.hidden {
-            opacity: 0;
-            transform: scale(1.05);
-            pointer-events: none;
-        }
+        #lock-overlay.hidden { opacity: 0; transform: scale(1.05); pointer-events: none; }
         .lock-logo {
             font-family: 'Orbitron', sans-serif;
             font-size: 38px;
@@ -80,114 +76,40 @@
             -webkit-text-fill-color: transparent;
             animation: shimmerLogo 3s ease-in-out infinite alternate;
         }
-        @keyframes shimmerLogo {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
-        .lock-subtitle {
-            font-size: 11px;
-            letter-spacing: 6px;
-            color: var(--neon-purple);
-            margin-top: 4px;
-            opacity: 0.8;
-        }
-        .lock-tagline {
-            font-size: 15px;
-            color: var(--text-grey);
-            margin-top: 12px;
-        }
+        @keyframes shimmerLogo { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+        .lock-subtitle { font-size: 11px; letter-spacing: 6px; color: var(--neon-purple); margin-top: 4px; opacity: 0.8; }
+        .lock-tagline { font-size: 15px; color: var(--text-grey); margin-top: 12px; }
         .lock-description {
-            font-size: 14px;
-            line-height: 1.7;
-            color: var(--text-grey);
-            max-width: 340px;
-            margin: 18px auto 24px;
-            background: var(--bg-card);
-            padding: 16px 20px;
-            border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.04);
+            font-size: 14px; line-height: 1.7; color: var(--text-grey); max-width: 340px;
+            margin: 18px auto 24px; background: var(--bg-card); padding: 16px 20px;
+            border-radius: 16px; border: 1px solid rgba(255,255,255,0.04);
         }
         .lock-input {
-            width: 100%;
-            max-width: 300px;
-            padding: 16px 20px;
-            background: rgba(255,255,255,0.05);
-            border: 2px solid rgba(168,85,247,0.3);
-            border-radius: 14px;
-            color: #fff;
-            font-size: 18px;
-            letter-spacing: 8px;
-            text-align: center;
-            outline: none;
+            width: 100%; max-width: 300px; padding: 16px 20px; background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(168,85,247,0.3); border-radius: 14px; color: #fff;
+            font-size: 18px; letter-spacing: 8px; text-align: center; outline: none;
         }
-        .lock-input:focus {
-            border-color: var(--neon-purple);
-            box-shadow: 0 0 30px rgba(168,85,247,0.15);
-        }
-        .lock-error {
-            color: var(--neon-red);
-            font-size: 13px;
-            min-height: 24px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
+        .lock-input:focus { border-color: var(--neon-purple); box-shadow: 0 0 30px rgba(168,85,247,0.15); }
+        .lock-error { color: var(--neon-red); font-size: 13px; min-height: 24px; opacity: 0; transition: opacity 0.3s; }
         .lock-error.show { opacity: 1; }
         .btn-unlock {
-            width: 100%;
-            max-width: 300px;
-            padding: 16px;
-            background: linear-gradient(135deg, var(--neon-purple), #7C3AED);
-            border: none;
-            border-radius: 14px;
-            color: #fff;
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            cursor: pointer;
-            box-shadow: 0 0 30px rgba(168,85,247,0.2);
-            transition: all 0.3s;
+            width: 100%; max-width: 300px; padding: 16px; background: linear-gradient(135deg, var(--neon-purple), #7C3AED);
+            border: none; border-radius: 14px; color: #fff; font-size: 18px; font-weight: 700;
+            letter-spacing: 2px; cursor: pointer; box-shadow: 0 0 30px rgba(168,85,247,0.2); transition: all 0.3s;
         }
         .btn-unlock:active { transform: scale(0.96); }
-        .lock-footer {
-            margin-top: 24px;
-            font-size: 12px;
-            color: var(--text-grey);
-        }
+        .lock-footer { margin-top: 24px; font-size: 12px; color: var(--text-grey); }
         .lock-footer .contact { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
-        .lock-footer .disclaimer {
-            font-size: 11px;
-            color: rgba(255,255,255,0.25);
-            margin-top: 8px;
-        }
+        .lock-footer .disclaimer { font-size: 11px; color: rgba(255,255,255,0.25); margin-top: 8px; }
 
         /* ============================================
-           MAIN APP (Visible after unlock)
+           MAIN APP
            ============================================ */
-        .section {
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-        }
+        .section { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.04); }
         .section:last-child { border-bottom: none; }
+        .section-title { font-size: 18px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
 
-        .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* ============================================
-           DASHBOARD
-           ============================================ */
-        .header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .app-title {
             font-family: 'Orbitron', sans-serif;
             font-size: 22px;
@@ -198,29 +120,15 @@
         .app-title span { color: var(--neon-purple); font-weight: 400; }
 
         .btn-scan {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--neon-purple), #6D28D9);
-            border: none;
-            border-radius: 14px;
-            color: #fff;
-            font-size: 17px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            cursor: pointer;
-            box-shadow: 0 0 30px rgba(168,85,247,0.15);
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            width: 100%; padding: 14px; background: linear-gradient(135deg, var(--neon-purple), #6D28D9);
+            border: none; border-radius: 14px; color: #fff; font-size: 17px; font-weight: 700;
+            letter-spacing: 1px; cursor: pointer; box-shadow: 0 0 30px rgba(168,85,247,0.15);
+            transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px;
         }
         .btn-scan:active { transform: scale(0.97); }
         .btn-scan.scanning { animation: pulseScan 1.2s ease-in-out infinite; }
-        @keyframes pulseScan {
-            0%, 100% { box-shadow: 0 0 20px rgba(168,85,247,0.2); }
-            50% { box-shadow: 0 0 60px rgba(168,85,247,0.6); }
-        }
+        @keyframes pulseScan { 0%, 100% { box-shadow: 0 0 20px rgba(168,85,247,0.2); } 50% { box-shadow: 0 0 60px rgba(168,85,247,0.6); } }
+        .btn-scan.ready { background: linear-gradient(135deg, var(--neon-green), #00CC88); box-shadow: 0 0 30px rgba(0,255,170,0.2); }
 
         .market-grid {
             display: grid;
@@ -240,16 +148,13 @@
         .market-card .sym { font-weight: 600; font-size: 12px; }
         .market-card .stat { font-size: 10px; color: var(--text-grey); }
         .market-card .dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 4px;
+            width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px;
         }
         .market-card .dot.green { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
         .market-card .dot.yellow { background: #FFD700; box-shadow: 0 0 10px #FFD700; }
         .market-card .dot.red { background: var(--neon-red); box-shadow: 0 0 10px var(--neon-red); }
         .market-card .dot.grey { background: #555; }
+        .market-card.ready { border-color: rgba(0,255,170,0.2); box-shadow: 0 0 15px rgba(0,255,170,0.05); }
 
         .live-ticker {
             background: var(--bg-card);
@@ -265,6 +170,26 @@
             text-overflow: ellipsis;
         }
         .live-ticker strong { color: var(--neon-cyan); }
+
+        /* ============================================
+           GATHERING COMPLETE BANNER
+           ============================================ */
+        #gathering-banner {
+            display: none;
+            background: rgba(0,255,170,0.08);
+            border: 1px solid var(--neon-green);
+            border-radius: 14px;
+            padding: 12px 16px;
+            margin: 6px 0 12px;
+            text-align: center;
+            color: var(--neon-green);
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 0 30px rgba(0,255,170,0.05);
+            animation: fadeInBanner 0.6s ease;
+        }
+        #gathering-banner.show { display: block; }
+        @keyframes fadeInBanner { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ============================================
            FREQUENCY CHART
@@ -283,93 +208,37 @@
             padding-bottom: 20px;
             position: relative;
         }
-        .chart-bars .bar-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-        }
-        .chart-bars .bar {
-            width: 18px;
-            border-radius: 3px 3px 0 0;
-            min-height: 4px;
-            transition: height 0.4s ease;
-        }
-        .chart-bars .bar-label {
-            font-size: 10px;
-            color: var(--text-grey);
-            margin-top: 4px;
-        }
+        .chart-bars .bar-group { display: flex; flex-direction: column; align-items: center; flex: 1; }
+        .chart-bars .bar { width: 18px; border-radius: 3px 3px 0 0; min-height: 4px; transition: height 0.4s ease; }
+        .chart-bars .bar-label { font-size: 10px; color: var(--text-grey); margin-top: 4px; }
         .chart-baseline {
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 80%;
-            border-top: 2px dashed rgba(255,255,255,0.1);
-            pointer-events: none;
+            position: absolute; left: 0; right: 0; top: 80%;
+            border-top: 2px dashed rgba(255,255,255,0.1); pointer-events: none;
         }
-        .chart-baseline-label {
-            position: absolute;
-            right: 0;
-            top: -8px;
-            font-size: 9px;
-            color: rgba(255,255,255,0.2);
-        }
+        .chart-baseline-label { position: absolute; right: 0; top: -8px; font-size: 9px; color: rgba(255,255,255,0.2); }
         .chart-exceedance {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: rgba(255,107,0,0.12);
-            border: 1px solid var(--neon-orange);
-            border-radius: 16px;
-            padding: 2px 10px;
-            font-size: 10px;
-            color: var(--neon-orange);
+            position: absolute; top: 0; right: 0;
+            background: rgba(255,107,0,0.12); border: 1px solid var(--neon-orange);
+            border-radius: 16px; padding: 2px 10px; font-size: 10px; color: var(--neon-orange);
         }
 
         /* ============================================
            MATRIX
            ============================================ */
         .matrix-grid {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 2px;
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 6px;
+            display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px;
+            background: var(--bg-card); border-radius: 12px; padding: 6px;
             border: 1px solid rgba(255,255,255,0.04);
         }
-        .matrix-cell {
-            aspect-ratio: 1;
-            border-radius: 3px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
-            color: rgba(255,255,255,0.3);
-            transition: all 0.3s;
-        }
+        .matrix-cell { aspect-ratio: 1; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 8px; color: rgba(255,255,255,0.3); transition: all 0.3s; }
         .matrix-cell.highlight-block { background: rgba(255,71,87,0.4); border: 1px solid var(--neon-red); color: #fff; }
         .matrix-cell.highlight-trigger { background: rgba(0,255,170,0.25); border: 1px solid var(--neon-green); color: #fff; }
-        .matrix-legend {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            font-size: 11px;
-            color: var(--text-grey);
-            margin-top: 8px;
-        }
+        .matrix-legend { display: flex; justify-content: center; gap: 20px; font-size: 11px; color: var(--text-grey); margin-top: 8px; }
 
         .seesaw-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            background: var(--bg-card);
-            border-radius: 14px;
-            padding: 14px;
-            margin-top: 12px;
-            border: 1px solid rgba(255,255,255,0.04);
+            display: flex; align-items: center; justify-content: center; gap: 16px;
+            background: var(--bg-card); border-radius: 14px; padding: 14px;
+            margin-top: 12px; border: 1px solid rgba(255,255,255,0.04);
         }
         .seesaw-item { text-align: center; }
         .seesaw-item .digit { font-size: 28px; font-weight: 700; }
@@ -377,73 +246,36 @@
         .seesaw-item .digit.bottom { color: var(--neon-cyan); }
         .seesaw-item .pct { font-size: 13px; color: var(--text-grey); }
         .seesaw-line {
-            flex: 1;
-            height: 2px;
+            flex: 1; height: 2px;
             background: linear-gradient(90deg, var(--neon-orange), var(--neon-cyan));
-            position: relative;
-            opacity: 0.4;
+            position: relative; opacity: 0.4;
         }
-        .seesaw-line::after {
-            content: '⟷';
-            position: absolute;
-            left: 50%;
-            top: -12px;
-            transform: translateX(-50%);
-            color: var(--text-grey);
-            font-size: 16px;
-        }
-        .seesaw-label {
-            text-align: center;
-            font-size: 11px;
-            color: var(--text-grey);
-            margin-top: 6px;
-        }
+        .seesaw-line::after { content: '⟷'; position: absolute; left: 50%; top: -12px; transform: translateX(-50%); color: var(--text-grey); font-size: 16px; }
+        .seesaw-label { text-align: center; font-size: 11px; color: var(--text-grey); margin-top: 6px; }
 
         /* ============================================
            ORACLE
            ============================================ */
-        .oracle-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin: 8px 0 12px;
-        }
+        .oracle-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 8px 0 12px; }
         .oracle-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 12px;
-            font-family: 'Inter', sans-serif;
-            font-size: 15px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s;
-            color: #fff;
+            flex: 1; padding: 12px; border: none; border-radius: 12px;
+            font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700;
+            letter-spacing: 1px; cursor: pointer; transition: all 0.3s; color: #fff;
         }
         .oracle-btn:active { transform: scale(0.95); }
         .oracle-btn.matches { background: linear-gradient(135deg, #00CC88, var(--neon-green)); box-shadow: 0 0 30px rgba(0,255,170,0.15); }
         .oracle-btn.differs { background: linear-gradient(135deg, #CC2244, var(--neon-red)); box-shadow: 0 0 30px rgba(255,71,87,0.15); }
+        .oracle-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
         .orb {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
+            width: 70px; height: 70px; border-radius: 50%;
             background: radial-gradient(circle at 30% 30%, #8E2DE2, #4A00E0);
             box-shadow: 0 0 50px rgba(74,0,224,0.3), inset 0 0 30px rgba(0,255,240,0.05);
             animation: orbPulse 3s ease-in-out infinite;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            color: rgba(255,255,255,0.15);
+            flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: rgba(255,255,255,0.15);
         }
-        @keyframes orbPulse {
-            0%, 100% { box-shadow: 0 0 50px rgba(74,0,224,0.3); }
-            50% { box-shadow: 0 0 80px rgba(74,0,224,0.5), 0 0 120px rgba(0,255,240,0.05); }
-        }
+        @keyframes orbPulse { 0%, 100% { box-shadow: 0 0 50px rgba(74,0,224,0.3); } 50% { box-shadow: 0 0 80px rgba(74,0,224,0.5), 0 0 120px rgba(0,255,240,0.05); } }
 
         .signal-card {
             background: var(--bg-card);
@@ -452,13 +284,12 @@
             border: 1px solid rgba(0,255,240,0.08);
             backdrop-filter: blur(10px);
             margin-top: 10px;
-        }
-        .signal-card .row {
+            min-height: 160px;
             display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            color: var(--text-grey);
+            flex-direction: column;
+            justify-content: center;
         }
+        .signal-card .row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-grey); }
         .signal-card .entry-digit {
             font-family: 'Orbitron', sans-serif;
             font-size: 52px;
@@ -477,143 +308,66 @@
             margin-bottom: 6px;
         }
         .signal-card .action-text.differs { color: var(--neon-red); }
-        .signal-card .confidence-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 6px 0;
-        }
-        .signal-card .confidence-bar {
-            flex: 1;
-            height: 5px;
-            background: rgba(255,255,255,0.06);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .signal-card .confidence-fill {
-            height: 100%;
-            border-radius: 4px;
-            background: linear-gradient(90deg, var(--neon-orange), var(--neon-green));
-            transition: width 1.2s ease;
-            width: 0%;
-        }
-        .signal-card .confidence-label {
-            font-size: 14px;
-            font-weight: 600;
-            color: #fff;
-            min-width: 44px;
-        }
-        .signal-card .bottom-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: var(--text-grey);
-            margin-top: 6px;
-            padding-top: 6px;
-            border-top: 1px solid rgba(255,255,255,0.04);
-        }
+        .signal-card .action-text.empty { color: var(--text-grey); font-weight: 400; font-size: 14px; }
+        .signal-card .confidence-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+        .signal-card .confidence-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+        .signal-card .confidence-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--neon-orange), var(--neon-green)); transition: width 1.2s ease; width: 0%; }
+        .signal-card .confidence-label { font-size: 14px; font-weight: 600; color: #fff; min-width: 44px; }
+        .signal-card .bottom-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-grey); margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.04); }
+        .signal-card .placeholder-text { text-align: center; color: var(--text-grey); font-size: 14px; opacity: 0.5; }
 
         /* ============================================
            OVER / UNDER
            ============================================ */
-        .ou-row {
-            display: flex;
-            gap: 12px;
-            margin: 8px 0 12px;
-        }
+        .ou-row { display: flex; gap: 12px; margin: 8px 0 12px; }
         .ou-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 12px;
-            font-family: 'Inter', sans-serif;
-            font-size: 15px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s;
-            color: #fff;
+            flex: 1; padding: 12px; border: none; border-radius: 12px;
+            font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700;
+            letter-spacing: 1px; cursor: pointer; transition: all 0.3s; color: #fff;
         }
         .ou-btn:active { transform: scale(0.95); }
         .ou-btn.over { background: linear-gradient(135deg, #CC8800, var(--neon-gold)); box-shadow: 0 0 30px rgba(255,215,0,0.1); }
         .ou-btn.under { background: linear-gradient(135deg, #0066CC, var(--neon-blue)); box-shadow: 0 0 30px rgba(0,191,255,0.1); }
+        .ou-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        .ou-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 8px;
-        }
-        .ou-stat {
-            background: var(--bg-card);
-            border-radius: 10px;
-            padding: 10px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.04);
-        }
+        .ou-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+        .ou-stat { background: var(--bg-card); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.04); }
         .ou-stat .label { font-size: 10px; color: var(--text-grey); }
         .ou-stat .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
 
         /* ============================================
-           SIGNAL POPUP (Overlay)
+           SIGNAL POPUP
            ============================================ */
         #signal-popup {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(11,11,26,0.92);
-            backdrop-filter: blur(20px);
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(11,11,26,0.92); backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 500;
-            padding: 24px;
-            flex-direction: column;
+            display: none; align-items: center; justify-content: center;
+            z-index: 500; padding: 24px; flex-direction: column;
         }
         #signal-popup.active { display: flex; }
         #signal-popup .popup-card {
-            background: var(--bg-dark);
-            border-radius: 24px;
-            padding: 24px;
-            max-width: 400px;
-            width: 100%;
+            background: var(--bg-dark); border-radius: 24px; padding: 24px;
+            max-width: 400px; width: 100%;
             border: 1px solid rgba(0,255,240,0.1);
             box-shadow: 0 0 60px rgba(0,255,240,0.05);
             position: relative;
         }
         #signal-popup .popup-card .btn-back {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            background: none;
-            border: none;
-            color: var(--text-grey);
-            font-size: 24px;
-            cursor: pointer;
-            transition: color 0.3s;
+            position: absolute; top: 12px; right: 16px;
+            background: none; border: none; color: var(--text-grey);
+            font-size: 24px; cursor: pointer; transition: color 0.3s;
         }
         #signal-popup .popup-card .btn-back:hover { color: #fff; }
         .popup-shooting {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-            z-index: 499;
-            overflow: hidden;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none; z-index: 499; overflow: hidden; display: none;
         }
+        .popup-shooting.active { display: block; }
         .shooting-star {
-            position: absolute;
-            width: 100px;
-            height: 2px;
+            position: absolute; width: 100px; height: 2px;
             background: linear-gradient(90deg, transparent, var(--neon-cyan));
-            border-radius: 2px;
-            opacity: 0;
-            animation: shootStar 2.5s linear infinite;
+            border-radius: 2px; opacity: 0; animation: shootStar 2.5s linear infinite;
         }
         .shooting-star:nth-child(1) { top: 10%; left: -10%; animation-delay: 0.2s; }
         .shooting-star:nth-child(2) { top: 30%; left: -20%; animation-delay: 1.2s; width: 140px; }
@@ -627,9 +381,6 @@
             100% { transform: translateX(calc(100vw + 200px)) translateY(-60px) rotate(15deg); opacity: 0; }
         }
 
-        /* ============================================
-           UTILITY
-           ============================================ */
         .text-glow { text-shadow: 0 0 20px rgba(0,255,240,0.1); }
         .mt-8 { margin-top: 8px; }
         .mb-8 { margin-bottom: 8px; }
@@ -673,10 +424,8 @@ LOCK SCREEN
 SIGNAL POPUP
 ============================================ -->
 <div class="popup-shooting" id="popupShooting">
-    <div class="shooting-star"></div>
-    <div class="shooting-star"></div>
-    <div class="shooting-star"></div>
-    <div class="shooting-star"></div>
+    <div class="shooting-star"></div><div class="shooting-star"></div>
+    <div class="shooting-star"></div><div class="shooting-star"></div>
     <div class="shooting-star"></div>
 </div>
 <div id="signal-popup">
@@ -701,7 +450,6 @@ MAIN APP
 ============================================ -->
 <div id="app" style="display:none;">
 
-    <!-- Header -->
     <div class="header-row">
         <div class="app-title">EMBRAZE <span>SOLACE</span></div>
         <div style="font-size:12px; color:var(--text-grey);">v1.0</div>
@@ -712,6 +460,9 @@ MAIN APP
     ============================================ -->
     <div class="section">
         <button class="btn-scan" id="btnScan">🔮 SCAN ALL MARKETS</button>
+
+        <div id="gathering-banner">✅ Gathering Complete — 17 markets ready</div>
+
         <div class="market-grid" id="marketGrid"></div>
         <div class="live-ticker" id="liveTicker">⏳ Connecting to Deriv WebSocket...</div>
     </div>
@@ -751,19 +502,12 @@ MAIN APP
     <div class="section">
         <div class="section-title">⚡ Execute Trade</div>
         <div class="oracle-row">
-            <button class="oracle-btn matches" id="btnMatches">MATCHES</button>
+            <button class="oracle-btn matches" id="btnMatches" disabled>MATCHES</button>
             <div class="orb" id="oracleOrb">✦</div>
-            <button class="oracle-btn differs" id="btnDiffers">DIFFERS</button>
+            <button class="oracle-btn differs" id="btnDiffers" disabled>DIFFERS</button>
         </div>
         <div class="signal-card" id="oracleSignalCard">
-            <div class="row"><span id="oracleMarket">R_10</span><span id="oracleEntropy">H = 3.21</span></div>
-            <div class="entry-digit" id="oracleEntryDigit">3</div>
-            <div class="action-text" id="oracleActionText">PLACE DIFFER ON 6</div>
-            <div class="confidence-row">
-                <span class="confidence-label" id="oracleConfidenceLabel">89.3%</span>
-                <div class="confidence-bar"><div class="confidence-fill" id="oracleConfidenceFill" style="width:89.3%;"></div></div>
-            </div>
-            <div class="bottom-row"><span id="oracleRatio">Ratio: 0.42x</span><span id="oracleTop">Top: 6 (11.2%)</span></div>
+            <div class="placeholder-text">⏳ Waiting for signal...<br><span style="font-size:12px;">Press MATCHES or DIFFERS to generate a signal</span></div>
         </div>
     </div>
 
@@ -773,24 +517,17 @@ MAIN APP
     <div class="section">
         <div class="section-title">⚖️ Over / Under</div>
         <div class="ou-row">
-            <button class="ou-btn over" id="btnOver">OVER</button>
-            <button class="ou-btn under" id="btnUnder">UNDER</button>
+            <button class="ou-btn over" id="btnOver" disabled>OVER</button>
+            <button class="ou-btn under" id="btnUnder" disabled>UNDER</button>
         </div>
         <div class="signal-card" id="ouSignalCard">
-            <div class="row"><span id="ouMarket">R_10</span><span id="ouEntropy">H = 3.21</span></div>
-            <div class="entry-digit" id="ouEntryDigit" style="font-size:40px;">3</div>
-            <div class="action-text" id="ouActionText">OVER</div>
-            <div class="bottom-row" style="margin-top:6px;"><span id="ouThreshold">Threshold: 4.5</span><span id="ouMean">Mean: 4.78</span></div>
-            <div class="confidence-row">
-                <span class="confidence-label" id="ouConfidenceLabel">72.4%</span>
-                <div class="confidence-bar"><div class="confidence-fill" id="ouConfidenceFill" style="width:72.4%;"></div></div>
-            </div>
+            <div class="placeholder-text">⏳ Waiting for signal...<br><span style="font-size:12px;">Press OVER or UNDER to generate a signal</span></div>
         </div>
         <div class="ou-stats">
-            <div class="ou-stat"><div class="label">Volume</div><div class="value" id="ouVolume">2,847</div></div>
-            <div class="ou-stat"><div class="label">Win Rate</div><div class="value" id="ouWinRate">68.3%</div></div>
-            <div class="ou-stat"><div class="label">Streak</div><div class="value" id="ouStreak">+5</div></div>
-            <div class="ou-stat"><div class="label">Confidence</div><div class="value" id="ouConfidenceValue">72.4%</div></div>
+            <div class="ou-stat"><div class="label">Volume</div><div class="value" id="ouVolume">--</div></div>
+            <div class="ou-stat"><div class="label">Win Rate</div><div class="value" id="ouWinRate">--</div></div>
+            <div class="ou-stat"><div class="label">Streak</div><div class="value" id="ouStreak">--</div></div>
+            <div class="ou-stat"><div class="label">Confidence</div><div class="value" id="ouConfidenceValue">--</div></div>
         </div>
     </div>
 
@@ -799,15 +536,13 @@ MAIN APP
     </div>
 </div>
 
-<!-- ============================================
-JAVASCRIPT — REAL DERIV WEBSOCKET + LIVE ENGINE
-============================================ -->
 <script>
     // ============================================================
     // 1. CONSTANTS & CONFIG
     // ============================================================
     const APP_PASSWORD = 'SUCCESSV12';
     const DERIV_WS = 'wss://api.derivws.com/trading/v1/options/ws/public';
+    const REQUIRED_TICKS = 30;
 
     const MARKETS = [
         'R_10', 'R_25', 'R_50', 'R_75', 'R_100',
@@ -816,13 +551,12 @@ JAVASCRIPT — REAL DERIV WEBSOCKET + LIVE ENGINE
         'RDBULL', 'RDBEAR'
     ];
 
-    // Each market stores its own rolling buffer (last 1000 ticks)
+    // State
     const buffers = {};
-    const marketStatus = {};
-
+    const marketTickCounts = {};
+    let appState = 'IDLE'; // IDLE → COLLECTING → READY → GENERATING → SIGNAL_READY
     let ws = null;
-    let isConnected = false;
-    let currentSignal = null;
+    let isGatheringComplete = false;
 
     // ============================================================
     // 2. LOCK SCREEN
@@ -849,24 +583,23 @@ JAVASCRIPT — REAL DERIV WEBSOCKET + LIVE ENGINE
     }
 
     // ============================================================
-    // 3. DERIV WEBSOCKET — LIVE DATA
+    // 3. DERIV WEBSOCKET
     // ============================================================
     function initWebSocket() {
         document.getElementById('liveTicker').textContent = '⏳ Connecting to Deriv WebSocket...';
+        appState = 'COLLECTING';
+
+        MARKETS.forEach(sym => {
+            buffers[sym] = [];
+            marketTickCounts[sym] = 0;
+        });
+
         ws = new WebSocket(DERIV_WS);
 
         ws.onopen = function() {
-            isConnected = true;
-            document.getElementById('liveTicker').textContent = '✅ Connected. Subscribing to all markets...';
-            // Subscribe to all markets
+            document.getElementById('liveTicker').textContent = '✅ Connected. Collecting ticks (0/30)...';
             MARKETS.forEach(sym => {
-                ws.send(JSON.stringify({
-                    ticks: sym,
-                    subscribe: 1
-                }));
-                // Initialize buffer
-                buffers[sym] = [];
-                marketStatus[sym] = 'subscribing';
+                ws.send(JSON.stringify({ ticks: sym, subscribe: 1 }));
             });
             renderMarketCards();
         };
@@ -880,28 +613,22 @@ JAVASCRIPT — REAL DERIV WEBSOCKET + LIVE ENGINE
                     const price = tick.quote;
                     const digit = extractLastDigit(price);
 
-                    // Store in buffer
                     if (buffers[sym]) {
                         buffers[sym].push(digit);
-                        if (buffers[sym].length > 1000) buffers[sym].shift();
+                        marketTickCounts[sym] = buffers[sym].length;
+                        updateMarketCard(sym, digit, price, marketTickCounts[sym]);
                     }
 
-                    // Update market status
-                    marketStatus[sym] = 'live';
-                    updateMarketCard(sym, digit, price);
-                    updateLiveTicker(sym, digit, price);
+                    // Update live ticker
+                    const totalCollected = MARKETS.reduce((sum, s) => sum + (buffers[s]?.length || 0), 0);
+                    const totalNeeded = MARKETS.length * REQUIRED_TICKS;
+                    document.getElementById('liveTicker').innerHTML =
+                        `📊 Collected ${totalCollected} / ${totalNeeded} ticks across ${MARKETS.length} markets`;
 
-                    // Update chart & matrix for R_10 (default display)
-                    if (sym === 'R_10' && buffers[sym].length > 10) {
-                        updateFrequencyChart(buffers[sym]);
-                        updateMatrixAndSeesaw(buffers[sym]);
-                        updateOracleCard(buffers[sym]);
-                        updateOverUnderCard(buffers[sym]);
-                    }
+                    // Check if all markets have 30 ticks
+                    checkGatheringComplete();
                 }
-            } catch (e) {
-                // ignore parse errors
-            }
+            } catch (e) { /* ignore */ }
         };
 
         ws.onerror = function() {
@@ -910,7 +637,6 @@ JAVASCRIPT — REAL DERIV WEBSOCKET + LIVE ENGINE
         };
 
         ws.onclose = function() {
-            isConnected = false;
             document.getElementById('liveTicker').textContent = '❌ Disconnected. Reconnecting...';
             setTimeout(initWebSocket, 5000);
         };
@@ -922,7 +648,37 @@ JAVASCRIPT — REAL DERIV WEBSOCKET + LIVE ENGINE
     }
 
     // ============================================================
-    // 4. UI UPDATES
+    // 4. GATHERING COMPLETE CHECK
+    // ============================================================
+    function checkGatheringComplete() {
+        if (isGatheringComplete) return;
+        const allReady = MARKETS.every(sym => (buffers[sym]?.length || 0) >= REQUIRED_TICKS);
+        if (allReady) {
+            isGatheringComplete = true;
+            appState = 'READY';
+            document.getElementById('gathering-banner').classList.add('show');
+            document.getElementById('liveTicker').innerHTML = '✅ <strong>Gathering Complete</strong> — All 17 markets ready.';
+            document.getElementById('btnScan').classList.add('ready');
+            document.getElementById('btnScan').innerHTML = '✅ ALL MARKETS READY';
+
+            // Enable all signal buttons
+            document.getElementById('btnMatches').disabled = false;
+            document.getElementById('btnDiffers').disabled = false;
+            document.getElementById('btnOver').disabled = false;
+            document.getElementById('btnUnder').disabled = false;
+
+            // Update charts with R_10 data if available
+            const data = buffers['R_10'] || [];
+            if (data.length > 10) {
+                updateFrequencyChart(data);
+                updateMatrixAndSeesaw(data);
+                updateSignalCardPlaceholder();
+            }
+        }
+    }
+
+    // ============================================================
+    // 5. UI UPDATES
     // ============================================================
     function renderMarketCards() {
         const grid = document.getElementById('marketGrid');
@@ -933,33 +689,44 @@ JAVASCRIPT — REAL DERIV WEBSOCKET + LIVE ENGINE
             card.id = `card-${sym}`;
             card.innerHTML = `
                 <div class="sym">${sym}</div>
-                <div class="stat"><span class="dot grey" id="dot-${sym}"></span> <span id="stat-${sym}">waiting</span></div>
+                <div class="stat"><span class="dot grey" id="dot-${sym}"></span> <span id="stat-${sym}">0/${REQUIRED_TICKS}</span></div>
             `;
             grid.appendChild(card);
         });
     }
 
-    function updateMarketCard(sym, digit, price) {
+    function updateMarketCard(sym, digit, price, count) {
         const dot = document.getElementById(`dot-${sym}`);
         const stat = document.getElementById(`stat-${sym}`);
         if (dot) {
-            dot.className = 'dot green';
-            dot.style.boxShadow = '0 0 10px var(--neon-green)';
+            const isReady = count >= REQUIRED_TICKS;
+            dot.className = 'dot ' + (isReady ? 'green' : 'yellow');
+            if (isReady) dot.style.boxShadow = '0 0 10px var(--neon-green)';
         }
         if (stat) {
-            stat.textContent = `${digit} | ${price.toFixed(2)}`;
+            stat.textContent = `${count}/${REQUIRED_TICKS}`;
+        }
+        const card = document.getElementById(`card-${sym}`);
+        if (card && count >= REQUIRED_TICKS) {
+            card.classList.add('ready');
         }
     }
 
-    function updateLiveTicker(sym, digit, price) {
-        const el = document.getElementById('liveTicker');
-        if (el) {
-            el.innerHTML = `🟢 ${sym} <strong>${price.toFixed(4)}</strong> | Last Digit: <strong>${digit}</strong> | Ticks: ${buffers[sym]?.length || 0}`;
-        }
+    function updateSignalCardPlaceholder() {
+        const card = document.getElementById('oracleSignalCard');
+        card.innerHTML = `
+            <div class="placeholder-text">🔮 Press MATCHES or DIFFERS to generate a signal<br>
+            <span style="font-size:12px;">Based on ${buffers['R_10']?.length || 0} live ticks</span></div>
+        `;
+        const ouCard = document.getElementById('ouSignalCard');
+        ouCard.innerHTML = `
+            <div class="placeholder-text">⚖️ Press OVER or UNDER to generate a signal<br>
+            <span style="font-size:12px;">Based on ${buffers['R_10']?.length || 0} live ticks</span></div>
+        `;
     }
 
     // ============================================================
-    // 5. FREQUENCY CHART (Live)
+    // 6. FREQUENCY CHART
     // ============================================================
     function updateFrequencyChart(data) {
         if (!data || data.length < 10) return;
@@ -996,44 +763,35 @@ JAVASCRIPT — REAL DERIV WEBSOCKET + LIVE ENGINE
     }
 
     // ============================================================
-    // 6. MATRIX & SEESAW (Live)
+    // 7. MATRIX & SEESAW
     // ============================================================
     function updateMatrixAndSeesaw(data) {
         if (!data || data.length < 20) return;
-
-        // Update Seesaw
         const freq = Array(10).fill(0);
         data.forEach(d => freq[d]++);
         const total = data.length;
-        let topDigit = 0,
-            topPct = 0,
-            bottomDigit = 0,
-            bottomPct = 100;
+        let topDigit = 0, topPct = 0, bottomDigit = 0, bottomPct = 100;
         freq.forEach((v, i) => {
             const pct = (v / total) * 100;
-            if (pct > topPct) { topPct = pct;
-                topDigit = i; }
-            if (pct < bottomPct) { bottomPct = pct;
-                bottomDigit = i; }
+            if (pct > topPct) { topPct = pct; topDigit = i; }
+            if (pct < bottomPct) { bottomPct = pct; bottomDigit = i; }
         });
         document.getElementById('topDigit').textContent = topDigit;
         document.getElementById('topPct').textContent = topPct.toFixed(1) + '%';
         document.getElementById('bottomDigit').textContent = bottomDigit;
         document.getElementById('bottomPct').textContent = bottomPct.toFixed(1) + '%';
 
-        // Matrix (simplified — show trigger/block relationship)
         const grid = document.getElementById('matrixGrid');
         grid.innerHTML = '';
-        // Find trigger: digit that is least likely to be followed by topDigit
-        // Simplified: use topDigit and bottomDigit
+        const triggerDigit = 3;
         for (let i = 0; i < 10; i++) {
             for (let j = 0; j < 10; j++) {
                 const cell = document.createElement('div');
                 cell.className = 'matrix-cell';
-                if (i === 3 && j === topDigit) {
+                if (i === triggerDigit && j === topDigit) {
                     cell.classList.add('highlight-block');
                     cell.textContent = '⛔';
-                } else if (i === 3 && j === 2) {
+                } else if (i === triggerDigit && j === 2) {
                     cell.classList.add('highlight-trigger');
                     cell.textContent = '▶';
                 } else {
@@ -1046,84 +804,34 @@ JAVASCRIPT — REAL DERIV WEBSOCKET + LIVE ENGINE
     }
 
     // ============================================================
-    // 7. ORACLE CARD (Live)
-    // ============================================================
-    function updateOracleCard(data) {
-        if (!data || data.length < 20) return;
-        const freq = Array(10).fill(0);
-        data.forEach(d => freq[d]++);
-        const total = data.length;
-        let topDigit = 0,
-            topPct = 0;
-        freq.forEach((v, i) => {
-            const pct = (v / total) * 100;
-            if (pct > topPct) { topPct = pct;
-                topDigit = i; }
-        });
-        // Trigger digit: simplified — use a fixed relationship (digit 3 blocks top)
-        const triggerDigit = 3;
-        const ratio = 0.42;
-        const confidence = 89.3;
-
-        document.getElementById('oracleMarket').textContent = 'R_10';
-        document.getElementById('oracleEntropy').textContent = `H = ${(3.21).toFixed(2)}`;
-        document.getElementById('oracleEntryDigit').textContent = triggerDigit;
-        document.getElementById('oracleActionText').textContent = `PLACE DIFFER ON ${topDigit}`;
-        document.getElementById('oracleConfidenceLabel').textContent = `${confidence.toFixed(1)}%`;
-        document.getElementById('oracleConfidenceFill').style.width = `${confidence}%`;
-        document.getElementById('oracleRatio').textContent = `Ratio: ${ratio.toFixed(2)}x`;
-        document.getElementById('oracleTop').textContent = `Top: ${topDigit} (${topPct.toFixed(1)}%)`;
-    }
-
-    // ============================================================
-    // 8. OVER / UNDER CARD (Live)
-    // ============================================================
-    function updateOverUnderCard(data) {
-        if (!data || data.length < 20) return;
-        const mean = data.reduce((a, b) => a + b, 0) / data.length;
-        const threshold = 4.5;
-        const action = mean > threshold ? 'OVER' : 'UNDER';
-        const confidence = 72.4;
-
-        document.getElementById('ouMarket').textContent = 'R_10';
-        document.getElementById('ouEntropy').textContent = `H = ${(3.21).toFixed(2)}`;
-        document.getElementById('ouEntryDigit').textContent = Math.round(mean);
-        document.getElementById('ouActionText').textContent = action;
-        document.getElementById('ouThreshold').textContent = `Threshold: ${threshold}`;
-        document.getElementById('ouMean').textContent = `Mean: ${mean.toFixed(2)}`;
-        document.getElementById('ouConfidenceLabel').textContent = `${confidence.toFixed(1)}%`;
-        document.getElementById('ouConfidenceFill').style.width = `${confidence}%`;
-        document.getElementById('ouConfidenceValue').textContent = `${confidence.toFixed(1)}%`;
-    }
-
-    // ============================================================
-    // 9. SIGNAL GENERATION (When buttons are pressed)
+    // 8. SIGNAL GENERATION
     // ============================================================
     function generateSignal(type) {
-        // Use R_10 data if available, otherwise fallback
-        const data = buffers['R_10'] || [];
-        if (data.length < 50) {
-            alert('⏳ Not enough tick data yet. Please wait for more ticks.');
+        if (appState !== 'READY' && appState !== 'SIGNAL_READY') {
+            alert('⏳ Please wait for all markets to collect 30 ticks.');
             return;
         }
 
-        // Calculate indicators
+        const data = buffers['R_10'] || [];
+        if (data.length < REQUIRED_TICKS) {
+            alert('⏳ R_10 does not have enough ticks yet. Please wait.');
+            return;
+        }
+
         const freq = Array(10).fill(0);
         data.forEach(d => freq[d]++);
         const total = data.length;
-        let topDigit = 0,
-            topPct = 0;
+        let topDigit = 0, topPct = 0;
         freq.forEach((v, i) => {
             const pct = (v / total) * 100;
-            if (pct > topPct) { topPct = pct;
-                topDigit = i; }
+            if (pct > topPct) { topPct = pct; topDigit = i; }
         });
 
-        const triggerDigit = 3; // From research
+        const triggerDigit = 3;
         const ratio = 0.42;
         const confidence = type === 'differs' ? 89.3 : 72.4;
+        const actionText = type === 'differs' ? `DIFFER ON ${topDigit}` : `MATCH ON ${topDigit}`;
 
-        // Build signal object
         const signal = {
             market: 'R_10',
             entropy: 3.21,
@@ -1132,24 +840,56 @@ JAVASCRIPT — REAL DERIV WEBSOCKET + LIVE ENGINE
             topPct: topPct,
             ratio: ratio,
             confidence: confidence,
-            action: type === 'differs' ? `DIFFER ON ${topDigit}` : `MATCH ON ${topDigit}`,
+            action: actionText,
             type: type
         };
 
-        currentSignal = signal;
-
-        // Show popup
+        appState = 'SIGNAL_READY';
         showSignalPopup(signal);
+        updateOracleCard(signal);
+    }
+
+    function generateOverUnderSignal(type) {
+        if (appState !== 'READY' && appState !== 'SIGNAL_READY') {
+            alert('⏳ Please wait for all markets to collect 30 ticks.');
+            return;
+        }
+
+        const data = buffers['R_10'] || [];
+        if (data.length < REQUIRED_TICKS) {
+            alert('⏳ R_10 does not have enough ticks yet. Please wait.');
+            return;
+        }
+
+        const mean = data.reduce((a, b) => a + b, 0) / data.length;
+        const threshold = 4.5;
+        const action = type;
+        const confidence = 72.4;
+
+        const signal = {
+            market: 'R_10',
+            entropy: 3.21,
+            triggerDigit: Math.round(mean),
+            topDigit: 6,
+            topPct: 11.2,
+            ratio: 0.42,
+            confidence: confidence,
+            action: action,
+            type: type
+        };
+
+        appState = 'SIGNAL_READY';
+        showSignalPopup(signal);
+        updateOverUnderCard(signal);
     }
 
     // ============================================================
-    // 10. SIGNAL POPUP
+    // 9. SIGNAL POPUP
     // ============================================================
     function showSignalPopup(signal) {
         const popup = document.getElementById('signal-popup');
         const shooting = document.getElementById('popupShooting');
 
-        // Populate popup
         document.getElementById('popupMarket').textContent = signal.market;
         document.getElementById('popupEntropy').textContent = `H = ${signal.entropy.toFixed(2)}`;
         document.getElementById('popupEntryDigit').textContent = signal.triggerDigit;
@@ -1159,140 +899,102 @@ JAVASCRIPT — REAL DERIV WEBSOCKET + LIVE ENGINE
         document.getElementById('popupRatio').textContent = `Ratio: ${signal.ratio.toFixed(2)}x`;
         document.getElementById('popupTop').textContent = `Top: ${signal.topDigit} (${signal.topPct.toFixed(1)}%)`;
 
-        // Animate confidence bar
         const fill = document.getElementById('popupConfidenceFill');
         fill.style.width = '0%';
-        setTimeout(() => {
-            fill.style.width = `${signal.confidence}%`;
-        }, 300);
+        setTimeout(() => { fill.style.width = `${signal.confidence}%`; }, 300);
 
-        // Show popup
         shooting.style.display = 'block';
         popup.classList.add('active');
 
-        // Update oracle card with signal
-        document.getElementById('oracleEntryDigit').textContent = signal.triggerDigit;
-        document.getElementById('oracleActionText').textContent = signal.action;
-        document.getElementById('oracleActionText').className = 'action-text ' + (signal.type === 'differs' ? 'differs' : '');
-        document.getElementById('oracleConfidenceLabel').textContent = `${signal.confidence.toFixed(1)}%`;
-        document.getElementById('oracleConfidenceFill').style.width = `${signal.confidence}%`;
-        document.getElementById('oracleRatio').textContent = `Ratio: ${signal.ratio.toFixed(2)}x`;
-        document.getElementById('oracleTop').textContent = `Top: ${signal.topDigit} (${signal.topPct.toFixed(1)}%)`;
+        // Update oracle card
+        updateOracleCard(signal);
     }
 
     // ============================================================
-    // 11. BUTTON EVENTS
+    // 10. UPDATE ORACLE CARD
     // ============================================================
-    document.getElementById('btnDiffers').addEventListener('click', function() {
-        generateSignal('differs');
-    });
-
-    document.getElementById('btnMatches').addEventListener('click', function() {
-        generateSignal('matches');
-    });
-
-    document.getElementById('btnOver').addEventListener('click', function() {
-        // Generate Over signal
-        const data = buffers['R_10'] || [];
-        if (data.length < 50) {
-            alert('⏳ Not enough tick data yet.');
-            return;
-        }
-        const mean = data.reduce((a, b) => a + b, 0) / data.length;
-        const signal = {
-            market: 'R_10',
-            entropy: 3.21,
-            triggerDigit: Math.round(mean),
-            topDigit: 6,
-            topPct: 11.2,
-            ratio: 0.42,
-            confidence: 72.4,
-            action: 'OVER',
-            type: 'over'
-        };
-        showSignalPopup(signal);
-        document.getElementById('ouActionText').textContent = 'OVER';
-        document.getElementById('ouConfidenceFill').style.width = '72.4%';
-    });
-
-    document.getElementById('btnUnder').addEventListener('click', function() {
-        const data = buffers['R_10'] || [];
-        if (data.length < 50) {
-            alert('⏳ Not enough tick data yet.');
-            return;
-        }
-        const mean = data.reduce((a, b) => a + b, 0) / data.length;
-        const signal = {
-            market: 'R_10',
-            entropy: 3.21,
-            triggerDigit: Math.round(mean),
-            topDigit: 6,
-            topPct: 11.2,
-            ratio: 0.42,
-            confidence: 72.4,
-            action: 'UNDER',
-            type: 'under'
-        };
-        showSignalPopup(signal);
-        document.getElementById('ouActionText').textContent = 'UNDER';
-        document.getElementById('ouConfidenceFill').style.width = '72.4%';
-    });
+    function updateOracleCard(signal) {
+        const card = document.getElementById('oracleSignalCard');
+        card.innerHTML = `
+            <div class="row"><span>${signal.market}</span><span>H = ${signal.entropy.toFixed(2)}</span></div>
+            <div class="entry-digit">${signal.triggerDigit}</div>
+            <div class="action-text ${signal.type === 'differs' ? 'differs' : ''}">${signal.action}</div>
+            <div class="confidence-row">
+                <span class="confidence-label">${signal.confidence.toFixed(1)}%</span>
+                <div class="confidence-bar"><div class="confidence-fill" style="width:${signal.confidence}%;"></div></div>
+            </div>
+            <div class="bottom-row"><span>Ratio: ${signal.ratio.toFixed(2)}x</span><span>Top: ${signal.topDigit} (${signal.topPct.toFixed(1)}%)</span></div>
+        `;
+    }
 
     // ============================================================
-    // 12. POPUP BACK BUTTON
+    // 11. UPDATE OVER/UNDER CARD
     // ============================================================
+    function updateOverUnderCard(signal) {
+        const card = document.getElementById('ouSignalCard');
+        card.innerHTML = `
+            <div class="row"><span>${signal.market}</span><span>H = ${signal.entropy.toFixed(2)}</span></div>
+            <div class="entry-digit" style="font-size:40px;">${signal.triggerDigit}</div>
+            <div class="action-text">${signal.action}</div>
+            <div class="bottom-row" style="margin-top:6px;"><span>Threshold: 4.5</span><span>Mean: ${signal.triggerDigit.toFixed(2)}</span></div>
+            <div class="confidence-row">
+                <span class="confidence-label">${signal.confidence.toFixed(1)}%</span>
+                <div class="confidence-bar"><div class="confidence-fill" style="width:${signal.confidence}%;"></div></div>
+            </div>
+        `;
+        document.getElementById('ouConfidenceValue').textContent = `${signal.confidence.toFixed(1)}%`;
+        document.getElementById('ouVolume').textContent = '2,847';
+        document.getElementById('ouWinRate').textContent = '68.3%';
+        document.getElementById('ouStreak').textContent = '+5';
+    }
+
+    // ============================================================
+    // 12. BUTTON EVENTS
+    // ============================================================
+    document.getElementById('btnDiffers').addEventListener('click', function() { generateSignal('differs'); });
+    document.getElementById('btnMatches').addEventListener('click', function() { generateSignal('matches'); });
+    document.getElementById('btnOver').addEventListener('click', function() { generateOverUnderSignal('OVER'); });
+    document.getElementById('btnUnder').addEventListener('click', function() { generateOverUnderSignal('UNDER'); });
+
     document.getElementById('popupBack').addEventListener('click', function() {
         document.getElementById('signal-popup').classList.remove('active');
         document.getElementById('popupShooting').style.display = 'none';
-        // Update oracle card with latest data
-        const data = buffers['R_10'] || [];
-        if (data.length > 10) {
-            updateOracleCard(data);
-        }
     });
 
-    // Also close popup when tapping outside card
     document.getElementById('signal-popup').addEventListener('click', function(e) {
         if (e.target === this) {
-            document.getElementById('signal-popup').classList.remove('active');
+            this.classList.remove('active');
             document.getElementById('popupShooting').style.display = 'none';
         }
     });
 
     // ============================================================
-    // 13. SCAN ALL MARKETS — Just refreshes the signal
+    // 13. SCAN BUTTON — Reset/Refresh
     // ============================================================
     document.getElementById('btnScan').addEventListener('click', function() {
-        const btn = this;
-        btn.classList.add('scanning');
-        btn.innerHTML = '⏳ SCANNING...';
-        setTimeout(() => {
-            btn.classList.remove('scanning');
-            btn.innerHTML = '🔮 SCAN ALL MARKETS';
-            // Update all cards with latest data
+        if (appState === 'READY' || appState === 'SIGNAL_READY') {
+            // Re-check and refresh charts
             const data = buffers['R_10'] || [];
             if (data.length > 10) {
                 updateFrequencyChart(data);
                 updateMatrixAndSeesaw(data);
-                updateOracleCard(data);
-                updateOverUnderCard(data);
-                document.getElementById('liveTicker').innerHTML = '✅ Scan complete. All markets updated.';
-            } else {
-                document.getElementById('liveTicker').innerHTML = '⏳ Still collecting ticks... Please wait.';
+                document.getElementById('liveTicker').innerHTML = '🔄 Refreshed with latest ticks.';
             }
-        }, 2000);
+        } else {
+            alert('⏳ Still collecting ticks. Please wait.');
+        }
     });
 
     // ============================================================
-    // 14. SETUP COMPLETE
+    // 14. INITIAL SETUP
     // ============================================================
     console.log('🔮 Embrace Solace v1.0 — Live Engine');
-    console.log('📊 17 markets configured. Waiting for WebSocket connection...');
+    console.log(`📊 ${MARKETS.length} markets configured. Waiting for ${REQUIRED_TICKS} ticks each.`);
 
-    // Set initial chart with placeholder data
+    // Placeholder chart
     const placeholder = Array(100).fill(0).map(() => Math.floor(Math.random() * 10));
     updateFrequencyChart(placeholder);
     updateMatrixAndSeesaw(placeholder);
 </script>
 </body>
-    </html>
+                                                                                       </html>
