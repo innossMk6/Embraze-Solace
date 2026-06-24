@@ -414,8 +414,8 @@ MAIN APP
     // 1. CONSTANTS & CONFIG
     // ============================================================
     const APP_PASSWORD = 'SUCCESSV12';
-    const DERIV_WS = 'wss://api.derivws.com/trading/v1/options/ws/public';
-    const REQUIRED_TICKS = 30;
+    const DERIV_WS = 'wss://ws.derivws.com/websockets/v3?app_id=1089';
+    const REQUIRED_TICKS = 100;
     const ANALYSIS_WINDOW = 100;
 
     const MARKETS = [
@@ -524,10 +524,11 @@ MAIN APP
             document.getElementById('btnScan').classList.add('ready');
             document.getElementById('btnScan').innerHTML = '✅ ALL MARKETS READY';
 
-            document.getElementById('btnMatches').disabled = false;
-            document.getElementById('btnDiffers').disabled = false;
-            document.getElementById('btnOverUnderFetch').disabled = false;
-            document.getElementById('btnEvenOddFetch').disabled = false;
+            const allAtHundred = MARKETS.every(sym => (buffers[sym]?.length || 0) >= 100);
+            document.getElementById('btnMatches').disabled = !allAtHundred;
+            document.getElementById('btnDiffers').disabled = !allAtHundred;
+            document.getElementById('btnOverUnderFetch').disabled = !allAtHundred;
+            document.getElementById('btnEvenOddFetch').disabled = !allAtHundred;
 
             const best = findBestMarket();
             if (best) { selectedMarket = best.market; updateSignalCardPlaceholder(best); }
@@ -698,6 +699,21 @@ MAIN APP
             }
             if (count > 5) { const ratio = follow / count; if (ratio < minFollow) { minFollow = ratio; triggerDigit = i; } }
         }
+
+        let preferFollower = -1, maxFollowRatio = -1;
+        for (let j = 0; j < 10; j++) {
+            if (j === topDigit) continue;
+            let cnt = 0, fol = 0;
+            for (let k = 0; k < data.length - 1; k++) {
+                if (data[k] === triggerDigit) { cnt++; if (data[k + 1] === j) fol++; }
+            }
+            if (cnt > 5) {
+                const r = fol / cnt;
+                if (r > maxFollowRatio) { maxFollowRatio = r; preferFollower = j; }
+            }
+        }
+        if (preferFollower === -1) preferFollower = (triggerDigit + 1) % 10;
+
         document.getElementById('topDigit').textContent = topDigit;
         document.getElementById('topPct').textContent = topPct.toFixed(1) + '%';
         document.getElementById('bottomDigit').textContent = bottomDigit;
@@ -709,7 +725,7 @@ MAIN APP
                 const cell = document.createElement('div');
                 cell.className = 'matrix-cell';
                 if (i === triggerDigit && j === topDigit) { cell.classList.add('highlight-block'); cell.textContent = '⛔'; }
-                else if (i === triggerDigit && j === 2) { cell.classList.add('highlight-trigger'); cell.textContent = '▶'; }
+                else if (i === triggerDigit && j === preferFollower) { cell.classList.add('highlight-trigger'); cell.textContent = '▶'; }
                 else { const op = 0.05 + Math.random() * 0.2; cell.style.background = `rgba(168,85,247,${op})`; }
                 grid.appendChild(cell);
             }
@@ -1019,7 +1035,7 @@ MAIN APP
     }
 
     // ============================================================
-    // 11. OVER / UNDER ENGINE — ORIGINAL TIGHT CONFIRMATION (RESTORED)
+    // 11. OVER / UNDER ENGINE — ORIGINAL TIGHT CONFIRMATION
     // ============================================================
     function analyzeOverUnder(data) {
         if (!data || data.length < ANALYSIS_WINDOW) return null;
@@ -1155,7 +1171,7 @@ MAIN APP
     }
 
     // ============================================================
-    // 12. EVEN / ODD ENGINE — ORIGINAL TIGHT CONFIRMATION (RESTORED)
+    // 12. EVEN / ODD ENGINE — ORIGINAL TIGHT CONFIRMATION
     // ============================================================
     function analyzeEvenOdd(data) {
         if (!data || data.length < ANALYSIS_WINDOW) return null;
@@ -1308,7 +1324,7 @@ MAIN APP
         const best = findBestMarket();
         if (!best) { alert('⏳ No market has enough data yet.'); return; }
         const data = buffers[best.market];
-        if (!data || data.length < REQUIRED_TICKS) { alert('⏳ Not enough ticks.'); return; }
+        if (!data || data.length < 30) { alert('⏳ Not enough ticks.'); return; }
         const result = analyzeDiffers(data);
         if (!result) { alert('❌ No Differs signal found.'); return; }
         result.market = best.market;
@@ -1319,9 +1335,11 @@ MAIN APP
         updateMatrixAndSeesaw(best.market);
     }
 
+    // FIX 1 — Over/Under restricted to 1s variant markets only
     function generateOverUnderSignal() {
         const allResults = [];
-        MARKETS.forEach(sym => {
+        const OU_MARKETS = ['1HZ10V', '1HZ25V', '1HZ50V', '1HZ75V', '1HZ100V'];
+        OU_MARKETS.forEach(sym => {
             const data = buffers[sym];
             if (!data || data.length < ANALYSIS_WINDOW) return;
             const result = analyzeOverUnder(data);
@@ -1342,9 +1360,11 @@ MAIN APP
         updateMatrixAndSeesaw(best.market);
     }
 
+    // FIX 2 — Even/Odd restricted to 1s variant markets only
     function generateEvenOddSignal() {
         const allResults = [];
-        MARKETS.forEach(sym => {
+        const EO_MARKETS = ['1HZ10V', '1HZ25V', '1HZ50V', '1HZ75V', '1HZ100V'];
+        EO_MARKETS.forEach(sym => {
             const data = buffers[sym];
             if (!data || data.length < ANALYSIS_WINDOW) return;
             const result = analyzeEvenOdd(data);
@@ -1541,4 +1561,4 @@ MAIN APP
     showMatrixPlaceholder();
 </script>
 </body>
-                                   </html>
+    </html>
