@@ -24,53 +24,24 @@
             --text-white: #FFFFFF;
             --text-grey: rgba(255,255,255,0.6);
         }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-deep);
-            color: var(--text-white);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 12px;
-        }
-        #app {
-            width: 100%;
-            max-width: 480px;
-            background: var(--bg-dark);
-            border-radius: 32px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 0 60px rgba(168,85,247,0.1);
-            padding: 20px 16px 30px;
-            min-height: 100vh;
-        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: var(--text-white); min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 12px; }
+        #app { width: 100%; max-width: 480px; background: var(--bg-dark); border-radius: 32px; overflow: hidden; position: relative; box-shadow: 0 0 60px rgba(168,85,247,0.1); padding: 20px 16px 30px; min-height: 100vh; }
 
         /* ============================================
            LOCK SCREEN
            ============================================ */
         #lock-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: radial-gradient(ellipse at center, #1A0B2E 0%, #0B0B1A 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 32px 24px;
-            text-align: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1000; padding: 32px 24px; text-align: center;
             transition: opacity 0.8s ease, transform 0.8s ease;
         }
         #lock-overlay.hidden { opacity: 0; transform: scale(1.05); pointer-events: none; }
         .lock-logo {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 38px;
-            font-weight: 900;
+            font-family: 'Orbitron', sans-serif; font-size: 38px; font-weight: 900;
             background: linear-gradient(135deg, #00FFF0, #A855F7, #00FFF0);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            background-size: 200% 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             animation: shimmerLogo 3s ease-in-out infinite alternate;
         }
         @keyframes shimmerLogo { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
@@ -104,18 +75,10 @@
            ============================================ */
         .section { margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.04); }
         .section:last-child { border-bottom: none; }
-        .section-title {
-            font-size: 18px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
-        }
+        .section-title { font-size: 18px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
 
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .app-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--neon-cyan);
-            text-shadow: 0 0 20px rgba(0,255,240,0.15);
-        }
+        .app-title { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 700; color: var(--neon-cyan); text-shadow: 0 0 20px rgba(0,255,240,0.15); }
         .app-title span { color: var(--neon-purple); font-weight: 400; }
 
         .btn-scan {
@@ -127,269 +90,101 @@
         .btn-scan:active { transform: scale(0.97); }
         .btn-scan.ready { background: linear-gradient(135deg, var(--neon-green), #00CC88); box-shadow: 0 0 30px rgba(0,255,170,0.2); }
 
-        .market-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-            gap: 6px;
-            margin: 10px 0;
-        }
-        .market-card {
-            background: var(--bg-card);
-            border-radius: 10px;
-            padding: 8px 4px;
-            text-align: center;
-            font-size: 11px;
-            border: 1px solid rgba(255,255,255,0.04);
-            transition: all 0.3s;
-        }
+        .market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; margin: 10px 0; }
+        .market-card { background: var(--bg-card); border-radius: 10px; padding: 8px 4px; text-align: center; font-size: 11px; border: 1px solid rgba(255,255,255,0.04); transition: all 0.3s; }
         .market-card .sym { font-weight: 600; font-size: 12px; }
         .market-card .stat { font-size: 10px; color: var(--text-grey); }
-        .market-card .dot {
-            width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px;
-        }
+        .market-card .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
         .market-card .dot.green { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
         .market-card .dot.yellow { background: #FFD700; box-shadow: 0 0 10px #FFD700; }
         .market-card .dot.grey { background: #555; }
         .market-card.ready { border-color: rgba(0,255,170,0.2); box-shadow: 0 0 15px rgba(0,255,170,0.05); }
 
-        .live-ticker {
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 10px 14px;
-            font-size: 13px;
-            color: var(--text-grey);
-            border: 1px solid rgba(255,255,255,0.04);
-            font-family: 'Inter', monospace;
-            margin-top: 6px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        .live-ticker { background: var(--bg-card); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: var(--text-grey); border: 1px solid rgba(255,255,255,0.04); font-family: 'Inter', monospace; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .live-ticker strong { color: var(--neon-cyan); }
 
-        #gathering-banner {
-            display: none;
-            background: rgba(0,255,170,0.08);
-            border: 1px solid var(--neon-green);
-            border-radius: 14px;
-            padding: 12px 16px;
-            margin: 6px 0 12px;
-            text-align: center;
-            color: var(--neon-green);
-            font-weight: 600;
-            font-size: 15px;
-            box-shadow: 0 0 30px rgba(0,255,170,0.05);
-            animation: fadeInBanner 0.6s ease;
-        }
+        #gathering-banner { display: none; background: rgba(0,255,170,0.08); border: 1px solid var(--neon-green); border-radius: 14px; padding: 12px 16px; margin: 6px 0 12px; text-align: center; color: var(--neon-green); font-weight: 600; font-size: 15px; box-shadow: 0 0 30px rgba(0,255,170,0.05); animation: fadeInBanner 0.6s ease; }
         #gathering-banner.show { display: block; }
         @keyframes fadeInBanner { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ============================================
            FREQUENCY CHART
            ============================================ */
-        .chart-container {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 16px;
-            border: 1px solid rgba(255,255,255,0.04);
-        }
-        .chart-bars {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            height: 140px;
-            padding-bottom: 20px;
-            position: relative;
-        }
+        .chart-container { background: var(--bg-card); border-radius: 16px; padding: 16px; border: 1px solid rgba(255,255,255,0.04); }
+        .chart-bars { display: flex; align-items: flex-end; justify-content: space-between; height: 140px; padding-bottom: 20px; position: relative; }
         .chart-bars .bar-group { display: flex; flex-direction: column; align-items: center; flex: 1; }
         .chart-bars .bar { width: 18px; border-radius: 3px 3px 0 0; min-height: 4px; transition: height 0.4s ease; }
         .chart-bars .bar-label { font-size: 10px; color: var(--text-grey); margin-top: 4px; }
-        .chart-baseline {
-            position: absolute; left: 0; right: 0; top: 80%;
-            border-top: 2px dashed rgba(255,255,255,0.1); pointer-events: none;
-        }
+        .chart-baseline { position: absolute; left: 0; right: 0; top: 80%; border-top: 2px dashed rgba(255,255,255,0.1); pointer-events: none; }
         .chart-baseline-label { position: absolute; right: 0; top: -8px; font-size: 9px; color: rgba(255,255,255,0.2); }
-        .chart-exceedance {
-            position: absolute; top: 0; right: 0;
-            background: rgba(255,107,0,0.12); border: 1px solid var(--neon-orange);
-            border-radius: 16px; padding: 2px 10px; font-size: 10px; color: var(--neon-orange);
-        }
-
-        .chart-placeholder {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 140px;
-            color: var(--text-grey);
-            font-size: 14px;
-            opacity: 0.5;
-            flex-direction: column;
-        }
+        .chart-exceedance { position: absolute; top: 0; right: 0; background: rgba(255,107,0,0.12); border: 1px solid var(--neon-orange); border-radius: 16px; padding: 2px 10px; font-size: 10px; color: var(--neon-orange); }
+        .chart-placeholder { display: flex; justify-content: center; align-items: center; height: 140px; color: var(--text-grey); font-size: 14px; opacity: 0.5; flex-direction: column; }
         .chart-placeholder span { font-size: 12px; opacity: 0.5; margin-top: 4px; }
 
         /* ============================================
            MATRIX
            ============================================ */
-        .matrix-grid {
-            display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px;
-            background: var(--bg-card); border-radius: 12px; padding: 6px;
-            border: 1px solid rgba(255,255,255,0.04);
-        }
+        .matrix-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; background: var(--bg-card); border-radius: 12px; padding: 6px; border: 1px solid rgba(255,255,255,0.04); }
         .matrix-cell { aspect-ratio: 1; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 8px; color: rgba(255,255,255,0.3); transition: all 0.3s; }
         .matrix-cell.highlight-block { background: rgba(255,71,87,0.4); border: 1px solid var(--neon-red); color: #fff; }
         .matrix-cell.highlight-trigger { background: rgba(0,255,170,0.25); border: 1px solid var(--neon-green); color: #fff; }
         .matrix-legend { display: flex; justify-content: center; gap: 20px; font-size: 11px; color: var(--text-grey); margin-top: 8px; }
 
-        .seesaw-container {
-            display: flex; align-items: center; justify-content: center; gap: 16px;
-            background: var(--bg-card); border-radius: 14px; padding: 14px;
-            margin-top: 12px; border: 1px solid rgba(255,255,255,0.04);
-        }
+        .seesaw-container { display: flex; align-items: center; justify-content: center; gap: 16px; background: var(--bg-card); border-radius: 14px; padding: 14px; margin-top: 12px; border: 1px solid rgba(255,255,255,0.04); }
         .seesaw-item { text-align: center; }
         .seesaw-item .digit { font-size: 28px; font-weight: 700; }
         .seesaw-item .digit.top { color: var(--neon-orange); }
         .seesaw-item .digit.bottom { color: var(--neon-cyan); }
         .seesaw-item .pct { font-size: 13px; color: var(--text-grey); }
-        .seesaw-line {
-            flex: 1; height: 2px;
-            background: linear-gradient(90deg, var(--neon-orange), var(--neon-cyan));
-            position: relative; opacity: 0.4;
-        }
+        .seesaw-line { flex: 1; height: 2px; background: linear-gradient(90deg, var(--neon-orange), var(--neon-cyan)); position: relative; opacity: 0.4; }
         .seesaw-line::after { content: '⟷'; position: absolute; left: 50%; top: -12px; transform: translateX(-50%); color: var(--text-grey); font-size: 16px; }
         .seesaw-label { text-align: center; font-size: 11px; color: var(--text-grey); margin-top: 6px; }
 
-        .matrix-placeholder {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px 0;
-            color: var(--text-grey);
-            font-size: 14px;
-            opacity: 0.5;
-        }
+        .matrix-placeholder { display: flex; justify-content: center; align-items: center; padding: 20px 0; color: var(--text-grey); font-size: 14px; opacity: 0.5; }
 
         /* ============================================
            ORACLE — MATCHES / DIFFERS
            ============================================ */
         .oracle-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 8px 0 12px; }
-        .oracle-btn {
-            flex: 1; padding: 12px; border: none; border-radius: 12px;
-            font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700;
-            letter-spacing: 1px; cursor: pointer; transition: all 0.3s; color: #fff;
-        }
+        .oracle-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; color: #fff; }
         .oracle-btn:active { transform: scale(0.95); }
         .oracle-btn.matches { background: linear-gradient(135deg, #00CC88, var(--neon-green)); box-shadow: 0 0 30px rgba(0,255,170,0.15); }
         .oracle-btn.differs { background: linear-gradient(135deg, #CC2244, var(--neon-red)); box-shadow: 0 0 30px rgba(255,71,87,0.15); }
         .oracle-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        .orb {
-            width: 70px; height: 70px; border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #8E2DE2, #4A00E0);
-            box-shadow: 0 0 50px rgba(74,0,224,0.3), inset 0 0 30px rgba(0,255,240,0.05);
-            animation: orbPulse 3s ease-in-out infinite;
-            flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-            font-size: 22px; color: rgba(255,255,255,0.15);
-        }
+        .orb { width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #8E2DE2, #4A00E0); box-shadow: 0 0 50px rgba(74,0,224,0.3), inset 0 0 30px rgba(0,255,240,0.05); animation: orbPulse 3s ease-in-out infinite; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; color: rgba(255,255,255,0.15); }
         @keyframes orbPulse { 0%, 100% { box-shadow: 0 0 50px rgba(74,0,224,0.3); } 50% { box-shadow: 0 0 80px rgba(74,0,224,0.5), 0 0 120px rgba(0,255,240,0.05); } }
 
-        .signal-card {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 16px;
-            border: 1px solid rgba(0,255,240,0.08);
-            backdrop-filter: blur(10px);
-            margin-top: 10px;
-            min-height: 150px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+        .signal-card { background: var(--bg-card); border-radius: 16px; padding: 16px; border: 1px solid rgba(0,255,240,0.08); backdrop-filter: blur(10px); margin-top: 10px; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
         .signal-card .row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-grey); }
-        .signal-card .big-digit {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 56px;
-            font-weight: 900;
-            text-align: center;
-            color: var(--neon-cyan);
-            text-shadow: 0 0 40px rgba(0,255,240,0.15);
-            line-height: 1;
-            margin: 2px 0;
-        }
+        .signal-card .big-digit { font-family: 'Orbitron', sans-serif; font-size: 56px; font-weight: 900; text-align: center; color: var(--neon-cyan); text-shadow: 0 0 40px rgba(0,255,240,0.15); line-height: 1; margin: 2px 0; }
         .signal-card .big-digit.differs { color: var(--neon-red); }
         .signal-card .big-digit.matches { color: var(--neon-green); }
-        .signal-card .entry-text {
-            text-align: center;
-            font-size: 14px;
-            color: var(--text-grey);
-            margin: 2px 0 4px;
-        }
+        .signal-card .entry-text { text-align: center; font-size: 14px; color: var(--text-grey); margin: 2px 0 4px; }
         .signal-card .entry-text strong { color: var(--neon-cyan); }
-        .signal-card .action-text {
-            text-align: center;
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--neon-green);
-            margin-bottom: 6px;
-        }
+        .signal-card .action-text { text-align: center; font-size: 15px; font-weight: 600; color: var(--neon-green); margin-bottom: 6px; }
         .signal-card .action-text.differs { color: var(--neon-red); }
         .signal-card .confidence-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
         .signal-card .confidence-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
         .signal-card .confidence-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--neon-orange), var(--neon-green)); transition: width 1.2s ease; width: 0%; }
         .signal-card .confidence-label { font-size: 14px; font-weight: 600; color: #fff; min-width: 44px; }
-        .signal-card .bottom-row {
-            display: flex; flex-wrap: wrap; gap: 4px; justify-content: space-between;
-            font-size: 12px; color: var(--text-grey); margin-top: 6px; padding-top: 6px;
-            border-top: 1px solid rgba(255,255,255,0.04);
-        }
-        .signal-card .key-status {
-            display: flex; gap: 6px; justify-content: center; font-size: 11px;
-            color: var(--text-grey); margin: 4px 0;
-        }
+        .signal-card .bottom-row { display: flex; flex-wrap: wrap; gap: 4px; justify-content: space-between; font-size: 12px; color: var(--text-grey); margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.04); }
+        .signal-card .key-status { display: flex; gap: 6px; justify-content: center; font-size: 11px; color: var(--text-grey); margin: 4px 0; }
         .signal-card .key-status span { padding: 0 2px; }
-        .signal-card .confidence-level {
-            text-align: center; font-size: 11px; margin-top: 4px;
-        }
+        .signal-card .confidence-level { text-align: center; font-size: 11px; margin-top: 4px; }
         .signal-card .placeholder-text { text-align: center; color: var(--text-grey); font-size: 14px; opacity: 0.5; }
 
         /* ============================================
            OVER / UNDER & EVEN / ODD — FETCH SIGNAL
            ============================================ */
         .fetch-row { display: flex; justify-content: center; margin: 8px 0 12px; }
-        .btn-fetch {
-            padding: 14px 32px;
-            background: linear-gradient(135deg, var(--neon-gold), #CC8800);
-            border: none;
-            border-radius: 14px;
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            font-size: 17px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 0 30px rgba(255,215,0,0.15);
-            width: 100%;
-        }
+        .btn-fetch { padding: 14px 32px; background: linear-gradient(135deg, var(--neon-gold), #CC8800); border: none; border-radius: 14px; color: #fff; font-family: 'Inter', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 30px rgba(255,215,0,0.15); width: 100%; }
         .btn-fetch:active { transform: scale(0.96); }
         .btn-fetch:disabled { opacity: 0.3; cursor: not-allowed; }
-        .btn-fetch.evenodd {
-            background: linear-gradient(135deg, var(--neon-purple), #6D28D9);
-            box-shadow: 0 0 30px rgba(168,85,247,0.15);
-        }
+        .btn-fetch.evenodd { background: linear-gradient(135deg, var(--neon-purple), #6D28D9); box-shadow: 0 0 30px rgba(168,85,247,0.15); }
 
-        .ou-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 8px;
-        }
-        .ou-stat {
-            background: var(--bg-card);
-            border-radius: 10px;
-            padding: 10px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.04);
-        }
+        .ou-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+        .ou-stat { background: var(--bg-card); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.04); }
         .ou-stat .label { font-size: 10px; color: var(--text-grey); }
         .ou-stat .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
 
@@ -404,23 +199,10 @@
             z-index: 500; padding: 24px; flex-direction: column;
         }
         #signal-popup.active { display: flex; }
-        #signal-popup .popup-card {
-            background: var(--bg-dark); border-radius: 24px; padding: 24px;
-            max-width: 400px; width: 100%;
-            border: 1px solid rgba(0,255,240,0.1);
-            box-shadow: 0 0 60px rgba(0,255,240,0.05);
-            position: relative;
-        }
-        #signal-popup .popup-card .btn-back {
-            position: absolute; top: 12px; right: 16px;
-            background: none; border: none; color: var(--text-grey);
-            font-size: 24px; cursor: pointer; transition: color 0.3s;
-        }
+        #signal-popup .popup-card { background: var(--bg-dark); border-radius: 24px; padding: 24px; max-width: 400px; width: 100%; border: 1px solid rgba(0,255,240,0.1); box-shadow: 0 0 60px rgba(0,255,240,0.05); position: relative; }
+        #signal-popup .popup-card .btn-back { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--text-grey); font-size: 24px; cursor: pointer; transition: color 0.3s; }
         #signal-popup .popup-card .btn-back:hover { color: #fff; }
-        .popup-shooting {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none; z-index: 499; overflow: hidden; display: none;
-        }
+        .popup-shooting { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 499; overflow: hidden; display: none; }
         .popup-shooting.active { display: block; }
         .shooting-star {
             position: absolute; width: 100px; height: 2px;
@@ -439,37 +221,13 @@
             100% { transform: translateX(calc(100vw + 200px)) translateY(-60px) rotate(15deg); opacity: 0; }
         }
 
-        .signal-loader {
-            width: 50px; height: 50px;
-            border: 3px solid rgba(168,85,247,0.1);
-            border-top: 3px solid var(--neon-purple);
-            border-radius: 50%;
-            animation: spinLoader 0.8s linear infinite;
-            margin: 0 auto 12px;
-            z-index: 2;
-            position: relative;
-        }
+        .signal-loader { width: 50px; height: 50px; border: 3px solid rgba(168,85,247,0.1); border-top: 3px solid var(--neon-purple); border-radius: 50%; animation: spinLoader 0.8s linear infinite; margin: 0 auto 12px; z-index: 2; position: relative; }
         @keyframes spinLoader { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .signal-loading-text {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--neon-cyan);
-            text-shadow: 0 0 30px rgba(0,255,240,0.2);
-            animation: pulseText 1.2s ease-in-out infinite;
-            margin-bottom: 4px;
-            z-index: 2;
-            position: relative;
-        }
+        .signal-loading-text { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 700; color: var(--neon-cyan); text-shadow: 0 0 30px rgba(0,255,240,0.2); animation: pulseText 1.2s ease-in-out infinite; margin-bottom: 4px; z-index: 2; position: relative; }
         @keyframes pulseText { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; text-shadow: 0 0 60px rgba(0,255,240,0.4); } }
 
-        .signal-progress-text {
-            font-size: 14px;
-            color: var(--text-grey);
-            z-index: 2;
-            position: relative;
-        }
+        .signal-progress-text { font-size: 14px; color: var(--text-grey); z-index: 2; position: relative; }
 
         .text-center { text-align: center; }
         .text-grey { color: var(--text-grey); }
@@ -570,10 +328,7 @@ MAIN APP
     <div class="section">
         <div class="section-title">📊 Frequency Distribution <span style="font-size:12px; color:var(--text-grey);" id="chartMarketLabel"></span></div>
         <div class="chart-container" id="chartContainer">
-            <div class="chart-placeholder" id="chartPlaceholder">
-                ⏳ Awaiting signal<br>
-                <span>Generate a signal to see frequency distribution</span>
-            </div>
+            <div class="chart-placeholder" id="chartPlaceholder">⏳ Awaiting signal<br><span>Generate a signal to see frequency distribution</span></div>
             <div class="chart-bars" id="chartBars" style="display:none;"></div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
                 <span class="text-grey text-sm" id="chartSubtitle">Preceded by live ticks from Deriv</span>
@@ -588,10 +343,7 @@ MAIN APP
     <div class="section">
         <div class="section-title">🌀 Digit Relationship Matrix <span style="font-size:12px; color:var(--text-grey);" id="matrixMarketLabel"></span></div>
         <div id="matrixContainer">
-            <div class="matrix-placeholder" id="matrixPlaceholder">
-                ⏳ Awaiting signal<br>
-                <span style="font-size:12px;">Generate a signal to see the relationship matrix</span>
-            </div>
+            <div class="matrix-placeholder" id="matrixPlaceholder">⏳ Awaiting signal<br><span style="font-size:12px;">Generate a signal to see the relationship matrix</span></div>
             <div class="matrix-grid" id="matrixGrid" style="display:none;"></div>
         </div>
         <div class="matrix-legend" id="matrixLegend" style="display:none;"><span>🔴 Blocked</span><span>🟢 Trigger</span></div>
@@ -623,9 +375,7 @@ MAIN APP
     ============================================ -->
     <div class="section">
         <div class="section-title">⚖️ Over / Under</div>
-        <div class="fetch-row">
-            <button class="btn-fetch" id="btnOverUnderFetch">📊 FETCH SIGNAL</button>
-        </div>
+        <div class="fetch-row"><button class="btn-fetch" id="btnOverUnderFetch">📊 FETCH SIGNAL</button></div>
         <div class="signal-card" id="ouSignalCard">
             <div class="placeholder-text">⏳ Press FETCH SIGNAL to analyze all markets<br><span style="font-size:12px;">Best barrier will be selected automatically</span></div>
         </div>
@@ -642,9 +392,7 @@ MAIN APP
     ============================================ -->
     <div class="section">
         <div class="section-title">🎯 Even / Odd</div>
-        <div class="fetch-row">
-            <button class="btn-fetch evenodd" id="btnEvenOddFetch">📊 FETCH SIGNAL</button>
-        </div>
+        <div class="fetch-row"><button class="btn-fetch evenodd" id="btnEvenOddFetch">📊 FETCH SIGNAL</button></div>
         <div class="signal-card" id="eoSignalCard">
             <div class="placeholder-text">⏳ Press FETCH SIGNAL to analyze all markets<br><span style="font-size:12px;">Best parity signal will be selected automatically</span></div>
         </div>
@@ -714,7 +462,6 @@ MAIN APP
     function initWebSocket() {
         document.getElementById('liveTicker').textContent = '⏳ Connecting to Deriv WebSocket...';
         appState = 'COLLECTING';
-
         MARKETS.forEach(sym => { buffers[sym] = []; });
 
         ws = new WebSocket(DERIV_WS);
@@ -1020,11 +767,11 @@ MAIN APP
                 }).join('');
             } else if (signal.lsi !== undefined) {
                 keyHtml = `
-                    <span style="color:${Math.abs(signal.lsi) > 4 ? '#00FFAA' : '#FF4757'};">LSI</span>
-                    <span style="color:${signal.positiveCount >= 2 ? '#00FFAA' : '#FF4757'};">BROAD</span>
-                    <span style="color:${signal.entropy > 2.80 && signal.entropy < 3.20 ? '#00FFAA' : '#FF4757'};">ENT</span>
+                    <span style="color:${Math.abs(signal.lsi) > 6 ? '#00FFAA' : '#FF4757'};">LSI</span>
+                    <span style="color:${signal.positiveCount >= 3 ? '#00FFAA' : '#FF4757'};">BROAD</span>
+                    <span style="color:${signal.entropy > 2.85 && signal.entropy < 3.15 ? '#00FFAA' : '#FF4757'};">ENT</span>
                     <span style="color:${signal.anchorBonus === 1 ? '#00FFAA' : '#FF4757'};">ANCH</span>
-                    <span style="color:${signal.edgeZ > 1.0 ? '#00FFAA' : '#FF4757'};">EDGE Z</span>
+                    <span style="color:${signal.edgeZ > 1.3 ? '#00FFAA' : '#FF4757'};">EDGE Z</span>
                 `;
             } else if (signal.pmr !== undefined) {
                 const k = signal.keys || {};
@@ -1098,7 +845,6 @@ MAIN APP
 
         const zScore = (freq[dominantDigit] - expected) / (0.3 * Math.sqrt(total));
 
-        // Trigger digit (Gatekeeper)
         let triggerDigit = 3;
         let minFollow = 1;
         for (let i = 0; i < 10; i++) {
@@ -1114,7 +860,6 @@ MAIN APP
 
         const suppressionRatio = Math.max(minFollow, 0.01) / 0.10;
 
-        // Persistence (simplified)
         const windowSize = Math.min(20, data.length);
         let recentHits = 0;
         for (let i = data.length - windowSize; i < data.length; i++) {
@@ -1161,7 +906,7 @@ MAIN APP
         data.forEach(d => freq[d]++);
         const expected = total / 10;
 
-        // KEY 1: DFR > 11% (loosened from 12%)
+        // KEY 1: DFR > 11%
         const dfr = freq.map(f => f / expected);
         let dominantDigit = 0;
         let dominantDFR = 0;
@@ -1170,7 +915,7 @@ MAIN APP
         });
         if (dominantDFR < 1.1) return null;
 
-        // KEY 2: Persistence ≥ 2 blocks (loosened from 3)
+        // KEY 2: Persistence ≥ 2 blocks
         const blockSize = 25;
         let blocksAbove = 0;
         for (let b = 0; b < 4; b++) {
@@ -1187,11 +932,11 @@ MAIN APP
         else if (blocksAbove >= 2) persistence = 'MEDIUM';
         else return null;
 
-        // KEY 3: Z-Score > 1.2 (loosened from 1.5)
+        // KEY 3: Z-Score > 1.2
         const zScore = (freq[dominantDigit] - expected) / (0.3 * Math.sqrt(total));
         if (zScore < 1.2) return null;
 
-        // KEY 4: Suppression ≥ 3 (loosened from 4)
+        // KEY 4: Suppression ≥ 3
         let suppressedCount = 0;
         for (let i = 0; i < 10; i++) {
             if (i !== dominantDigit && freq[i] < expected) suppressedCount++;
@@ -1230,7 +975,6 @@ MAIN APP
         }
         confidenceScore = Math.min(99, Math.max(50, confidenceScore));
 
-        // Trigger digit
         let triggerDigit = 3;
         let minFollow = 1;
         for (let i = 0; i < 10; i++) {
@@ -1275,7 +1019,7 @@ MAIN APP
     }
 
     // ============================================================
-    // 11. OVER / UNDER ENGINE — FIVE-LAYER (LOOSENED)
+    // 11. OVER / UNDER ENGINE — ORIGINAL TIGHT CONFIRMATION (RESTORED)
     // ============================================================
     function analyzeOverUnder(data) {
         if (!data || data.length < ANALYSIS_WINDOW) return null;
@@ -1286,8 +1030,8 @@ MAIN APP
         const lsi = ((lowerCount / total) - (upperCount / total)) * 100;
 
         let mode = null;
-        if (lsi > 4) mode = 'under';       // loosened from 6
-        else if (lsi < -4) mode = 'over';  // loosened from -6
+        if (lsi > 6) mode = 'under';
+        else if (lsi < -6) mode = 'over';
         else return null;
 
         const freq = Array(10).fill(0);
@@ -1301,11 +1045,11 @@ MAIN APP
         } else {
             for (let i = 5; i <= 9; i++) if (zScores[i] > 0) positiveCount++;
         }
-        if (positiveCount < 2) return null; // loosened from 3
+        if (positiveCount < 3) return null;
 
         let entropy = 0;
         freq.forEach(v => { const p = v / total; if (p > 0) entropy -= p * Math.log2(p); });
-        if (entropy > 3.20 || entropy < 2.80) return null; // loosened
+        if (entropy > 3.15 || entropy < 2.85) return null;
 
         let dominantDigit = 0;
         let dominantZ = -Infinity;
@@ -1316,12 +1060,12 @@ MAIN APP
         let anchorPass = false;
         let anchorBonus = 1;
         if (mode === 'under') {
-            if (dominantDigit <= 6 && dominantZ > 1.0) { anchorPass = true; anchorBonus = 1; }
-            else if (dominantDigit <= 6 && dominantZ > 0.5) { anchorPass = true; anchorBonus = 0.8; }
+            if (dominantDigit <= 6 && dominantZ > 1.5) { anchorPass = true; anchorBonus = 1; }
+            else if (dominantDigit <= 6 && dominantZ > 1.0) { anchorPass = true; anchorBonus = 0.8; }
             else anchorPass = false;
         } else {
-            if (dominantDigit >= 3 && dominantZ > 1.0) { anchorPass = true; anchorBonus = 1; }
-            else if (dominantDigit >= 3 && dominantZ > 0.5) { anchorPass = true; anchorBonus = 0.8; }
+            if (dominantDigit >= 3 && dominantZ > 1.5) { anchorPass = true; anchorBonus = 1; }
+            else if (dominantDigit >= 3 && dominantZ > 1.0) { anchorPass = true; anchorBonus = 0.8; }
             else anchorPass = false;
         }
         if (!anchorPass) return null;
@@ -1348,7 +1092,7 @@ MAIN APP
             const edgeZ = edge / Math.sqrt((theoretical * (1 - theoretical)) / total);
 
             if (observed < 0.513) return;
-            if (edgeZ < 1.0) return; // loosened from 1.3
+            if (edgeZ < 1.3) return;
 
             const score = edge * edgeZ * anchorBonus * 100;
             if (score > bestScore) {
@@ -1411,7 +1155,7 @@ MAIN APP
     }
 
     // ============================================================
-    // 12. EVEN / ODD ENGINE — FIVE-KEY (LOOSENED)
+    // 12. EVEN / ODD ENGINE — ORIGINAL TIGHT CONFIRMATION (RESTORED)
     // ============================================================
     function analyzeEvenOdd(data) {
         if (!data || data.length < ANALYSIS_WINDOW) return null;
@@ -1426,14 +1170,14 @@ MAIN APP
         const oddProb = oddCount / total;
         const pmr = evenProb;
 
-        if (pmr < 0.53 && oddProb < 0.53) return null; // loosened from 55
+        if (pmr < 0.55 && oddProb < 0.55) return null;
         const dominantParity = pmr > oddProb ? 'even' : 'odd';
         const dominantPMR = dominantParity === 'even' ? pmr : oddProb;
-        if (dominantPMR < 0.53) return null;
+        if (dominantPMR < 0.55) return null;
 
         const expected = total / 2;
         const zScore = (dominantParity === 'even' ? evenCount : oddCount - expected) / (0.5 * Math.sqrt(total));
-        if (Math.abs(zScore) < 1.2) return null; // loosened from 1.5
+        if (Math.abs(zScore) < 1.5) return null;
 
         const freq = Array(10).fill(0);
         data.forEach(d => freq[d]++);
@@ -1443,7 +1187,7 @@ MAIN APP
         activeDigits.forEach(d => {
             if (freq[d] > expectedPerDigit) contributors++;
         });
-        if (contributors < 2) return null; // loosened from 3
+        if (contributors < 3) return null;
 
         const halfSize = Math.floor(total / 2);
         const firstHalf = data.slice(0, halfSize);
@@ -1477,19 +1221,19 @@ MAIN APP
         if (significantEven >= 2 && significantOdd >= 2) cpcs = 'HIGH';
         else if ((significantEven >= 2 && significantOdd >= 1) || (significantOdd >= 2 && significantEven >= 1)) cpcs = 'MEDIUM';
         else cpcs = 'LOW';
-        if (cpcs === 'HIGH') return null; // still block HIGH conflict
+        if (cpcs === 'HIGH') return null;
 
         let confidenceLevel = 'LOW';
         let confidenceScore = 50;
         if (dominantPMR > 0.58 && Math.abs(zScore) > 2.0 && contributors >= 4 && momentum === 'RISING' && cpcs === 'LOW') {
             confidenceLevel = 'HIGH';
             confidenceScore = 85 + Math.min(10, (dominantPMR - 0.58) * 100);
-        } else if (dominantPMR >= 0.53 && Math.abs(zScore) >= 1.2 && contributors >= 2 && (momentum === 'STEADY' || momentum === 'RISING') && cpcs !== 'HIGH') {
+        } else if (dominantPMR >= 0.55 && Math.abs(zScore) >= 1.5 && contributors >= 3 && (momentum === 'STEADY' || momentum === 'RISING') && cpcs === 'LOW') {
             confidenceLevel = 'MEDIUM';
-            confidenceScore = 65 + (dominantPMR - 0.53) * 100 + (Math.abs(zScore) - 1.2) * 10;
+            confidenceScore = 65 + (dominantPMR - 0.55) * 100 + (Math.abs(zScore) - 1.5) * 10;
         } else {
             confidenceLevel = 'LOW';
-            confidenceScore = 50 + (dominantPMR - 0.53) * 50 + (Math.abs(zScore) - 1.2) * 5;
+            confidenceScore = 50 + (dominantPMR - 0.55) * 50 + (Math.abs(zScore) - 1.5) * 5;
         }
         confidenceScore = Math.min(99, Math.max(50, confidenceScore));
 
@@ -1531,9 +1275,9 @@ MAIN APP
             action: signal,
             actionType: dominantParity,
             keys: {
-                pmrPass: dominantPMR > 0.53,
-                zScorePass: Math.abs(zScore) > 1.2,
-                pccPass: contributors >= 2,
+                pmrPass: dominantPMR > 0.55,
+                zScorePass: Math.abs(zScore) > 1.5,
+                pccPass: contributors >= 3,
                 momentumPass: momentum !== 'FALLING',
                 cpcsPass: cpcs !== 'HIGH'
             },
@@ -1554,7 +1298,6 @@ MAIN APP
         if (!result) { alert('❌ No Matches signal found (all five keys did not confirm).'); return; }
         result.market = best.market;
         result.entropy = best.entropy;
-        latestSignal = result;
         showSignalPopup(result, 'matches');
         updateOracleCard(result);
         updateFrequencyChart(best.market);
@@ -1570,7 +1313,6 @@ MAIN APP
         if (!result) { alert('❌ No Differs signal found.'); return; }
         result.market = best.market;
         result.entropy = best.entropy;
-        latestSignal = result;
         showSignalPopup(result, 'differs');
         updateOracleCard(result);
         updateFrequencyChart(best.market);
@@ -1594,7 +1336,6 @@ MAIN APP
         let entropy = 0;
         freq.forEach(v => { const p = v / total; if (p > 0) entropy -= p * Math.log2(p); });
         best.entropy = entropy;
-        latestSignal = best;
         showSignalPopup(best, 'overunder');
         updateOverUnderCard(best);
         updateFrequencyChart(best.market);
@@ -1618,7 +1359,6 @@ MAIN APP
         let entropy = 0;
         freq.forEach(v => { const p = v / total; if (p > 0) entropy -= p * Math.log2(p); });
         best.entropy = entropy;
-        latestSignal = best;
         showSignalPopup(best, 'evenodd');
         updateEvenOddCard(best);
         updateFrequencyChart(best.market);
@@ -1681,11 +1421,11 @@ MAIN APP
         const card = document.getElementById('ouSignalCard');
         const keyStatus = `
             <div class="key-status">
-                <span style="color:${Math.abs(signal.lsi) > 4 ? '#00FFAA' : '#FF4757'};">LSI</span>
-                <span style="color:${signal.positiveCount >= 2 ? '#00FFAA' : '#FF4757'};">BROAD</span>
-                <span style="color:${signal.entropy > 2.80 && signal.entropy < 3.20 ? '#00FFAA' : '#FF4757'};">ENT</span>
+                <span style="color:${Math.abs(signal.lsi) > 6 ? '#00FFAA' : '#FF4757'};">LSI</span>
+                <span style="color:${signal.positiveCount >= 3 ? '#00FFAA' : '#FF4757'};">BROAD</span>
+                <span style="color:${signal.entropy > 2.85 && signal.entropy < 3.15 ? '#00FFAA' : '#FF4757'};">ENT</span>
                 <span style="color:${signal.anchorBonus === 1 ? '#00FFAA' : '#FF4757'};">ANCH</span>
-                <span style="color:${signal.edgeZ > 1.0 ? '#00FFAA' : '#FF4757'};">EDGE Z</span>
+                <span style="color:${signal.edgeZ > 1.3 ? '#00FFAA' : '#FF4757'};">EDGE Z</span>
             </div>
         `;
         const levelColor = signal.confidenceLevel === 'HIGH' ? '#00FFAA' : signal.confidenceLevel === 'MEDIUM' ? '#FFD700' : '#FF6B00';
@@ -1801,4 +1541,4 @@ MAIN APP
     showMatrixPlaceholder();
 </script>
 </body>
-    </html>
+                                   </html>
