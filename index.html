@@ -299,7 +299,7 @@
             border: 1px solid rgba(0,255,240,0.08);
             backdrop-filter: blur(10px);
             margin-top: 10px;
-            min-height: 140px;
+            min-height: 150px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -336,7 +336,19 @@
         .signal-card .confidence-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
         .signal-card .confidence-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--neon-orange), var(--neon-green)); transition: width 1.2s ease; width: 0%; }
         .signal-card .confidence-label { font-size: 14px; font-weight: 600; color: #fff; min-width: 44px; }
-        .signal-card .bottom-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-grey); margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.04); }
+        .signal-card .bottom-row {
+            display: flex; flex-wrap: wrap; gap: 4px; justify-content: space-between;
+            font-size: 12px; color: var(--text-grey); margin-top: 6px; padding-top: 6px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+        .signal-card .key-status {
+            display: flex; gap: 6px; justify-content: center; font-size: 11px;
+            color: var(--text-grey); margin: 4px 0;
+        }
+        .signal-card .key-status span { padding: 0 2px; }
+        .signal-card .confidence-level {
+            text-align: center; font-size: 11px; margin-top: 4px;
+        }
         .signal-card .placeholder-text { text-align: center; color: var(--text-grey); font-size: 14px; opacity: 0.5; }
 
         /* ============================================
@@ -519,11 +531,13 @@ SIGNAL POPUP
                 <div class="big-digit" id="popupBigDigit">--</div>
                 <div class="entry-text" id="popupEntryText">Entry: --</div>
                 <div class="action-text" id="popupActionText">--</div>
+                <div class="key-status" id="popupKeyStatus"></div>
                 <div class="confidence-row">
                     <span class="confidence-label" id="popupConfidenceLabel">--</span>
                     <div class="confidence-bar"><div class="confidence-fill" id="popupConfidenceFill" style="width:0%;"></div></div>
                 </div>
-                <div class="bottom-row"><span id="popupRatio">--</span><span id="popupTop">--</span></div>
+                <div class="bottom-row" id="popupBottomRow"><span>--</span><span>--</span></div>
+                <div class="confidence-level" id="popupConfidenceLevel"></div>
                 <div class="text-center text-grey text-sm" style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.04);">NEURAL PATTERN ANALYSIS</div>
             </div>
         </div>
@@ -994,11 +1008,72 @@ MAIN APP
             document.getElementById('popupActionText').textContent = signal.action || '--';
             document.getElementById('popupActionText').className = 'action-text ' + (signal.actionType || '');
             document.getElementById('popupConfidenceLabel').textContent = `${signal.confidence.toFixed(1)}%`;
-            document.getElementById('popupRatio').textContent = `Ratio: ${signal.ratio?.toFixed(2) || '--'}x`;
-            document.getElementById('popupTop').textContent = `Top: ${signal.topDigit || '--'} (${signal.topPct?.toFixed(1) || '--'}%)`;
             const fill = document.getElementById('popupConfidenceFill');
             fill.style.width = '0%';
             setTimeout(() => { fill.style.width = `${signal.confidence}%`; }, 300);
+
+            // Key status
+            let keyHtml = '';
+            if (signal.keys) {
+                const k = signal.keys;
+                keyHtml = `
+                    <span style="color:${k.dfrPass !== undefined ? (k.dfrPass ? '#00FFAA' : '#FF4757') : '#888'};">DFR</span>
+                    <span style="color:${k.persistencePass !== undefined ? (k.persistencePass ? '#00FFAA' : '#FF4757') : '#888'};">PERS</span>
+                    <span style="color:${k.zScorePass !== undefined ? (k.zScorePass ? '#00FFAA' : '#FF4757') : '#888'};">Z</span>
+                    <span style="color:${k.suppressionPass !== undefined ? (k.suppressionPass ? '#00FFAA' : '#FF4757') : '#888'};">SUPP</span>
+                    <span style="color:${k.stabilityPass !== undefined ? (k.stabilityPass ? '#00FFAA' : '#FF4757') : '#888'};">STAB</span>
+                `;
+            } else if (signal.lsi !== undefined) {
+                // Over/Under keys
+                keyHtml = `
+                    <span style="color:${Math.abs(signal.lsi) > 6 ? '#00FFAA' : '#FF4757'};">LSI</span>
+                    <span style="color:${signal.positiveCount >= 3 ? '#00FFAA' : '#FF4757'};">BROAD</span>
+                    <span style="color:${signal.entropy > 2.85 && signal.entropy < 3.15 ? '#00FFAA' : '#FF4757'};">ENT</span>
+                    <span style="color:${signal.anchorBonus === 1 ? '#00FFAA' : '#FF4757'};">ANCH</span>
+                    <span style="color:${signal.edgeZ > 1.3 ? '#00FFAA' : '#FF4757'};">EDGE Z</span>
+                `;
+            } else if (signal.pmr !== undefined) {
+                // Even/Odd keys
+                const k = signal.keys || {};
+                keyHtml = `
+                    <span style="color:${k.pmrPass ? '#00FFAA' : '#FF4757'};">PMR</span>
+                    <span style="color:${k.zScorePass ? '#00FFAA' : '#FF4757'};">Z</span>
+                    <span style="color:${k.pccPass ? '#00FFAA' : '#FF4757'};">PCC</span>
+                    <span style="color:${k.momentumPass ? '#00FFAA' : '#FF4757'};">MOM</span>
+                    <span style="color:${k.cpcsPass ? '#00FFAA' : '#FF4757'};">CPCS</span>
+                `;
+            }
+            document.getElementById('popupKeyStatus').innerHTML = keyHtml ? `<div class="key-status">${keyHtml}</div>` : '';
+
+            // Bottom row
+            let bottomHtml = '';
+            if (signal.dfr !== undefined) {
+                bottomHtml = `
+                    <span>DFR: ${(signal.dfr * 100).toFixed(1)}%</span>
+                    <span>Z: ${signal.zScore.toFixed(2)}</span>
+                    <span>PERS: ${signal.persistence}</span>
+                    <span>SUPP: ${signal.suppressedCount}/9</span>
+                `;
+            } else if (signal.lsi !== undefined) {
+                bottomHtml = `
+                    <span>LSI: ${signal.lsiDisplay || signal.lsi.toFixed(1)+'%'}</span>
+                    <span>Obs: ${signal.observed.toFixed(1)}%</span>
+                    <span>Edge: ${signal.edge.toFixed(1)}%</span>
+                    <span>Dominant: ${signal.dominantDisplay || signal.dominantDigit}</span>
+                `;
+            } else if (signal.pmr !== undefined) {
+                bottomHtml = `
+                    <span>PMR: ${signal.pmr.toFixed(1)}%</span>
+                    <span>Z: ${signal.zScore.toFixed(2)}</span>
+                    <span>PCC: ${signal.contributors}/5</span>
+                    <span>MOM: ${signal.momentum}</span>
+                `;
+            }
+            document.getElementById('popupBottomRow').innerHTML = bottomHtml || '<span>--</span><span>--</span>';
+
+            // Confidence level
+            const levelColor = signal.confidenceLevel === 'HIGH' ? '#00FFAA' : signal.confidenceLevel === 'MEDIUM' ? '#FFD700' : '#FF6B00';
+            document.getElementById('popupConfidenceLevel').innerHTML = `<span style="color:${levelColor};">${signal.confidenceLevel || ''} CONFIDENCE</span>`;
 
             loaderContainer.style.display = 'none';
             resultContainer.style.display = 'block';
@@ -1007,72 +1082,183 @@ MAIN APP
     }
 
     // ============================================================
-    // 9. MATCHES / DIFFERS ENGINE
+    // 9. MATCHES ENGINE — FIVE‑KEY CONFIRMATION
     // ============================================================
-    function analyzeMatchesDiffers(data, type) {
-        if (!data || data.length < 10) return null;
+    function analyzeMatches(data) {
+        if (!data || data.length < 100) return null;
+
+        const total = data.length;
         const freq = Array(10).fill(0);
         data.forEach(d => freq[d]++);
-        const total = data.length;
         const expected = total / 10;
-        const dfr = freq.map(f => f / expected);
-        let dominantDigit = 0, dominantDFR = 0;
-        dfr.forEach((v, i) => { if (v > dominantDFR) { dominantDFR = v; dominantDigit = i; } });
-        const zScore = (freq[dominantDigit] - expected) / (0.3 * Math.sqrt(total));
-        const windowSize = Math.min(20, data.length);
-        let recentHits = 0;
-        for (let i = data.length - windowSize; i < data.length; i++) {
-            if (data[i] === dominantDigit) recentHits++;
-        }
-        const persistence = recentHits / windowSize;
-        const stability = dfr[dominantDigit] / (1 + Math.abs(zScore / 3.5));
-        const confidence = Math.min(100, (dominantDFR * 40) + (persistence * 30) + (stability * 30));
 
-        let triggerDigit = 3, minFollow = 1;
+        // KEY 1: DFR
+        const dfr = freq.map(f => f / expected);
+        let dominantDigit = 0;
+        let dominantDFR = 0;
+        dfr.forEach((v, i) => {
+            if (v > dominantDFR) { dominantDFR = v; dominantDigit = i; }
+        });
+        if (dominantDFR < 1.2) return null;
+
+        // KEY 2: Persistence
+        const blockSize = 25;
+        let blocksAbove = 0;
+        for (let b = 0; b < 4; b++) {
+            const start = b * blockSize;
+            const end = Math.min(start + blockSize, total);
+            let count = 0;
+            for (let i = start; i < end; i++) {
+                if (data[i] === dominantDigit) count++;
+            }
+            if (count / (end - start) > 0.10) blocksAbove++;
+        }
+        let persistence = 'LOW';
+        if (blocksAbove >= 4) persistence = 'HIGH';
+        else if (blocksAbove >= 3) persistence = 'MEDIUM';
+        else return null;
+
+        // KEY 3: Z-Score
+        const zScore = (freq[dominantDigit] - expected) / (0.3 * Math.sqrt(total));
+        if (zScore < 1.5) return null;
+
+        // KEY 4: Suppression Field
+        let suppressedCount = 0;
+        for (let i = 0; i < 10; i++) {
+            if (i !== dominantDigit && freq[i] < expected) suppressedCount++;
+        }
+        if (suppressedCount < 4) return null;
+
+        // KEY 5: Stability Window (previous 100 ticks)
+        let prevWindow = [];
+        if (data.length >= 200) {
+            prevWindow = data.slice(-200, -100);
+        } else {
+            const half = Math.floor(data.length / 2);
+            prevWindow = data.slice(0, half);
+        }
+        let stability = 'GREEN';
+        if (prevWindow.length > 0) {
+            const prevFreq = Array(10).fill(0);
+            prevWindow.forEach(d => prevFreq[d]++);
+            const prevDFR = prevFreq[dominantDigit] / (prevWindow.length / 10);
+            stability = prevDFR > 1.1 ? 'GREEN' : prevDFR > 0.9 ? 'YELLOW' : 'RED';
+            if (stability === 'RED') return null;
+        }
+
+        // Confidence
+        let confidenceLevel = 'LOW';
+        let confidenceScore = 50;
+        if (dominantDFR > 1.5 && zScore > 2.0 && persistence === 'HIGH' && suppressedCount >= 6) {
+            confidenceLevel = 'HIGH';
+            confidenceScore = 85 + Math.min(10, (dominantDFR - 1.5) * 20);
+        } else if (dominantDFR >= 1.2 && zScore >= 1.5 && persistence !== 'LOW' && suppressedCount >= 4) {
+            confidenceLevel = 'MEDIUM';
+            confidenceScore = 65 + (dominantDFR - 1.2) * 30 + (zScore - 1.5) * 10;
+        } else {
+            confidenceLevel = 'LOW';
+            confidenceScore = 50 + (dominantDFR - 1.2) * 20 + (zScore - 1.5) * 5;
+        }
+        confidenceScore = Math.min(99, Math.max(50, confidenceScore));
+
+        // Trigger digit
+        let triggerDigit = 3;
+        let minFollow = 1;
         for (let i = 0; i < 10; i++) {
             let count = 0, follow = 0;
             for (let j = 0; j < data.length - 1; j++) {
                 if (data[j] === i) { count++; if (data[j + 1] === dominantDigit) follow++; }
             }
-            if (count > 5) { const ratio = follow / count; if (ratio < minFollow) { minFollow = ratio; triggerDigit = i; } }
+            if (count > 5) {
+                const ratio = follow / count;
+                if (ratio < minFollow) { minFollow = ratio; triggerDigit = i; }
+            }
         }
-        const ratio = Math.max(minFollow, 0.01);
-        const suppressionRatio = ratio / 0.10;
+        const suppressionRatio = Math.max(minFollow, 0.01) / 0.10;
+
         let entropy = 0;
         freq.forEach(v => { const p = v / total; if (p > 0) entropy -= p * Math.log2(p); });
 
-        const isMatches = type === 'matches';
-        const action = isMatches ? `MATCH ON ${dominantDigit}` : `DIFFER ON ${dominantDigit}`;
-        const actionType = isMatches ? 'matches' : 'differs';
-        const bigDigit = dominantDigit;
-        const entryText = `Entry: ${triggerDigit}`;
-
         return {
             market: 'R_10',
-            entropy,
+            dominantDigit,
             triggerDigit,
-            topDigit: dominantDigit,
-            topPct: (freq[dominantDigit] / total) * 100,
-            ratio: suppressionRatio,
-            confidence: Math.min(confidence, 99),
-            action,
-            actionType,
-            bigDigit,
-            entryText,
-            freq,
-            dfr,
+            dfr: dominantDFR,
             zScore,
             persistence,
-            stability,
-            data
+            persistenceBlocks: blocksAbove,
+            suppressedCount,
+            suppressionRatio,
+            confidence: confidenceScore,
+            confidenceLevel,
+            entropy,
+            action: `MATCH ON ${dominantDigit}`,
+            actionType: 'matches',
+            bigDigit: dominantDigit,
+            entryText: `Entry: ${triggerDigit}`,
+            keys: {
+                dfrPass: dominantDFR >= 1.2,
+                persistencePass: persistence !== 'LOW',
+                zScorePass: zScore >= 1.5,
+                suppressionPass: suppressedCount >= 4,
+                stabilityPass: stability !== 'RED'
+            },
+            stability
         };
     }
 
     // ============================================================
-    // 10. OVER / UNDER ENGINE
+    // 10. OVER / UNDER ENGINE — FIVE‑LAYER CONFIRMATION
     // ============================================================
     function analyzeOverUnder(data) {
-        if (!data || data.length < 10) return null;
+        if (!data || data.length < 100) return null;
+
+        const total = data.length;
+        const lowerCount = data.filter(d => d <= 4).length;
+        const upperCount = data.filter(d => d >= 5).length;
+        const lsi = ((lowerCount / total) - (upperCount / total)) * 100;
+
+        let mode = null;
+        if (lsi > 6) mode = 'under';
+        else if (lsi < -6) mode = 'over';
+        else return null;
+
+        const freq = Array(10).fill(0);
+        data.forEach(d => freq[d]++);
+        const expected = total / 10;
+        const zScores = freq.map(f => (f - expected) / (0.3 * Math.sqrt(total)));
+
+        let positiveCount = 0;
+        if (mode === 'under') {
+            for (let i = 0; i <= 4; i++) if (zScores[i] > 0) positiveCount++;
+        } else {
+            for (let i = 5; i <= 9; i++) if (zScores[i] > 0) positiveCount++;
+        }
+        if (positiveCount < 3) return null;
+
+        let entropy = 0;
+        freq.forEach(v => { const p = v / total; if (p > 0) entropy -= p * Math.log2(p); });
+        if (entropy > 3.15 || entropy < 2.85) return null;
+
+        let dominantDigit = 0;
+        let dominantZ = -Infinity;
+        zScores.forEach((z, i) => {
+            if (z > dominantZ) { dominantZ = z; dominantDigit = i; }
+        });
+
+        let anchorPass = false;
+        let anchorBonus = 1;
+        if (mode === 'under') {
+            if (dominantDigit <= 6 && dominantZ > 1.5) { anchorPass = true; anchorBonus = 1; }
+            else if (dominantDigit <= 6 && dominantZ > 1.0) { anchorPass = true; anchorBonus = 0.8; }
+            else anchorPass = false;
+        } else {
+            if (dominantDigit >= 3 && dominantZ > 1.5) { anchorPass = true; anchorBonus = 1; }
+            else if (dominantDigit >= 3 && dominantZ > 1.0) { anchorPass = true; anchorBonus = 0.8; }
+            else anchorPass = false;
+        }
+        if (!anchorPass) return null;
+
         const barriers = [
             { label: 'UNDER 6', type: 'under', threshold: 5 },
             { label: 'UNDER 7', type: 'under', threshold: 6 },
@@ -1083,97 +1269,214 @@ MAIN APP
             { label: 'OVER 2', type: 'over', threshold: 2 },
             { label: 'OVER 3', type: 'over', threshold: 3 }
         ];
-        const total = data.length;
-        let best = null;
+
+        let bestBarrier = null;
         let bestScore = -Infinity;
+
         barriers.forEach(b => {
             const winCount = data.filter(d => b.type === 'under' ? d <= b.threshold : d > b.threshold).length;
             const observed = winCount / total;
             const theoretical = b.type === 'under' ? (b.threshold + 1) / 10 : (9 - b.threshold) / 10;
             const edge = observed - theoretical;
             const edgeZ = edge / Math.sqrt((theoretical * (1 - theoretical)) / total);
-            const score = edge * edgeZ * 100;
-            if (score > bestScore) { bestScore = score; best = { ...b, observed, theoretical, edge, edgeZ, score }; }
+
+            if (observed < 0.513) return;
+            if (edgeZ < 1.3) return;
+
+            const score = edge * edgeZ * anchorBonus * 100;
+            if (score > bestScore) {
+                bestScore = score;
+                bestBarrier = {
+                    ...b,
+                    observed: observed * 100,
+                    theoretical: theoretical * 100,
+                    edge: edge * 100,
+                    edgeZ,
+                    score,
+                    mode,
+                    lsi,
+                    entropy,
+                    dominantDigit,
+                    dominantZ,
+                    positiveCount,
+                    anchorBonus
+                };
+            }
         });
-        if (!best) return null;
-        const overProb = data.filter(d => d > 4.5).length / total;
-        const underProb = data.filter(d => d < 4.5).length / total;
-        const lsi = overProb - underProb;
-        const confidence = Math.min(100, (Math.abs(best.edge) * 50) + (Math.abs(lsi) * 50));
-        let entropy = 0;
-        const freq = Array(10).fill(0);
-        data.forEach(d => freq[d]++);
-        freq.forEach(v => { const p = v / total; if (p > 0) entropy -= p * Math.log2(p); });
-        const bigDigit = best.type === 'under' ? best.threshold : best.threshold + 1;
+
+        if (!bestBarrier) return null;
+
+        const confidence = Math.min(100, Math.max(50,
+            (bestBarrier.edge * 2) +
+            (Math.abs(bestBarrier.lsi) * 2) +
+            (bestBarrier.anchorBonus * 30) +
+            (bestBarrier.positiveCount * 8)
+        ));
+
+        const bigDigit = bestBarrier.type === 'under' ? bestBarrier.threshold : bestBarrier.threshold + 1;
+
         return {
             market: 'R_10',
-            entropy,
-            signal: best.label,
+            entropy: bestBarrier.entropy,
+            signal: bestBarrier.label,
             bigDigit,
             confidence: Math.min(confidence, 99),
-            observed: best.observed * 100,
-            theoretical: best.theoretical * 100,
-            edge: best.edge * 100,
-            edgeZ: best.edgeZ,
-            lsi: lsi * 100,
-            overProb: overProb * 100,
-            underProb: underProb * 100,
-            action: best.label,
-            actionType: best.type === 'under' ? 'under' : 'over'
+            confidenceLevel: confidence > 80 ? 'HIGH' : confidence > 65 ? 'MEDIUM' : 'LOW',
+            observed: bestBarrier.observed,
+            theoretical: bestBarrier.theoretical,
+            edge: bestBarrier.edge,
+            edgeZ: bestBarrier.edgeZ,
+            lsi: bestBarrier.lsi,
+            mode: bestBarrier.mode,
+            dominantDigit: bestBarrier.dominantDigit,
+            dominantZ: bestBarrier.dominantZ,
+            positiveCount: bestBarrier.positiveCount,
+            anchorBonus: bestBarrier.anchorBonus,
+            action: bestBarrier.label,
+            actionType: bestBarrier.type,
+            lsiDisplay: bestBarrier.lsi.toFixed(1) + '%',
+            dominantDisplay: `${bestBarrier.dominantDigit} (Z=${bestBarrier.dominantZ.toFixed(2)})`,
+            keys: {
+                lsiPass: Math.abs(bestBarrier.lsi) > 6,
+                broadPass: bestBarrier.positiveCount >= 3,
+                entropyPass: bestBarrier.entropy > 2.85 && bestBarrier.entropy < 3.15,
+                anchorPass: bestBarrier.anchorBonus === 1,
+                edgeZPass: bestBarrier.edgeZ > 1.3
+            }
         };
     }
 
     // ============================================================
-    // 11. EVEN / ODD ENGINE
+    // 11. EVEN / ODD ENGINE — FIVE‑KEY CONFIRMATION
     // ============================================================
     function analyzeEvenOdd(data) {
-        if (!data || data.length < 10) return null;
+        if (!data || data.length < 100) return null;
+
+        const total = data.length;
         const evenDigits = [0, 2, 4, 6, 8];
         const oddDigits = [1, 3, 5, 7, 9];
-        const total = data.length;
+
         const evenCount = data.filter(d => evenDigits.includes(d)).length;
         const oddCount = data.filter(d => oddDigits.includes(d)).length;
         const evenProb = evenCount / total;
         const oddProb = oddCount / total;
-        const pmrEven = evenProb;
-        const pmrOdd = oddProb;
+        const pmr = evenProb;
+
+        if (pmr < 0.55 && oddProb < 0.55) return null;
+        const dominantParity = pmr > oddProb ? 'even' : 'odd';
+        const dominantPMR = dominantParity === 'even' ? pmr : oddProb;
+        if (dominantPMR < 0.55) return null;
+
         const expected = total / 2;
-        const zScore = (evenCount - expected) / (0.5 * Math.sqrt(total));
+        const zScore = (dominantParity === 'even' ? evenCount : oddCount - expected) / (0.5 * Math.sqrt(total));
+        if (Math.abs(zScore) < 1.5) return null;
+
         const freq = Array(10).fill(0);
         data.forEach(d => freq[d]++);
         const expectedPerDigit = total / 10;
         let contributors = 0;
-        evenDigits.forEach(d => { if (freq[d] > expectedPerDigit * 1.1) contributors++; });
-        oddDigits.forEach(d => { if (freq[d] < expectedPerDigit * 0.9) contributors--; });
-        const windowSize = Math.min(10, data.length);
-        const recentData = data.slice(-windowSize);
-        const recentEven = recentData.filter(d => evenDigits.includes(d)).length;
-        const recentOdd = recentData.filter(d => oddDigits.includes(d)).length;
-        const recentPMR = recentEven / (recentOdd + 0.01);
-        const momentum = recentPMR - (evenProb / (oddProb + 0.01));
-        const evenMean = evenDigits.reduce((sum, d) => sum + freq[d], 0) / evenDigits.length;
-        const oddMean = oddDigits.reduce((sum, d) => sum + freq[d], 0) / oddDigits.length;
-        const cpcs = 1 / (1 + Math.abs(evenMean - oddMean) / 10);
-        const confidence = Math.min(100, (Math.abs(zScore) / 3.5 * 40) + (Math.abs(momentum) * 30) + (cpcs * 30));
-        const signal = evenCount > oddCount ? 'EVEN' : 'ODD';
+        const activeDigits = dominantParity === 'even' ? evenDigits : oddDigits;
+        activeDigits.forEach(d => {
+            if (freq[d] > expectedPerDigit) contributors++;
+        });
+        if (contributors < 3) return null;
+
+        const halfSize = Math.floor(total / 2);
+        const firstHalf = data.slice(0, halfSize);
+        const secondHalf = data.slice(halfSize);
+        const firstEven = firstHalf.filter(d => evenDigits.includes(d)).length / firstHalf.length;
+        const secondEven = secondHalf.filter(d => evenDigits.includes(d)).length / secondHalf.length;
+        const firstOdd = firstHalf.filter(d => oddDigits.includes(d)).length / firstHalf.length;
+        const secondOdd = secondHalf.filter(d => oddDigits.includes(d)).length / secondHalf.length;
+
+        let momentum = 'STEADY';
+        if (dominantParity === 'even') {
+            if (secondEven > firstEven + 0.02) momentum = 'RISING';
+            else if (secondEven < firstEven - 0.02) momentum = 'FALLING';
+        } else {
+            if (secondOdd > firstOdd + 0.02) momentum = 'RISING';
+            else if (secondOdd < firstOdd - 0.02) momentum = 'FALLING';
+        }
+        if (momentum === 'FALLING') return null;
+
+        let significantEven = 0, significantOdd = 0;
+        evenDigits.forEach(d => {
+            const z = (freq[d] - expectedPerDigit) / (0.3 * Math.sqrt(total));
+            if (z > 1.5) significantEven++;
+        });
+        oddDigits.forEach(d => {
+            const z = (freq[d] - expectedPerDigit) / (0.3 * Math.sqrt(total));
+            if (z > 1.5) significantOdd++;
+        });
+
+        let cpcs = 'LOW';
+        if (significantEven >= 2 && significantOdd >= 2) cpcs = 'HIGH';
+        else if ((significantEven >= 2 && significantOdd >= 1) || (significantOdd >= 2 && significantEven >= 1)) cpcs = 'MEDIUM';
+        else cpcs = 'LOW';
+        if (cpcs === 'HIGH') return null;
+
+        let confidenceLevel = 'LOW';
+        let confidenceScore = 50;
+        if (dominantPMR > 0.58 && Math.abs(zScore) > 2.0 && contributors >= 4 && momentum === 'RISING' && cpcs === 'LOW') {
+            confidenceLevel = 'HIGH';
+            confidenceScore = 85 + Math.min(10, (dominantPMR - 0.58) * 100);
+        } else if (dominantPMR >= 0.55 && Math.abs(zScore) >= 1.5 && contributors >= 3 && (momentum === 'STEADY' || momentum === 'RISING') && cpcs === 'LOW') {
+            confidenceLevel = 'MEDIUM';
+            confidenceScore = 65 + (dominantPMR - 0.55) * 100 + (Math.abs(zScore) - 1.5) * 10;
+        } else {
+            confidenceLevel = 'LOW';
+            confidenceScore = 50 + (dominantPMR - 0.55) * 50 + (Math.abs(zScore) - 1.5) * 5;
+        }
+        confidenceScore = Math.min(99, Math.max(50, confidenceScore));
+
+        const signal = dominantParity === 'even' ? 'EVEN' : 'ODD';
+        const bigDigit = dominantParity === 'even' ? 6 : 7;
+
         let entropy = 0;
         freq.forEach(v => { const p = v / total; if (p > 0) entropy -= p * Math.log2(p); });
+
+        let triggerDigit = 3;
+        let minFollow = 1;
+        const dominantDigit = dominantParity === 'even' ? 6 : 7;
+        for (let i = 0; i < 10; i++) {
+            let count = 0, follow = 0;
+            for (let j = 0; j < data.length - 1; j++) {
+                if (data[j] === i) { count++; if (data[j + 1] === dominantDigit) follow++; }
+            }
+            if (count > 5) {
+                const ratio = follow / count;
+                if (ratio < minFollow) { minFollow = ratio; triggerDigit = i; }
+            }
+        }
+        const suppressionRatio = Math.max(minFollow, 0.01) / 0.10;
+
         return {
             market: 'R_10',
-            entropy,
             signal,
-            bigDigit: signal === 'EVEN' ? 6 : 7,
-            confidence: Math.min(confidence, 99),
-            evenProb: evenProb * 100,
-            oddProb: oddProb * 100,
-            pmrEven,
-            pmrOdd,
-            zScore,
+            dominantParity,
+            pmr: dominantPMR * 100,
+            zScore: Math.abs(zScore),
             contributors,
             momentum,
             cpcs,
+            confidence: confidenceScore,
+            confidenceLevel,
+            entropy,
+            bigDigit,
+            triggerDigit,
+            entryText: `Entry: ${triggerDigit}`,
+            suppressionRatio,
             action: signal,
-            actionType: signal === 'EVEN' ? 'even' : 'odd'
+            actionType: dominantParity,
+            keys: {
+                pmrPass: dominantPMR > 0.55,
+                zScorePass: Math.abs(zScore) > 1.5,
+                pccPass: contributors >= 3,
+                momentumPass: momentum !== 'FALLING',
+                cpcsPass: cpcs !== 'HIGH'
+            },
+            evenProb: (evenCount / total) * 100,
+            oddProb: (oddCount / total) * 100
         };
     }
 
@@ -1184,9 +1487,9 @@ MAIN APP
         const best = findBestMarket();
         if (!best) { alert('⏳ No market has enough data yet.'); return; }
         const data = buffers[best.market];
-        if (!data || data.length < REQUIRED_TICKS) { alert('⏳ Not enough ticks.'); return; }
-        const result = analyzeMatchesDiffers(data, 'matches');
-        if (!result) { alert('⏳ Analysis failed.'); return; }
+        if (!data || data.length < ANALYSIS_WINDOW) { alert(`⏳ Need at least ${ANALYSIS_WINDOW} ticks for Matches analysis.`); return; }
+        const result = analyzeMatches(data);
+        if (!result) { alert('❌ No Matches signal found (all five keys did not confirm).'); return; }
         result.market = best.market;
         result.entropy = best.entropy;
         result.topDigit = best.topDigit;
@@ -1204,13 +1507,18 @@ MAIN APP
         if (!best) { alert('⏳ No market has enough data yet.'); return; }
         const data = buffers[best.market];
         if (!data || data.length < REQUIRED_TICKS) { alert('⏳ Not enough ticks.'); return; }
-        const result = analyzeMatchesDiffers(data, 'differs');
-        if (!result) { alert('⏳ Analysis failed.'); return; }
+        // Reuse matches analysis but change action type
+        const result = analyzeMatches(data);
+        if (!result) { alert('❌ No Differs signal found.'); return; }
         result.market = best.market;
         result.entropy = best.entropy;
         result.topDigit = best.topDigit;
         result.topPct = best.topPct;
         result.ratio = best.suppressionRatio;
+        result.action = `DIFFER ON ${result.dominantDigit}`;
+        result.actionType = 'differs';
+        result.bigDigit = result.dominantDigit;
+        result.entryText = `Entry: ${result.triggerDigit}`;
         latestSignal = result;
         showSignalPopup(result, 'differs');
         updateOracleCard(result);
@@ -1222,11 +1530,11 @@ MAIN APP
         const allResults = [];
         MARKETS.forEach(sym => {
             const data = buffers[sym];
-            if (!data || data.length < REQUIRED_TICKS) return;
+            if (!data || data.length < ANALYSIS_WINDOW) return;
             const result = analyzeOverUnder(data);
             if (result) { result.market = sym; allResults.push(result); }
         });
-        if (allResults.length === 0) { alert('⏳ No Over/Under signals found.'); return; }
+        if (allResults.length === 0) { alert('❌ No Over/Under signal found (all five layers did not confirm).'); return; }
         let best = allResults.reduce((a, b) => a.confidence > b.confidence ? a : b);
         const data = buffers[best.market];
         const freq = Array(10).fill(0);
@@ -1246,11 +1554,11 @@ MAIN APP
         const allResults = [];
         MARKETS.forEach(sym => {
             const data = buffers[sym];
-            if (!data || data.length < REQUIRED_TICKS) return;
+            if (!data || data.length < ANALYSIS_WINDOW) return;
             const result = analyzeEvenOdd(data);
             if (result) { result.market = sym; allResults.push(result); }
         });
-        if (allResults.length === 0) { alert('⏳ No Even/Odd signals found.'); return; }
+        if (allResults.length === 0) { alert('❌ No Even/Odd signal found (all five keys did not confirm).'); return; }
         let best = allResults.reduce((a, b) => a.confidence > b.confidence ? a : b);
         const data = buffers[best.market];
         const freq = Array(10).fill(0);
@@ -1272,32 +1580,68 @@ MAIN APP
     function updateOracleCard(signal) {
         if (!signal) return;
         const card = document.getElementById('oracleSignalCard');
+        const keys = signal.keys || {};
+        const keyStatus = `
+            <div class="key-status">
+                <span style="color:${keys.dfrPass !== undefined ? (keys.dfrPass ? '#00FFAA' : '#FF4757') : '#888'};">DFR</span>
+                <span style="color:${keys.persistencePass !== undefined ? (keys.persistencePass ? '#00FFAA' : '#FF4757') : '#888'};">PERS</span>
+                <span style="color:${keys.zScorePass !== undefined ? (keys.zScorePass ? '#00FFAA' : '#FF4757') : '#888'};">Z</span>
+                <span style="color:${keys.suppressionPass !== undefined ? (keys.suppressionPass ? '#00FFAA' : '#FF4757') : '#888'};">SUPP</span>
+                <span style="color:${keys.stabilityPass !== undefined ? (keys.stabilityPass ? '#00FFAA' : '#FF4757') : '#888'};">STAB</span>
+            </div>
+        `;
+        const levelColor = signal.confidenceLevel === 'HIGH' ? '#00FFAA' : signal.confidenceLevel === 'MEDIUM' ? '#FFD700' : '#FF6B00';
         card.innerHTML = `
             <div class="row"><span>${signal.market}</span><span>H = ${signal.entropy.toFixed(2)}</span></div>
             <div class="big-digit ${signal.actionType}">${signal.bigDigit}</div>
-            <div class="entry-text"><strong>Entry: ${signal.triggerDigit}</strong></div>
+            <div class="entry-text"><strong>${signal.entryText}</strong></div>
             <div class="action-text ${signal.actionType}">${signal.action}</div>
+            ${keyStatus}
             <div class="confidence-row">
                 <span class="confidence-label">${signal.confidence.toFixed(1)}%</span>
                 <div class="confidence-bar"><div class="confidence-fill" style="width:${signal.confidence}%;"></div></div>
             </div>
-            <div class="bottom-row"><span>Ratio: ${signal.ratio.toFixed(2)}x</span><span>Top: ${signal.topDigit} (${signal.topPct.toFixed(1)}%)</span></div>
+            <div class="bottom-row">
+                <span>DFR: ${(signal.dfr * 100).toFixed(1)}%</span>
+                <span>Z: ${signal.zScore.toFixed(2)}</span>
+                <span>PERS: ${signal.persistence}</span>
+                <span>SUPP: ${signal.suppressedCount}/9</span>
+            </div>
+            <div class="confidence-level" style="color:${levelColor};">${signal.confidenceLevel} CONFIDENCE</div>
         `;
     }
 
     function updateOverUnderCard(signal) {
         if (!signal) return;
         const card = document.getElementById('ouSignalCard');
+        const keys = signal.keys || {};
+        const keyStatus = `
+            <div class="key-status">
+                <span style="color:${keys.lsiPass ? '#00FFAA' : '#FF4757'};">LSI</span>
+                <span style="color:${keys.broadPass ? '#00FFAA' : '#FF4757'};">BROAD</span>
+                <span style="color:${keys.entropyPass ? '#00FFAA' : '#FF4757'};">ENT</span>
+                <span style="color:${keys.anchorPass ? '#00FFAA' : '#FF4757'};">ANCH</span>
+                <span style="color:${keys.edgeZPass ? '#00FFAA' : '#FF4757'};">EDGE Z</span>
+            </div>
+        `;
+        const levelColor = signal.confidenceLevel === 'HIGH' ? '#00FFAA' : signal.confidenceLevel === 'MEDIUM' ? '#FFD700' : '#FF6B00';
         card.innerHTML = `
             <div class="row"><span>${signal.market}</span><span>H = ${signal.entropy.toFixed(2)}</span></div>
             <div class="big-digit" style="color:var(--neon-gold);">${signal.bigDigit}</div>
             <div class="entry-text"><strong>${signal.action}</strong></div>
             <div class="action-text" style="color:var(--neon-gold);">${signal.action}</div>
+            ${keyStatus}
             <div class="confidence-row">
-                <span class="confidence-label">${signal.confidence.toFixed(1)}%</span>
-                <div class="confidence-bar"><div class="confidence-fill" style="width:${signal.confidence}%;"></div></div>
+                <span class="confidence-label" style="color:${levelColor};">${signal.confidence.toFixed(1)}%</span>
+                <div class="confidence-bar"><div class="confidence-fill" style="width:${signal.confidence}%; background: linear-gradient(90deg, #FF6B00, ${levelColor});"></div></div>
             </div>
-            <div class="bottom-row"><span>Edge: ${signal.edge.toFixed(1)}%</span><span>Observed: ${signal.observed.toFixed(1)}%</span></div>
+            <div class="bottom-row">
+                <span>LSI: ${signal.lsiDisplay}</span>
+                <span>Obs: ${signal.observed.toFixed(1)}%</span>
+                <span>Edge: ${signal.edge.toFixed(1)}%</span>
+                <span>Dominant: ${signal.dominantDisplay}</span>
+            </div>
+            <div class="confidence-level" style="color:${levelColor};">${signal.confidenceLevel} CONFIDENCE</div>
         `;
         document.getElementById('ouMarket').textContent = signal.market;
         document.getElementById('ouConfidenceValue').textContent = `${signal.confidence.toFixed(1)}%`;
@@ -1308,20 +1652,41 @@ MAIN APP
     function updateEvenOddCard(signal) {
         if (!signal) return;
         const card = document.getElementById('eoSignalCard');
+        const keys = signal.keys || {};
+        const keyStatus = `
+            <div class="key-status">
+                <span style="color:${keys.pmrPass ? '#00FFAA' : '#FF4757'};">PMR</span>
+                <span style="color:${keys.zScorePass ? '#00FFAA' : '#FF4757'};">Z</span>
+                <span style="color:${keys.pccPass ? '#00FFAA' : '#FF4757'};">PCC</span>
+                <span style="color:${keys.momentumPass ? '#00FFAA' : '#FF4757'};">MOM</span>
+                <span style="color:${keys.cpcsPass ? '#00FFAA' : '#FF4757'};">CPCS</span>
+            </div>
+        `;
+        const levelColor = signal.confidenceLevel === 'HIGH' ? '#00FFAA' : signal.confidenceLevel === 'MEDIUM' ? '#FFD700' : '#FF6B00';
         card.innerHTML = `
             <div class="row"><span>${signal.market}</span><span>H = ${signal.entropy.toFixed(2)}</span></div>
-            <div class="big-digit" style="color:var(--neon-purple);">${signal.signal}</div>
-            <div class="entry-text"><strong>${signal.signal}</strong></div>
-            <div class="action-text" style="color:var(--neon-purple);">${signal.signal}</div>
+            <div class="big-digit" style="color:${signal.dominantParity === 'even' ? '#00BFFF' : '#FF6B00'};">${signal.signal}</div>
+            <div class="entry-text"><strong>${signal.entryText}</strong></div>
+            <div class="action-text" style="color:${signal.dominantParity === 'even' ? '#00BFFF' : '#FF6B00'};">${signal.action}</div>
+            ${keyStatus}
             <div class="confidence-row">
-                <span class="confidence-label">${signal.confidence.toFixed(1)}%</span>
-                <div class="confidence-bar"><div class="confidence-fill" style="width:${signal.confidence}%;"></div></div>
+                <span class="confidence-label" style="color:${levelColor};">${signal.confidence.toFixed(1)}%</span>
+                <div class="confidence-bar"><div class="confidence-fill" style="width:${signal.confidence}%; background: linear-gradient(90deg, #FF6B00, ${levelColor});"></div></div>
             </div>
-            <div class="bottom-row"><span>Even: ${signal.evenProb.toFixed(1)}%</span><span>Odd: ${signal.oddProb.toFixed(1)}%</span></div>
+            <div class="bottom-row">
+                <span>PMR: ${signal.pmr.toFixed(1)}%</span>
+                <span>Z: ${signal.zScore.toFixed(2)}</span>
+                <span>PCC: ${signal.contributors}/5</span>
+                <span>MOM: ${signal.momentum}</span>
+            </div>
+            <div class="confidence-level" style="color:${levelColor};">${signal.confidenceLevel} CONFIDENCE</div>
+            <div style="text-align:center; font-size:10px; color:var(--text-grey); margin-top:4px;">
+                Even: ${signal.evenProb.toFixed(1)}% | Odd: ${signal.oddProb.toFixed(1)}%
+            </div>
         `;
         document.getElementById('eoMarket').textContent = signal.market;
         document.getElementById('eoConfidenceValue').textContent = `${signal.confidence.toFixed(1)}%`;
-        document.getElementById('eoPMR').textContent = `${signal.evenProb.toFixed(1)}% / ${signal.oddProb.toFixed(1)}%`;
+        document.getElementById('eoPMR').textContent = `${signal.pmr.toFixed(1)}%`;
         document.getElementById('eoZScore').textContent = signal.zScore.toFixed(2);
     }
 
@@ -1372,4 +1737,4 @@ MAIN APP
     showMatrixPlaceholder();
 </script>
 </body>
-            </html>
+                                                                               </html>
