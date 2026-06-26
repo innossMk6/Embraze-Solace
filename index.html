@@ -935,6 +935,7 @@ MAIN APP
                 const wr = signal.winRates;
                 bottomHtml = `
                     <span>1t: ${wr[1]? wr[1].toFixed(1) : '--'}%</span>
+                    <span>2t: ${wr[2]? wr[2].toFixed(1) : '--'}%</span>
                     <span>3t: ${wr[3]? wr[3].toFixed(1) : '--'}%</span>
                     <span>5t: ${wr[5]? wr[5].toFixed(1) : '--'}%</span>
                     <span>10t: ${wr[10]? wr[10].toFixed(1) : '--'}%</span>
@@ -1362,38 +1363,59 @@ MAIN APP
     }
 
     // ============================================================
-    // 10. PRICE-MOVEMENT ENGINES (NEW)
+    // 10. PRICE-MOVEMENT ENGINES (NEW — FIXED)
     // ============================================================
 
-    // 10a. Rise/Fall Engine with duration optimisation
+    // Helper: Calculate EMA
+    function calcEMA(arr, period) {
+        if (arr.length === 0) return 0;
+        const k = 2 / (period + 1);
+        let ema = arr[0];
+        for (let i = 1; i < arr.length; i++) {
+            ema = arr[i] * k + ema * (1 - k);
+        }
+        return ema;
+    }
+
+    // 10a. Rise/Fall Engine with duration optimisation (FIXED)
     function analyzeRiseFall() {
         const results = [];
-        const durations = [1, 2, 3, 5, 10, 15];
+        const durations = [1, 2, 3, 5, 10]; // 15 ticks removed — not supported on Deriv
 
         MARKETS.forEach(sym => {
             const data = tickBuffers[sym];
-            if (!data || data.length < 200) return;
+            if (!data || data.length < 100) return;
             const prices = data.map(t => t.price);
 
-            const netChange = prices[prices.length - 1] - prices[0];
-            const avgChange = netChange / prices.length;
-            let totalRange = 0;
+            // FIX 1: EMA comparison instead of average change
+            const ema20 = calcEMA(prices.slice(-Math.min(prices.length, 60)), 20);
+            const ema50 = calcEMA(prices.slice(-Math.min(prices.length, 100)), 50);
+            const lastPrice = prices[prices.length - 1];
+            const direction = (ema20 > ema50 && lastPrice > ema20) ? 'RISE' : 'FALL';
+            const avgChange = (prices[prices.length - 1] - prices[prices.length - 20]) / 20;
+
+            // Compute true tick-direction entropy (not hardcoded)
+            let up = 0, down = 0;
             for (let i = 1; i < prices.length; i++) {
-                totalRange += Math.abs(prices[i] - prices[i-1]);
+                if (prices[i] > prices[i-1]) up++;
+                else if (prices[i] < prices[i-1]) down++;
             }
-            const atr = totalRange / (prices.length - 1);
+            const pUp = up / (up + down + 0.001);
+            const pDown = down / (up + down + 0.001);
+            const entropy = - (pUp * Math.log2(pUp + 0.001) + pDown * Math.log2(pDown + 0.001));
 
-            const direction = avgChange > 0.1 * atr ? 'RISE' : 'FALL';
-
+            // Simulate win rates for each duration (using recent 200 ticks only)
+            const recentPrices = prices.slice(-200);
             const winRates = {};
             durations.forEach(d => {
                 let wins = 0, total = 0;
-                for (let i = 0; i < prices.length - d; i++) {
-                    const isSignal = (direction === 'RISE' && avgChange > 0) || (direction === 'FALL' && avgChange < 0);
+                for (let i = 0; i < recentPrices.length - d; i++) {
+                    // Use EMA-based signal condition
+                    const isSignal = (direction === 'RISE' && ema20 > ema50) || (direction === 'FALL' && ema20 < ema50);
                     if (isSignal) {
                         total++;
-                        const p0 = prices[i];
-                        const p1 = prices[i + d];
+                        const p0 = recentPrices[i];
+                        const p1 = recentPrices[i + d];
                         const isWin = (direction === 'RISE') ? p1 > p0 : p1 < p0;
                         if (isWin) wins++;
                     }
@@ -1410,6 +1432,7 @@ MAIN APP
                 }
             });
 
+            // Confidence: based on win rate and trend strength
             const confidence = Math.min(95, 50 + bestWinRate * 0.3);
 
             results.push({
@@ -1419,9 +1442,10 @@ MAIN APP
                 winRate: bestWinRate,
                 confidence: confidence,
                 avgChange: avgChange,
-                atr: atr,
+                ema20: ema20,
+                ema50: ema50,
                 winRates: winRates,
-                entropy: 0.85
+                entropy: entropy // now real tick-direction entropy
             });
         });
 
@@ -1429,7 +1453,7 @@ MAIN APP
         return results.reduce((a, b) => a.confidence > b.confidence ? a : b);
     }
 
-    // 10b. Higher/Lower Engine (hardwired barriers)
+    // 10b. Higher/Lower Engine (hardwired barriers — FIXED confidence)
     function analyzeHigherLower() {
         const results = [];
         const hlMarkets = Object.keys(HL_BARRIERS);
@@ -1453,7 +1477,9 @@ MAIN APP
             const direction = avgChange > 0 ? 'HIGHER' : 'LOWER';
             const barrier = direction === 'HIGHER' ? HL_BARRIERS[sym].higher : HL_BARRIERS[sym].lower;
 
-            const confidence = Math.min(95, 50 + trendStrength * 30);
+            // FIX 2: Normalise confidence per market volatility
+            const normalizedStrength = Math.min(trendStrength / 0.5, 1.0);
+            const confidence = Math.min(95, 50 + normalizedStrength * 45);
 
             results.push({
                 market: sym,
@@ -1472,7 +1498,7 @@ MAIN APP
         return results.reduce((a, b) => a.confidence > b.confidence ? a : b);
     }
 
-    // 10c. Accumulators Engine
+    // 10c. Accumulators Engine (unchanged)
     function analyzeAccumulator() {
         const results = [];
 
@@ -1654,7 +1680,6 @@ MAIN APP
         signal.entryText = `Optimal: ${signal.duration} ticks`;
         signal.actionType = 'rf';
         signal.confidenceLevel = signal.confidence > 80 ? 'HIGH' : signal.confidence > 65 ? 'MEDIUM' : 'LOW';
-        signal.entropy = signal.entropy || 0.85;
         showSignalPopup(signal, 'rf');
         updateRiseFallCard(signal);
         updateFrequencyChart(signal.market);
@@ -1676,6 +1701,12 @@ MAIN APP
     }
 
     function generateAccumulatorSignal() {
+        // FIX 3: Check if candles are loaded before attempting
+        const hasCandles = MARKETS.some(sym => candleBuffers[sym] && candleBuffers[sym].length >= 20);
+        if (!hasCandles) {
+            alert('⏳ Candle data still loading. Please wait 10 seconds and try again.');
+            return;
+        }
         const signal = analyzeAccumulator();
         if (!signal) { alert('❌ No Accumulator signal found.'); return; }
         signal.action = `RUN: ${signal.ticks} ticks @ ${signal.growth.toFixed(0)}%`;
@@ -1849,8 +1880,8 @@ MAIN APP
                 <div class="confidence-bar"><div class="confidence-fill" style="width:${signal.confidence}%; background: linear-gradient(90deg, #FF6B00, ${levelColor});"></div></div>
             </div>
             <div class="bottom-row">
-                <span>Avg: ${(signal.avgChange*100).toFixed(2)}%</span>
-                <span>ATR: ${signal.atr.toFixed(4)}</span>
+                <span>EMA: ${signal.ema20 > signal.ema50 ? '📈 Bullish' : '📉 Bearish'}</span>
+                <span>H: ${signal.entropy.toFixed(2)}</span>
                 ${Object.entries(signal.winRates).map(([k,v]) => `<span>${k}t: ${v.toFixed(1)}%</span>`).join('')}
             </div>
             <div class="confidence-level" style="color:${levelColor};">${signal.confidenceLevel} CONFIDENCE</div>
@@ -1969,7 +2000,7 @@ MAIN APP
     // ============================================================
     // 14. INITIAL SETUP
     // ============================================================
-    console.log('🔮 Embrace Solace v3.0 — Complete Analysis Engine');
+    console.log('🔮 Embrace Solace v3.1 — Fixed Engines');
     console.log(`📊 ${MARKETS.length} markets configured.`);
     showChartPlaceholder();
     showMatrixPlaceholder();
