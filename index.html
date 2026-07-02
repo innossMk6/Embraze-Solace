@@ -1097,11 +1097,9 @@
             for (const item of candidates) {
                 if (!best || item.score > best.score) best = item;
             }
-            // Tie‑break if scores are extremely close
             if (candidates.length > 1 && best) {
                 const runnerUp = candidates.find(c => c !== best && Math.abs(c.score - best.score) < 0.02);
                 if (runnerUp) {
-                    // randomly decide among the top two to avoid deterministic repetition
                     candidates.sort((a, b) => (b.score - a.score) || Math.random() - 0.5);
                     best = candidates[0];
                 }
@@ -1200,7 +1198,7 @@
         }
 
         // ============================================================
-        // 4. SCORING HELPERS (patched)
+        // 4. SCORING HELPERS (tightened)
         // ============================================================
 
         function matchScore(digits, digit, windowSize = 100) {
@@ -1228,10 +1226,10 @@
             const conc = concentrationFreq(freq);
             const trans = transitionRate(window);
 
-            const targetBoost = f * 1.4;
-            const consistencyBoost = persist * 1.0;
-            const compactnessBoost = conc * 0.5;
-            const instabilityPenalty = ent * 0.35 + trans * 0.18;
+            const targetBoost = f * 1.2;
+            const consistencyBoost = persist * 0.9;
+            const compactnessBoost = conc * 0.4;
+            const instabilityPenalty = ent * 0.4 + trans * 0.2;
 
             const score = targetBoost + consistencyBoost + compactnessBoost - instabilityPenalty;
             return { score, features: { f, persist, ent, conc, trans, freq } };
@@ -1262,12 +1260,12 @@
             const conc = concentrationFreq(freq);
             const trans = transitionRate(window);
 
-            const rarityBoost = (1 - f) * 1.25;
-            const spreadBoost = (1 - conc) * 0.45;
-            const consistencyBoost = persist * 0.95;
-            const stabilityBoost = (1 - trans) * 0.20;
+            const rarityBoost = (1 - f) * 1.0;
+            const spreadBoost = (1 - conc) * 0.35;
+            const consistencyBoost = persist * 0.8;
+            const stabilityBoost = (1 - trans) * 0.15;
 
-            const score = rarityBoost + spreadBoost + consistencyBoost + stabilityBoost + ent * 0.15;
+            const score = rarityBoost + spreadBoost + consistencyBoost + stabilityBoost + ent * 0.12;
             return { score, features: { f, persist, ent, conc, trans, freq } };
         }
 
@@ -1306,11 +1304,11 @@
             const conc = concentrationFreq(freq);
             const reject = transitionRate(window);
 
-            const directionBoost = mass * 1.25;
-            const edgeBoost = margin * 0.85;
-            const consistencyBoost = persist * 0.95;
-            const stabilityBoost = conc * 0.30;
-            const penalty = ent * 0.30 + reject * 0.45;
+            const directionBoost = mass * 1.0;
+            const edgeBoost = margin * 0.7;
+            const consistencyBoost = persist * 0.8;
+            const stabilityBoost = conc * 0.25;
+            const penalty = ent * 0.35 + reject * 0.5;
 
             const score = directionBoost + edgeBoost + consistencyBoost + stabilityBoost - penalty;
             return { score, features: { mass, margin, persist, ent, conc, reject, freq } };
@@ -1353,11 +1351,11 @@
             }
             const flipRate = window.length > 1 ? flips / (window.length - 1) : 0;
 
-            const directionBoost = mass * 1.25;
-            const edgeBoost = margin * 0.85;
-            const consistencyBoost = persist * 0.95;
-            const compactnessBoost = conc * 0.25;
-            const penalty = ent * 0.30 + flipRate * 0.45;
+            const directionBoost = mass * 1.0;
+            const edgeBoost = margin * 0.7;
+            const consistencyBoost = persist * 0.8;
+            const compactnessBoost = conc * 0.2;
+            const penalty = ent * 0.35 + flipRate * 0.5;
 
             const score = directionBoost + edgeBoost + consistencyBoost + compactnessBoost - penalty;
             return { score, features: { mass, margin, persist, ent, conc, flipRate, freq } };
@@ -1390,13 +1388,6 @@
             const shoot = document.getElementById('popupShooting');
             if (popup) popup.classList.remove('active');
             if (shoot) shoot.classList.remove('active');
-        }
-
-        function showSignalResult() {
-            const loader = document.getElementById('signalLoaderContainer');
-            const result = document.getElementById('signalResultContainer');
-            if (loader) loader.style.display = 'none';
-            if (result) result.style.display = 'block';
         }
 
         function setSignalCard(html) {
@@ -1658,7 +1649,7 @@
         }
 
         // ============================================================
-        // 6. SIGNAL GENERATORS (patched)
+        // 6. SIGNAL GENERATORS (tightened confidence)
         // ============================================================
 
         function generateMatchesSignal() {
@@ -1690,8 +1681,9 @@
                     currentSignal.match = { market: best.market, entropy: best.entropy, bestMatch };
                     currentSignal.activeEngine = 'match';
 
-                    const confidence = Math.max(5, Math.min(99, norm(bestMatch.score) * 100));
-                    const level = confidence > 70 ? 'HIGH' : confidence > 55 ? 'MEDIUM' : 'LOW';
+                    // Tightened confidence
+                    const confidence = Math.max(5, Math.min(99, norm(bestMatch.score * 0.85) * 100));
+                    const level = confidence > 75 ? 'HIGH' : confidence > 60 ? 'MEDIUM' : 'LOW';
                     const levelColor = level === 'HIGH' ? '#00FFAA' : level === 'MEDIUM' ? '#FFD700' : '#FF6B00';
 
                     setSignalCard(`
@@ -1758,8 +1750,9 @@
                     currentSignal.differ = { market: best.market, entropy: best.entropy, bestDiffer };
                     currentSignal.activeEngine = 'differ';
 
-                    const confidence = Math.max(5, Math.min(99, norm(bestDiffer.score) * 100));
-                    const level = confidence > 70 ? 'HIGH' : confidence > 55 ? 'MEDIUM' : 'LOW';
+                    // Tightened confidence
+                    const confidence = Math.max(5, Math.min(99, norm(bestDiffer.score * 0.85) * 100));
+                    const level = confidence > 75 ? 'HIGH' : confidence > 60 ? 'MEDIUM' : 'LOW';
                     const levelColor = level === 'HIGH' ? '#00FFAA' : level === 'MEDIUM' ? '#FFD700' : '#FF6B00';
 
                     setSignalCard(`
@@ -1815,23 +1808,18 @@
                     if (!digits.length) throw new Error('No digits');
 
                     const candidates = [];
-                    for (let barrier = 0; barrier < 10; barrier++) {
-                        const over = overUnderScore(digits, 'OVER', barrier, ANALYSIS_WINDOW);
-                        const under = overUnderScore(digits, 'UNDER', barrier, ANALYSIS_WINDOW);
+                    // Over barriers: 0,1,2,3
+                    const overBarriers = [0, 1, 2, 3];
+                    // Under barriers: 9,8,7,6
+                    const underBarriers = [9, 8, 7, 6];
 
-                        candidates.push({
-                            mode: 'OVER',
-                            barrier,
-                            score: over.score,
-                            features: over.features
-                        });
-
-                        candidates.push({
-                            mode: 'UNDER',
-                            barrier,
-                            score: under.score,
-                            features: under.features
-                        });
+                    for (const barrier of overBarriers) {
+                        const res = overUnderScore(digits, 'OVER', barrier, ANALYSIS_WINDOW);
+                        candidates.push({ mode: 'OVER', barrier, score: res.score, features: res.features });
+                    }
+                    for (const barrier of underBarriers) {
+                        const res = overUnderScore(digits, 'UNDER', barrier, ANALYSIS_WINDOW);
+                        candidates.push({ mode: 'UNDER', barrier, score: res.score, features: res.features });
                     }
 
                     const bestSetup = pickBestCandidate(candidates);
@@ -1840,8 +1828,9 @@
                     currentSignal.ou = { market: best.market, entropy: best.entropy, bestSetup };
                     currentSignal.activeEngine = 'ou';
 
-                    const confidence = Math.max(5, Math.min(99, norm(bestSetup.score) * 100));
-                    const level = confidence > 70 ? 'HIGH' : confidence > 55 ? 'MEDIUM' : 'LOW';
+                    // Tightened confidence
+                    const confidence = Math.max(5, Math.min(99, norm(bestSetup.score * 0.85) * 100));
+                    const level = confidence > 75 ? 'HIGH' : confidence > 60 ? 'MEDIUM' : 'LOW';
                     const levelColor = level === 'HIGH' ? '#00FFAA' : level === 'MEDIUM' ? '#FFD700' : '#FF6B00';
 
                     setOUCard(`
@@ -1925,8 +1914,9 @@
                     };
                     currentSignal.activeEngine = 'eo';
 
-                    const confidence = Math.max(5, Math.min(99, norm(bestSide.score) * 100));
-                    const level = confidence > 70 ? 'HIGH' : confidence > 55 ? 'MEDIUM' : 'LOW';
+                    // Tightened confidence
+                    const confidence = Math.max(5, Math.min(99, norm(bestSide.score * 0.85) * 100));
+                    const level = confidence > 75 ? 'HIGH' : confidence > 60 ? 'MEDIUM' : 'LOW';
                     const levelColor = level === 'HIGH' ? '#00FFAA' : level === 'MEDIUM' ? '#FFD700' : '#FF6B00';
 
                     setEOCard(`
@@ -1974,10 +1964,10 @@
         }
 
         // ============================================================
-        // 7. ENTRY CONFIRMATION (patched)
+        // 7. ENTRY CONFIRMATION (threshold raised to 0.55)
         // ============================================================
 
-        function confirmEntry(digits, selectedDigit, signalScore, liveWindow = LIVE_CONFIRM_WINDOW, threshold = 0.50, engineType = 'match') {
+        function confirmEntry(digits, selectedDigit, signalScore, liveWindow = LIVE_CONFIRM_WINDOW, threshold = 0.55, engineType = 'match') {
             const live = latestWindow(digits, liveWindow);
             let liveScore = 0;
 
@@ -2018,7 +2008,7 @@
                     const digits = data.map(t => t.digit);
                     const selectedDigit = active === 'match' ? signalData.bestMatch.digit : signalData.bestDiffer.digit;
                     const signalScore = active === 'match' ? signalData.bestMatch.score : signalData.bestDiffer.score;
-                    const confirm = confirmEntry(digits, selectedDigit, signalScore, LIVE_CONFIRM_WINDOW, 0.50, active);
+                    const confirm = confirmEntry(digits, selectedDigit, signalScore, LIVE_CONFIRM_WINDOW, 0.55, active);
 
                     if (confirm.status === 'CONFIRM') {
                         btn.className = 'btn-entry entry-confirmed';
@@ -2067,7 +2057,7 @@
                     if (!data || data.length < ANALYSIS_WINDOW) throw new Error('No data');
 
                     const digits = data.map(t => t.digit);
-                    const confirm = confirmEntry(digits, bestSetup.barrier, bestSetup.score, LIVE_CONFIRM_WINDOW, 0.50, 'ou');
+                    const confirm = confirmEntry(digits, bestSetup.barrier, bestSetup.score, LIVE_CONFIRM_WINDOW, 0.55, 'ou');
 
                     if (confirm.status === 'CONFIRM') {
                         btn.className = 'btn-entry entry-confirmed';
@@ -2105,7 +2095,7 @@
                     if (!data || data.length < ANALYSIS_WINDOW) throw new Error('No data');
 
                     const digits = data.map(t => t.digit);
-                    const confirm = confirmEntry(digits, bestSide === 'EVEN' ? 0 : 1, bestScore, LIVE_CONFIRM_WINDOW, 0.50, 'eo');
+                    const confirm = confirmEntry(digits, bestSide === 'EVEN' ? 0 : 1, bestScore, LIVE_CONFIRM_WINDOW, 0.55, 'eo');
 
                     if (confirm.status === 'CONFIRM') {
                         btn.className = 'btn-entry entry-confirmed';
@@ -2383,4 +2373,4 @@
         });
     </script>
 </body>
-            </html>
+    </html>
