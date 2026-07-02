@@ -503,7 +503,7 @@
     </div>
 
     <!-- ============================================
-    JAVASCRIPT — INFRASTRUCTURE + DIGIT ENGINE + CONNECTION PATCH
+    JAVASCRIPT — ALL PATCHES INTEGRATED
     ============================================ -->
     <script>
         // ============================================================
@@ -543,7 +543,85 @@
         let selectedMarket = null;
 
         // ============================================================
-        // 2. CONNECTION STABILITY PATCH
+        // 2. ZERO-DIGIT + SYMBOL DECIMAL FIX PATCH
+        // ============================================================
+
+        function decimalsForSymbol(sym) {
+            if (!sym) return 3;
+
+            const s = String(sym).toUpperCase().replace(/s+/g, ' ').trim();
+
+            const twoDpExact = new Set([
+                'VOLATILITY 10 (1S)',
+                'VOLATILITY 25 (1S)',
+                'VOLATILITY 50 (1S)',
+                'VOLATILITY 75 (1S)',
+                'VOLATILITY 100 (1S)',
+                'VOLATILITY 100 1S',
+                'R_100_1S',
+                'JUMP 10',
+                'JUMP 25',
+                'JUMP 50',
+                'JUMP 75',
+                'JUMP 100',
+                'J10',
+                'J25',
+                'J50',
+                'J75',
+                'J100'
+            ]);
+
+            const fourDpExact = new Set([
+                'VOLATILITY 50',
+                'VOLATILITY 75',
+                'BULL',
+                'BEAR',
+                'R_50',
+                'R_75'
+            ]);
+
+            const threeDpExact = new Set([
+                'VOLATILITY 10',
+                'VOLATILITY 25',
+                'R_10',
+                'R_25'
+            ]);
+
+            if (twoDpExact.has(s)) return 2;
+            if (fourDpExact.has(s)) return 4;
+            if (threeDpExact.has(s)) return 3;
+
+            if (s.includes('(1S)')) return 2;
+            if (s.includes('JUMP')) return 2;
+
+            if (s.includes('100')) return 2;
+            if (s.includes('50') || s.includes('75') || s.includes('BULL') || s.includes('BEAR')) return 4;
+            if (s.includes('10') || s.includes('25')) return 3;
+
+            return 3;
+        }
+
+        function extractLastDigit(price) {
+            if (price === null || price === undefined) return null;
+            const s = String(price).trim();
+            const match = s.match(/(\d)(?!.*\d)/);
+            return match ? parseInt(match[1], 10) : null;
+        }
+
+        function getTickDigit(sym, price) {
+            if (price === null || price === undefined) return null;
+
+            const dp = decimalsForSymbol(sym);
+            const n = Number(price);
+
+            if (!Number.isFinite(n)) return null;
+
+            const normalizedPrice = n.toFixed(dp);
+            return extractLastDigit(normalizedPrice);
+        }
+
+        // ============================================================
+        // 3. CONNECTION STABILITY PATCH
         // ============================================================
 
         let reconnectAllowed = true;
@@ -618,7 +696,7 @@
         });
 
         // ============================================================
-        // 3. LOCK SCREEN
+        // 4. LOCK SCREEN
         // ============================================================
 
         document.getElementById('btnUnlock').addEventListener('click', unlockApp);
@@ -643,7 +721,7 @@
         }
 
         // ============================================================
-        // 4. DERIV WEBSOCKET + CANDLE API (with reconnect flag)
+        // 5. DERIV WEBSOCKET + CANDLE API (with reconnect flag)
         // ============================================================
 
         function initWebSocket(isReconnect) {
@@ -658,7 +736,6 @@
             document.getElementById('liveTicker').textContent = '⏳ Connecting to Deriv WebSocket...';
             appState = 'COLLECTING';
 
-            // Close existing ws if any
             if (ws) {
                 try { ws.close(); } catch (e) {}
                 ws = null;
@@ -668,7 +745,6 @@
 
             ws.onopen = function() {
                 document.getElementById('liveTicker').textContent = '✅ Connected. Collecting ticks and candles...';
-                // Subscribe only if not already subscribed (or we just resubscribe)
                 MARKETS.forEach(sym => {
                     ws.send(JSON.stringify({ ticks: sym, subscribe: 1 }));
                 });
@@ -695,7 +771,14 @@
                         const tick = data.tick;
                         const sym = tick.symbol;
                         const price = tick.quote;
-                        const digit = extractLastDigit(price);
+                        // --- PATCHED: use getTickDigit with symbol ---
+                        const digit = getTickDigit(sym, price);
+
+                        if (digit === null || Number.isNaN(digit)) {
+                            console.warn('Bad digit parse', sym, price);
+                            return;
+                        }
+
                         if (tickBuffers[sym]) {
                             tickBuffers[sym].push({ price, digit });
                             if (tickBuffers[sym].length > 1000) tickBuffers[sym].shift();
@@ -729,13 +812,8 @@
             };
         }
 
-        function extractLastDigit(price) {
-            const str = price.toString().replace('.', '').replace('-', '');
-            return parseInt(str.charAt(str.length - 1));
-        }
-
         // ============================================================
-        // 5. GATHERING COMPLETE (unchanged)
+        // 6. GATHERING COMPLETE (unchanged)
         // ============================================================
         function checkGatheringComplete() {
             if (isGatheringComplete) return;
@@ -760,7 +838,7 @@
         }
 
         // ============================================================
-        // 6. UI HELPERS (unchanged)
+        // 7. UI HELPERS (unchanged)
         // ============================================================
         function renderMarketCards() {
             const grid = document.getElementById('marketGrid');
@@ -813,7 +891,7 @@
         }
 
         // ============================================================
-        // 7. FIND BEST MARKET (unchanged)
+        // 8. FIND BEST MARKET (unchanged)
         // ============================================================
         function findBestMarket() {
             let best = null;
@@ -860,7 +938,7 @@
         }
 
         // ============================================================
-        // 8. FREQUENCY CHART & MATRIX UPDATES (unchanged)
+        // 9. FREQUENCY CHART & MATRIX UPDATES (unchanged)
         // ============================================================
         function updateFrequencyChart(market) {
             const data = tickBuffers[market];
@@ -956,7 +1034,7 @@
         }
 
         // ============================================================
-        // 9. NEW DIGIT ENGINE — CLEAN FINAL VERSION
+        // 10. DIGIT ENGINE — CLEAN FINAL VERSION
         // ============================================================
 
         const SIGNAL_DELAY_MS = 10000;
@@ -1582,7 +1660,7 @@
         }
 
         // ============================================================
-        // 10. EVENT LISTENERS (unchanged)
+        // 11. EVENT LISTENERS (unchanged)
         // ============================================================
         document.getElementById('btnMatches').addEventListener('click', generateMatchesSignal);
         document.getElementById('btnDiffers').addEventListener('click', generateDiffersSignal);
@@ -1612,13 +1690,13 @@
         });
 
         // ============================================================
-        // 11. INITIAL SETUP
+        // 12. INITIAL SETUP
         // ============================================================
-        console.log('🔮 Embrace Solace v3.2 — Connection Stability Patch Applied');
+        console.log('🔮 Embrace Solace v3.2 — Zero‑Digit + Symbol Decimal Fix Applied');
         console.log(`📊 ${MARKETS.length} markets configured.`);
         showChartPlaceholder();
         showMatrixPlaceholder();
         updateSignalCardPlaceholder();
     </script>
 </body>
-                                         </html>
+                    </html>
