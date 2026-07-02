@@ -514,6 +514,7 @@
         const DERIV_WS = 'wss://ws.derivws.com/websockets/v3?app_id=1089';
         const REQUIRED_TICKS = 100;
         const ANALYSIS_WINDOW = 100;
+        const SIGNAL_DELAY_MS = 10000;
 
         const MARKETS = [
             'R_10', 'R_25', 'R_50', 'R_75', 'R_100',
@@ -1050,7 +1051,6 @@
             return { level: 'LOW', color: '#FF6B00' };
         }
 
-        // (latestWindow, frequency, entropyFreq, concentrationFreq, transitionRate are unchanged)
         function latestWindow(arr, size) {
             return arr.slice(-Math.min(size, arr.length));
         }
@@ -1232,8 +1232,48 @@
             return { status, entryScore, liveScore, drift };
         }
 
+        function norm(x) {
+            return 1 / (1 + Math.exp(-x));
+        }
+
         // ============================================================
-        // 11. POPUP HELPERS (unchanged)
+        // 11. SIGNAL LOADING MANAGEMENT (PATCH)
+        // ============================================================
+
+        const signalTimers = {};
+        const activeSignalLoaders = {};
+
+        function beginSignalLoading(key, message, subtitle) {
+            if (activeSignalLoaders[key]) {
+                console.warn(`Signal ${key} already loading.`);
+                return false;
+            }
+            activeSignalLoaders[key] = true;
+            renderLoadingPopup(message, subtitle);
+            return true;
+        }
+
+        function endSignalLoading(key) {
+            delete activeSignalLoaders[key];
+            if (signalTimers[key]) {
+                clearTimeout(signalTimers[key]);
+                delete signalTimers[key];
+            }
+            // Do NOT hide popup here—caller will hide after rendering result
+        }
+
+        function failSignalLoading(key, errorMsg) {
+            delete activeSignalLoaders[key];
+            if (signalTimers[key]) {
+                clearTimeout(signalTimers[key]);
+                delete signalTimers[key];
+            }
+            hidePopup();
+            alert(errorMsg);
+        }
+
+        // ============================================================
+        // 12. POPUP HELPERS (unchanged)
         // ============================================================
         function renderLoadingPopup(message, subtitle) {
             const popup = document.getElementById('signal-popup');
@@ -1269,250 +1309,286 @@
         }
 
         // ============================================================
-        // 12. SIGNAL GENERATORS (using relaxed scoring)
+        // 13. SIGNAL GENERATORS (PATCHED)
         // ============================================================
 
         function generateMatchesSignal() {
+            const key = 'md';
+            if (!beginSignalLoading(key, 'GENERATING MATCH SIGNAL...', '⏳ Analyzing latest ticks for Matches...')) return;
+
             const best = findBestMarket();
-            if (!best) { alert('⏳ No market has enough data yet.'); return; }
+            if (!best) return failSignalLoading(key, '⏳ No market has enough data yet.');
 
             const data = tickBuffers[best.market];
             if (!data || data.length < ANALYSIS_WINDOW) {
-                alert(`⏳ Need at least ${ANALYSIS_WINDOW} ticks.`);
-                return;
+                return failSignalLoading(key, `⏳ Need at least ${ANALYSIS_WINDOW} ticks.`);
             }
 
-            renderLoadingPopup('GENERATING MATCH SIGNAL...', '⏳ Analyzing latest ticks for Matches...');
-            setTimeout(() => {
-                const digits = data.map(t => t.digit);
-                const window = latestWindow(digits, ANALYSIS_WINDOW);
+            signalTimers[key] = setTimeout(() => {
+                try {
+                    const digits = data.map(t => t.digit);
+                    const window = latestWindow(digits, ANALYSIS_WINDOW);
 
-                let bestMatch = { digit: 0, score: -Infinity, features: null };
-                for (let d = 0; d < 10; d++) {
-                    const ms = matchScore(window, d, ANALYSIS_WINDOW);
-                    if (ms.score > bestMatch.score) bestMatch = { digit: d, score: ms.score, features: ms.features };
+                    let bestMatch = { digit: 0, score: -Infinity, features: null };
+                    for (let d = 0; d < 10; d++) {
+                        const ms = matchScore(window, d, ANALYSIS_WINDOW);
+                        if (ms.score > bestMatch.score) bestMatch = { digit: d, score: ms.score, features: ms.features };
+                    }
+
+                    currentSignal.match = { market: best.market, entropy: best.entropy, bestMatch };
+                    currentSignal.activeEngine = 'match';
+
+                    const q = signalQuality(bestMatch.score);
+                    const confidence = norm(bestMatch.score) * 100;
+
+                    setSignalCard(`
+                        <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
+                        <div class="big-digit matches">${bestMatch.digit}</div>
+                        <div class="entry-text"><strong>Match Digit: ${bestMatch.digit}</strong></div>
+                        <div class="action-text matches">MATCH ON ${bestMatch.digit}</div>
+                        <div class="confidence-row">
+                            <span class="confidence-label">${confidence.toFixed(1)}%</span>
+                            <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%;"></div></div>
+                        </div>
+                        <div class="bottom-row">
+                            <span>DFR: ${(bestMatch.features.f * 100).toFixed(1)}%</span>
+                            <span>Z: ${((bestMatch.features.f - 0.10) / 0.03).toFixed(2)}</span>
+                            <span>PERS: ${bestMatch.features.persist > 0.6 ? 'HIGH' : bestMatch.features.persist > 0.4 ? 'MEDIUM' : 'LOW'}</span>
+                        </div>
+                        <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
+                    `);
+
+                    document.getElementById('btnFindEntryMD').disabled = false;
+                    document.getElementById('btnFindEntryMD').className = 'btn-entry entry-default';
+                    document.getElementById('btnFindEntryMD').textContent = '🔍 FIND ENTRY';
+
+                    updateFrequencyChart(best.market);
+                    updateMatrixAndSeesaw(best.market);
+                    hidePopup();
+                } catch (e) {
+                    console.error(e);
+                    failSignalLoading(key, '❌ Failed to generate match signal.');
+                    return;
+                } finally {
+                    endSignalLoading(key);
                 }
-
-                currentSignal.match = { market: best.market, entropy: best.entropy, bestMatch };
-                currentSignal.activeEngine = 'match';
-
-                const q = signalQuality(bestMatch.score);
-                const confidence = norm(bestMatch.score) * 100;
-
-                setSignalCard(`
-                    <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
-                    <div class="big-digit matches">${bestMatch.digit}</div>
-                    <div class="entry-text"><strong>Match Digit: ${bestMatch.digit}</strong></div>
-                    <div class="action-text matches">MATCH ON ${bestMatch.digit}</div>
-                    <div class="confidence-row">
-                        <span class="confidence-label">${confidence.toFixed(1)}%</span>
-                        <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%;"></div></div>
-                    </div>
-                    <div class="bottom-row">
-                        <span>DFR: ${(bestMatch.features.f * 100).toFixed(1)}%</span>
-                        <span>Z: ${((bestMatch.features.f - 0.10) / 0.03).toFixed(2)}</span>
-                        <span>PERS: ${bestMatch.features.persist > 0.6 ? 'HIGH' : bestMatch.features.persist > 0.4 ? 'MEDIUM' : 'LOW'}</span>
-                    </div>
-                    <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
-                `);
-
-                document.getElementById('btnFindEntryMD').disabled = false;
-                document.getElementById('btnFindEntryMD').className = 'btn-entry entry-default';
-                document.getElementById('btnFindEntryMD').textContent = '🔍 FIND ENTRY';
-
-                updateFrequencyChart(best.market);
-                updateMatrixAndSeesaw(best.market);
-                hidePopup();
             }, SIGNAL_DELAY_MS);
         }
 
         function generateDiffersSignal() {
+            const key = 'df';
+            if (!beginSignalLoading(key, 'GENERATING DIFFER SIGNAL...', '⏳ Analyzing latest ticks for Differs...')) return;
+
             const best = findBestMarket();
-            if (!best) { alert('⏳ No market has enough data yet.'); return; }
+            if (!best) return failSignalLoading(key, '⏳ No market has enough data yet.');
 
             const data = tickBuffers[best.market];
             if (!data || data.length < ANALYSIS_WINDOW) {
-                alert(`⏳ Need at least ${ANALYSIS_WINDOW} ticks.`);
-                return;
+                return failSignalLoading(key, `⏳ Need at least ${ANALYSIS_WINDOW} ticks.`);
             }
 
-            renderLoadingPopup('GENERATING DIFFER SIGNAL...', '⏳ Analyzing latest ticks for Differs...');
-            setTimeout(() => {
-                const digits = data.map(t => t.digit);
-                const window = latestWindow(digits, ANALYSIS_WINDOW);
+            signalTimers[key] = setTimeout(() => {
+                try {
+                    const digits = data.map(t => t.digit);
+                    const window = latestWindow(digits, ANALYSIS_WINDOW);
 
-                let bestDiffer = { digit: 0, score: -Infinity, features: null };
-                for (let d = 0; d < 10; d++) {
-                    const ds = differScore(window, d, ANALYSIS_WINDOW);
-                    if (ds.score > bestDiffer.score) bestDiffer = { digit: d, score: ds.score, features: ds.features };
+                    let bestDiffer = { digit: 0, score: -Infinity, features: null };
+                    for (let d = 0; d < 10; d++) {
+                        const ds = differScore(window, d, ANALYSIS_WINDOW);
+                        if (ds.score > bestDiffer.score) bestDiffer = { digit: d, score: ds.score, features: ds.features };
+                    }
+
+                    currentSignal.differ = { market: best.market, entropy: best.entropy, bestDiffer };
+                    currentSignal.activeEngine = 'differ';
+
+                    const q = signalQuality(bestDiffer.score);
+                    const confidence = norm(bestDiffer.score) * 100;
+
+                    setSignalCard(`
+                        <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
+                        <div class="big-digit differs">${bestDiffer.digit}</div>
+                        <div class="entry-text"><strong>Differ Digit: ${bestDiffer.digit}</strong></div>
+                        <div class="action-text differs">DIFFER ON ${bestDiffer.digit}</div>
+                        <div class="confidence-row">
+                            <span class="confidence-label">${confidence.toFixed(1)}%</span>
+                            <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%;"></div></div>
+                        </div>
+                        <div class="bottom-row">
+                            <span>DFR: ${(bestDiffer.features.f * 100).toFixed(1)}%</span>
+                            <span>Z: ${((bestDiffer.features.f - 0.10) / 0.03).toFixed(2)}</span>
+                            <span>Trigger: DIFFER</span>
+                        </div>
+                        <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
+                    `);
+
+                    document.getElementById('btnFindEntryMD').disabled = false;
+                    document.getElementById('btnFindEntryMD').className = 'btn-entry entry-default';
+                    document.getElementById('btnFindEntryMD').textContent = '🔍 FIND ENTRY';
+
+                    updateFrequencyChart(best.market);
+                    updateMatrixAndSeesaw(best.market);
+                    hidePopup();
+                } catch (e) {
+                    console.error(e);
+                    failSignalLoading(key, '❌ Failed to generate differ signal.');
+                    return;
+                } finally {
+                    endSignalLoading(key);
                 }
-
-                currentSignal.differ = { market: best.market, entropy: best.entropy, bestDiffer };
-                currentSignal.activeEngine = 'differ';
-
-                const q = signalQuality(bestDiffer.score);
-                const confidence = norm(bestDiffer.score) * 100;
-
-                setSignalCard(`
-                    <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
-                    <div class="big-digit differs">${bestDiffer.digit}</div>
-                    <div class="entry-text"><strong>Differ Digit: ${bestDiffer.digit}</strong></div>
-                    <div class="action-text differs">DIFFER ON ${bestDiffer.digit}</div>
-                    <div class="confidence-row">
-                        <span class="confidence-label">${confidence.toFixed(1)}%</span>
-                        <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%;"></div></div>
-                    </div>
-                    <div class="bottom-row">
-                        <span>DFR: ${(bestDiffer.features.f * 100).toFixed(1)}%</span>
-                        <span>Z: ${((bestDiffer.features.f - 0.10) / 0.03).toFixed(2)}</span>
-                        <span>Trigger: DIFFER</span>
-                    </div>
-                    <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
-                `);
-
-                document.getElementById('btnFindEntryMD').disabled = false;
-                document.getElementById('btnFindEntryMD').className = 'btn-entry entry-default';
-                document.getElementById('btnFindEntryMD').textContent = '🔍 FIND ENTRY';
-
-                updateFrequencyChart(best.market);
-                updateMatrixAndSeesaw(best.market);
-                hidePopup();
             }, SIGNAL_DELAY_MS);
         }
 
         function generateOverUnderSignal() {
+            const key = 'ou';
+            if (!beginSignalLoading(key, 'GENERATING OVER/UNDER SIGNAL...', '⏳ Analyzing latest ticks for Over/Under...')) return;
+
             const best = findBestMarket();
-            if (!best) { alert('⏳ No market has enough data yet.'); return; }
+            if (!best) return failSignalLoading(key, '⏳ No market has enough data yet.');
 
             const data = tickBuffers[best.market];
             if (!data || data.length < ANALYSIS_WINDOW) {
-                alert(`⏳ Need at least ${ANALYSIS_WINDOW} ticks.`);
-                return;
+                return failSignalLoading(key, `⏳ Need at least ${ANALYSIS_WINDOW} ticks.`);
             }
 
-            renderLoadingPopup('GENERATING OVER/UNDER SIGNAL...', '⏳ Analyzing latest ticks for Over/Under...');
-            setTimeout(() => {
-                const digits = data.map(t => t.digit);
-                const window = latestWindow(digits, ANALYSIS_WINDOW);
+            signalTimers[key] = setTimeout(() => {
+                try {
+                    const digits = data.map(t => t.digit);
+                    const window = latestWindow(digits, ANALYSIS_WINDOW);
 
-                let bestSetup = null;
-                let bestScore = -Infinity;
-                const modes = ['OVER', 'UNDER'];
-                const barriers = { OVER: [0, 1, 2, 3], UNDER: [6, 7, 8, 9] };
+                    let bestSetup = null;
+                    let bestScore = -Infinity;
+                    const modes = ['OVER', 'UNDER'];
+                    const barriers = { OVER: [0, 1, 2, 3], UNDER: [6, 7, 8, 9] };
 
-                modes.forEach(mode => {
-                    barriers[mode].forEach(barrier => {
-                        const res = overUnderScore(window, mode, barrier, ANALYSIS_WINDOW);
-                        if (res.score > bestScore) bestScore = res.score, bestSetup = { mode, barrier, score: res.score, features: res.features };
+                    modes.forEach(mode => {
+                        barriers[mode].forEach(barrier => {
+                            const res = overUnderScore(window, mode, barrier, ANALYSIS_WINDOW);
+                            if (res.score > bestScore) bestScore = res.score, bestSetup = { mode, barrier, score: res.score, features: res.features };
+                        });
                     });
-                });
 
-                if (!bestSetup) { hidePopup(); alert('❌ No Over/Under setup found.'); return; }
+                    if (!bestSetup) { failSignalLoading(key, '❌ No Over/Under setup found.'); return; }
 
-                currentSignal.ou = { market: best.market, entropy: best.entropy, bestSetup };
-                currentSignal.activeEngine = 'ou';
+                    currentSignal.ou = { market: best.market, entropy: best.entropy, bestSetup };
+                    currentSignal.activeEngine = 'ou';
 
-                const q = signalQuality(bestSetup.score);
-                const confidence = norm(bestSetup.score) * 100;
+                    const q = signalQuality(bestSetup.score);
+                    const confidence = norm(bestSetup.score) * 100;
 
-                setOUCard(`
-                    <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
-                    <div class="big-digit" style="color:var(--neon-gold);">${bestSetup.barrier}</div>
-                    <div class="entry-text"><strong>${bestSetup.mode} ${bestSetup.barrier}</strong></div>
-                    <div class="action-text" style="color:var(--neon-gold);">${bestSetup.mode} ${bestSetup.barrier}</div>
-                    <div class="confidence-row">
-                        <span class="confidence-label" style="color:${q.color};">${confidence.toFixed(1)}%</span>
-                        <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%; background: linear-gradient(90deg, #FF6B00, ${q.color});"></div></div>
-                    </div>
-                    <div class="bottom-row">
-                        <span>Observed: ${(bestSetup.features.mass * 100).toFixed(1)}%</span>
-                        <span>Edge: ${((bestSetup.features.mass - 0.5) * 100).toFixed(1)}%</span>
-                    </div>
-                    <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
-                `);
+                    setOUCard(`
+                        <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
+                        <div class="big-digit" style="color:var(--neon-gold);">${bestSetup.barrier}</div>
+                        <div class="entry-text"><strong>${bestSetup.mode} ${bestSetup.barrier}</strong></div>
+                        <div class="action-text" style="color:var(--neon-gold);">${bestSetup.mode} ${bestSetup.barrier}</div>
+                        <div class="confidence-row">
+                            <span class="confidence-label" style="color:${q.color};">${confidence.toFixed(1)}%</span>
+                            <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%; background: linear-gradient(90deg, #FF6B00, ${q.color});"></div></div>
+                        </div>
+                        <div class="bottom-row">
+                            <span>Observed: ${(bestSetup.features.mass * 100).toFixed(1)}%</span>
+                            <span>Edge: ${((bestSetup.features.mass - 0.5) * 100).toFixed(1)}%</span>
+                        </div>
+                        <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
+                    `);
 
-                document.getElementById('ouMarket').textContent = best.market;
-                document.getElementById('ouConfidenceValue').textContent = `${confidence.toFixed(1)}%`;
-                document.getElementById('ouEdge').textContent = `${((bestSetup.features.mass - 0.5) * 100).toFixed(1)}%`;
-                document.getElementById('ouObserved').textContent = `${(bestSetup.features.mass * 100).toFixed(1)}%`;
+                    document.getElementById('ouMarket').textContent = best.market;
+                    document.getElementById('ouConfidenceValue').textContent = `${confidence.toFixed(1)}%`;
+                    document.getElementById('ouEdge').textContent = `${((bestSetup.features.mass - 0.5) * 100).toFixed(1)}%`;
+                    document.getElementById('ouObserved').textContent = `${(bestSetup.features.mass * 100).toFixed(1)}%`;
 
-                document.getElementById('btnFindEntryOU').disabled = false;
-                document.getElementById('btnFindEntryOU').className = 'btn-entry entry-default';
-                document.getElementById('btnFindEntryOU').textContent = '🔍 FIND ENTRY';
+                    document.getElementById('btnFindEntryOU').disabled = false;
+                    document.getElementById('btnFindEntryOU').className = 'btn-entry entry-default';
+                    document.getElementById('btnFindEntryOU').textContent = '🔍 FIND ENTRY';
 
-                updateFrequencyChart(best.market);
-                updateMatrixAndSeesaw(best.market);
-                hidePopup();
+                    updateFrequencyChart(best.market);
+                    updateMatrixAndSeesaw(best.market);
+                    hidePopup();
+                } catch (e) {
+                    console.error(e);
+                    failSignalLoading(key, '❌ Failed to generate Over/Under signal.');
+                    return;
+                } finally {
+                    endSignalLoading(key);
+                }
             }, SIGNAL_DELAY_MS);
         }
 
         function generateEvenOddSignal() {
+            const key = 'eo';
+            if (!beginSignalLoading(key, 'GENERATING EVEN/ODD SIGNAL...', '⏳ Analyzing latest ticks for Even/Odd...')) return;
+
             const best = findBestMarket();
-            if (!best) { alert('⏳ No market has enough data yet.'); return; }
+            if (!best) return failSignalLoading(key, '⏳ No market has enough data yet.');
 
             const data = tickBuffers[best.market];
             if (!data || data.length < ANALYSIS_WINDOW) {
-                alert(`⏳ Need at least ${ANALYSIS_WINDOW} ticks.`);
-                return;
+                return failSignalLoading(key, `⏳ Need at least ${ANALYSIS_WINDOW} ticks.`);
             }
 
-            renderLoadingPopup('GENERATING EVEN/ODD SIGNAL...', '⏳ Analyzing latest ticks for Even/Odd...');
-            setTimeout(() => {
-                const digits = data.map(t => t.digit);
-                const window = latestWindow(digits, ANALYSIS_WINDOW);
+            signalTimers[key] = setTimeout(() => {
+                try {
+                    const digits = data.map(t => t.digit);
+                    const window = latestWindow(digits, ANALYSIS_WINDOW);
 
-                const evenRes = evenOddScore(window, 'EVEN', ANALYSIS_WINDOW);
-                const oddRes = evenOddScore(window, 'ODD', ANALYSIS_WINDOW);
+                    const evenRes = evenOddScore(window, 'EVEN', ANALYSIS_WINDOW);
+                    const oddRes = evenOddScore(window, 'ODD', ANALYSIS_WINDOW);
 
-                const bestSide = evenRes.score > oddRes.score ? 'EVEN' : 'ODD';
-                const bestScore = Math.max(evenRes.score, oddRes.score);
-                const bestFeatures = evenRes.score > oddRes.score ? evenRes.features : oddRes.features;
+                    const bestSide = evenRes.score > oddRes.score ? 'EVEN' : 'ODD';
+                    const bestScore = Math.max(evenRes.score, oddRes.score);
+                    const bestFeatures = evenRes.score > oddRes.score ? evenRes.features : oddRes.features;
 
-                currentSignal.eo = {
-                    market: best.market,
-                    entropy: best.entropy,
-                    bestSide,
-                    bestScore,
-                    bestFeatures
-                };
-                currentSignal.activeEngine = 'eo';
+                    currentSignal.eo = {
+                        market: best.market,
+                        entropy: best.entropy,
+                        bestSide,
+                        bestScore,
+                        bestFeatures
+                    };
+                    currentSignal.activeEngine = 'eo';
 
-                const q = signalQuality(bestScore);
-                const confidence = norm(bestScore) * 100;
+                    const q = signalQuality(bestScore);
+                    const confidence = norm(bestScore) * 100;
 
-                setEOCard(`
-                    <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
-                    <div class="big-digit" style="color:${bestSide === 'EVEN' ? '#00BFFF' : '#FF6B00'};">${bestSide}</div>
-                    <div class="entry-text"><strong>Side: ${bestSide}</strong></div>
-                    <div class="action-text" style="color:${bestSide === 'EVEN' ? '#00BFFF' : '#FF6B00'};">${bestSide}</div>
-                    <div class="confidence-row">
-                        <span class="confidence-label" style="color:${q.color};">${confidence.toFixed(1)}%</span>
-                        <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%; background: linear-gradient(90deg, #FF6B00, ${q.color});"></div></div>
-                    </div>
-                    <div class="bottom-row">
-                        <span>PMR: ${bestScore.toFixed(3)}</span>
-                        <span>Z: ${((bestScore - 0.5) / 0.05).toFixed(2)}</span>
-                    </div>
-                    <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
-                `);
+                    setEOCard(`
+                        <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
+                        <div class="big-digit" style="color:${bestSide === 'EVEN' ? '#00BFFF' : '#FF6B00'};">${bestSide}</div>
+                        <div class="entry-text"><strong>Side: ${bestSide}</strong></div>
+                        <div class="action-text" style="color:${bestSide === 'EVEN' ? '#00BFFF' : '#FF6B00'};">${bestSide}</div>
+                        <div class="confidence-row">
+                            <span class="confidence-label" style="color:${q.color};">${confidence.toFixed(1)}%</span>
+                            <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%; background: linear-gradient(90deg, #FF6B00, ${q.color});"></div></div>
+                        </div>
+                        <div class="bottom-row">
+                            <span>PMR: ${bestScore.toFixed(3)}</span>
+                            <span>Z: ${((bestScore - 0.5) / 0.05).toFixed(2)}</span>
+                        </div>
+                        <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
+                    `);
 
-                document.getElementById('eoMarket').textContent = best.market;
-                document.getElementById('eoConfidenceValue').textContent = `${confidence.toFixed(1)}%`;
-                document.getElementById('eoPMR').textContent = bestScore.toFixed(3);
-                document.getElementById('eoZScore').textContent = ((bestScore - 0.5) / 0.05).toFixed(2);
+                    document.getElementById('eoMarket').textContent = best.market;
+                    document.getElementById('eoConfidenceValue').textContent = `${confidence.toFixed(1)}%`;
+                    document.getElementById('eoPMR').textContent = bestScore.toFixed(3);
+                    document.getElementById('eoZScore').textContent = ((bestScore - 0.5) / 0.05).toFixed(2);
 
-                document.getElementById('btnFindEntryEO').disabled = false;
-                document.getElementById('btnFindEntryEO').className = 'btn-entry entry-default';
-                document.getElementById('btnFindEntryEO').textContent = '🔍 FIND ENTRY';
+                    document.getElementById('btnFindEntryEO').disabled = false;
+                    document.getElementById('btnFindEntryEO').className = 'btn-entry entry-default';
+                    document.getElementById('btnFindEntryEO').textContent = '🔍 FIND ENTRY';
 
-                updateFrequencyChart(best.market);
-                updateMatrixAndSeesaw(best.market);
-                hidePopup();
+                    updateFrequencyChart(best.market);
+                    updateMatrixAndSeesaw(best.market);
+                    hidePopup();
+                } catch (e) {
+                    console.error(e);
+                    failSignalLoading(key, '❌ Failed to generate Even/Odd signal.');
+                    return;
+                } finally {
+                    endSignalLoading(key);
+                }
             }, SIGNAL_DELAY_MS);
         }
 
         // ============================================================
-        // 13. FIND ENTRY (using updated confirmEntry)
+        // 14. FIND ENTRY (unchanged, uses updated confirmEntry)
         // ============================================================
 
         function findEntryForMatchesDiffers() {
@@ -1640,7 +1716,7 @@
         }
 
         // ============================================================
-        // 14. EVENT LISTENERS (unchanged)
+        // 15. EVENT LISTENERS (unchanged)
         // ============================================================
         document.getElementById('btnMatches').addEventListener('click', generateMatchesSignal);
         document.getElementById('btnDiffers').addEventListener('click', generateDiffersSignal);
@@ -1670,9 +1746,9 @@
         });
 
         // ============================================================
-        // 15. INITIAL SETUP
+        // 16. INITIAL SETUP
         // ============================================================
-        console.log('🔮 Embrace Solace v3.2 — Relaxed Scoring Block Applied');
+        console.log('🔮 Embrace Solace v3.2 — Signal Loading Management Patch Applied');
         console.log(`📊 ${MARKETS.length} markets configured.`);
         showChartPlaceholder();
         showMatrixPlaceholder();
