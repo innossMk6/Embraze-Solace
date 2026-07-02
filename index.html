@@ -1,1758 +1,981 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Embrace Solace — Full App</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
-    <style>
-        /* ============================================
-           GLOBAL RESET & BASE (unchanged)
-           ============================================ */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --bg-deep: #0B0B1A;
-            --bg-dark: #0D0B1A;
-            --bg-card: rgba(255,255,255,0.04);
-            --neon-cyan: #00FFF0;
-            --neon-purple: #A855F7;
-            --neon-orange: #FF6B00;
-            --neon-green: #00FFAA;
-            --neon-red: #FF4757;
-            --neon-gold: #FFD700;
-            --neon-blue: #00BFFF;
-            --text-white: #FFFFFF;
-            --text-grey: rgba(255,255,255,0.6);
-        }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: var(--text-white); min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 12px; }
-        #app { width: 100%; max-width: 480px; background: var(--bg-dark); border-radius: 32px; overflow: hidden; position: relative; box-shadow: 0 0 60px rgba(168,85,247,0.1); padding: 20px 16px 30px; min-height: 100vh; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Embrace Solace — Full App</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================
+GLOBAL RESET & BASE (unchanged)
+============================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+--bg-deep: #0B0B1A;
+--bg-dark: #0D0B1A;
+--bg-card: rgba(255,255,255,0.04);
+--neon-cyan: #00FFF0;
+--neon-purple: #A855F7;
+--neon-orange: #FF6B00;
+--neon-green: #00FFAA;
+--neon-red: #FF4757;
+--neon-gold: #FFD700;
+--neon-blue: #00BFFF;
+--text-white: #FFFFFF;
+--text-grey: rgba(255,255,255,0.6);
+}
+body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: var(--text-white); min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 12px; }
+#app { width: 100%; max-width: 480px; background: var(--bg-dark); border-radius: 32px; overflow: hidden; position: relative; box-shadow: 0 0 60px rgba(168,85,247,0.1); padding: 20px 16px 30px; min-height: 100vh; }
 
-        /* ============================================
-           LOCK SCREEN (unchanged)
-           ============================================ */
-        #lock-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(ellipse at center, #1A0B2E 0%, #0B0B1A 100%);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 1000; padding: 32px 24px; text-align: center;
-            transition: opacity 0.8s ease, transform 0.8s ease;
-        }
-        #lock-overlay.hidden { opacity: 0; transform: scale(1.05); pointer-events: none; }
-        .lock-logo {
-            font-family: 'Orbitron', sans-serif; font-size: 38px; font-weight: 900;
-            background: linear-gradient(135deg, #00FFF0, #A855F7, #00FFF0);
-            background-size: 200% 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            animation: shimmerLogo 3s ease-in-out infinite alternate;
-        }
-        @keyframes shimmerLogo { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
-        .lock-subtitle { font-size: 11px; letter-spacing: 6px; color: var(--neon-purple); margin-top: 4px; opacity: 0.8; }
-        .lock-tagline { font-size: 15px; color: var(--text-grey); margin-top: 12px; }
-        .lock-description {
-            font-size: 14px; line-height: 1.7; color: var(--text-grey); max-width: 340px;
-            margin: 18px auto 24px; background: var(--bg-card); padding: 16px 20px;
-            border-radius: 16px; border: 1px solid rgba(255,255,255,0.04);
-        }
-        .lock-input {
-            width: 100%; max-width: 300px; padding: 16px 20px; background: rgba(255,255,255,0.05);
-            border: 2px solid rgba(168,85,247,0.3); border-radius: 14px; color: #fff;
-            font-size: 18px; letter-spacing: 8px; text-align: center; outline: none;
-        }
-        .lock-input:focus { border-color: var(--neon-purple); box-shadow: 0 0 30px rgba(168,85,247,0.15); }
-        .lock-error { color: var(--neon-red); font-size: 13px; min-height: 24px; opacity: 0; transition: opacity 0.3s; }
-        .lock-error.show { opacity: 1; }
-        .btn-unlock {
-            width: 100%; max-width: 300px; padding: 16px; background: linear-gradient(135deg, var(--neon-purple), #7C3AED);
-            border: none; border-radius: 14px; color: #fff; font-size: 18px; font-weight: 700;
-            letter-spacing: 2px; cursor: pointer; box-shadow: 0 0 30px rgba(168,85,247,0.2); transition: all 0.3s;
-        }
-        .btn-unlock:active { transform: scale(0.96); }
-        .lock-footer { margin-top: 24px; font-size: 12px; color: var(--text-grey); }
-        .lock-footer .contact { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
-        .lock-footer .disclaimer { font-size: 11px; color: rgba(255,255,255,0.25); margin-top: 8px; }
+/* ============================================
+LOCK SCREEN (unchanged)
+============================================ */
+#lock-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at center, #1A0B2E 0%, #0B0B1A 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; padding: 32px 24px; text-align: center; transition: opacity 0.8s ease, transform 0.8s ease; }
+#lock-overlay.hidden { opacity: 0; transform: scale(1.05); pointer-events: none; }
+.lock-logo { font-family: 'Orbitron', sans-serif; font-size: 38px; font-weight: 900; background: linear-gradient(135deg, #00FFF0, #A855F7, #00FFF0); background-size: 200% 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shimmerLogo 3s ease-in-out infinite alternate; }
+@keyframes shimmerLogo { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+.lock-subtitle { font-size: 11px; letter-spacing: 6px; color: var(--neon-purple); margin-top: 4px; opacity: 0.8; }
+.lock-tagline { font-size: 15px; color: var(--text-grey); margin-top: 12px; }
+.lock-description { font-size: 14px; line-height: 1.7; color: var(--text-grey); max-width: 340px; margin: 18px auto 24px; background: var(--bg-card); padding: 16px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.04); }
+.lock-input { width: 100%; max-width: 300px; padding: 16px 20px; background: rgba(255,255,255,0.05); border: 2px solid rgba(168,85,247,0.3); border-radius: 14px; color: #fff; font-size: 18px; letter-spacing: 8px; text-align: center; outline: none; }
+.lock-input:focus { border-color: var(--neon-purple); box-shadow: 0 0 30px rgba(168,85,247,0.15); }
+.lock-error { color: var(--neon-red); font-size: 13px; min-height: 24px; opacity: 0; transition: opacity 0.3s; }
+.lock-error.show { opacity: 1; }
+.btn-unlock { width: 100%; max-width: 300px; padding: 16px; background: linear-gradient(135deg, var(--neon-purple), #7C3AED); border: none; border-radius: 14px; color: #fff; font-size: 18px; font-weight: 700; letter-spacing: 2px; cursor: pointer; box-shadow: 0 0 30px rgba(168,85,247,0.2); transition: all 0.3s; }
+.btn-unlock:active { transform: scale(0.96); }
+.lock-footer { margin-top: 24px; font-size: 12px; color: var(--text-grey); }
+.lock-footer .contact { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.lock-footer .disclaimer { font-size: 11px; color: rgba(255,255,255,0.25); margin-top: 8px; }
 
-        /* ============================================
-           MAIN APP (unchanged)
-           ============================================ */
-        .section { margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.04); }
-        .section:last-child { border-bottom: none; }
-        .section-title { font-size: 18px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+/* ============================================
+MAIN APP (unchanged)
+============================================ */
+.section { margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.section:last-child { border-bottom: none; }
+.section-title { font-size: 18px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.app-title { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 700; color: var(--neon-cyan); text-shadow: 0 0 20px rgba(0,255,240,0.15); }
+.app-title span { color: var(--neon-purple); font-weight: 400; }
+.btn-scan { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--neon-purple), #6D28D9); border: none; border-radius: 14px; color: #fff; font-size: 17px; font-weight: 700; letter-spacing: 1px; cursor: pointer; box-shadow: 0 0 30px rgba(168,85,247,0.15); transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn-scan:active { transform: scale(0.97); }
+.btn-scan.ready { background: linear-gradient(135deg, var(--neon-green), #00CC88); box-shadow: 0 0 30px rgba(0,255,170,0.2); }
+.market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; margin: 10px 0; }
+.market-card { background: var(--bg-card); border-radius: 10px; padding: 8px 4px; text-align: center; font-size: 11px; border: 1px solid rgba(255,255,255,0.04); transition: all 0.3s; }
+.market-card .sym { font-weight: 600; font-size: 12px; }
+.market-card .stat { font-size: 10px; color: var(--text-grey); }
+.market-card .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.market-card .dot.green { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+.market-card .dot.yellow { background: #FFD700; box-shadow: 0 0 10px #FFD700; }
+.market-card .dot.grey { background: #555; }
+.market-card.ready { border-color: rgba(0,255,170,0.2); box-shadow: 0 0 15px rgba(0,255,170,0.05); }
+.live-ticker { background: var(--bg-card); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: var(--text-grey); border: 1px solid rgba(255,255,255,0.04); font-family: 'Inter', monospace; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live-ticker strong { color: var(--neon-cyan); }
+#gathering-banner { display: none; background: rgba(0,255,170,0.08); border: 1px solid var(--neon-green); border-radius: 14px; padding: 12px 16px; margin: 6px 0 12px; text-align: center; color: var(--neon-green); font-weight: 600; font-size: 15px; box-shadow: 0 0 30px rgba(0,255,170,0.05); animation: fadeInBanner 0.6s ease; }
+#gathering-banner.show { display: block; }
+@keyframes fadeInBanner { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .app-title { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 700; color: var(--neon-cyan); text-shadow: 0 0 20px rgba(0,255,240,0.15); }
-        .app-title span { color: var(--neon-purple); font-weight: 400; }
+/* ============================================
+FREQUENCY CHART (unchanged)
+============================================ */
+.chart-container { background: var(--bg-card); border-radius: 16px; padding: 16px; border: 1px solid rgba(255,255,255,0.04); }
+.chart-bars { display: flex; align-items: flex-end; justify-content: space-between; height: 140px; padding-bottom: 20px; position: relative; }
+.chart-bars .bar-group { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.chart-bars .bar { width: 18px; border-radius: 3px 3px 0 0; min-height: 4px; transition: height 0.4s ease; }
+.chart-bars .bar-label { font-size: 10px; color: var(--text-grey); margin-top: 4px; }
+.chart-baseline { position: absolute; left: 0; right: 0; top: 80%; border-top: 2px dashed rgba(255,255,255,0.1); pointer-events: none; }
+.chart-baseline-label { position: absolute; right: 0; top: -8px; font-size: 9px; color: rgba(255,255,255,0.2); }
+.chart-exceedance { position: absolute; top: 0; right: 0; background: rgba(255,107,0,0.12); border: 1px solid var(--neon-orange); border-radius: 16px; padding: 2px 10px; font-size: 10px; color: var(--neon-orange); }
+.chart-placeholder { display: flex; justify-content: center; align-items: center; height: 140px; color: var(--text-grey); font-size: 14px; opacity: 0.5; flex-direction: column; }
+.chart-placeholder span { font-size: 12px; opacity: 0.5; margin-top: 4px; }
 
-        .btn-scan {
-            width: 100%; padding: 14px; background: linear-gradient(135deg, var(--neon-purple), #6D28D9);
-            border: none; border-radius: 14px; color: #fff; font-size: 17px; font-weight: 700;
-            letter-spacing: 1px; cursor: pointer; box-shadow: 0 0 30px rgba(168,85,247,0.15);
-            transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-        .btn-scan:active { transform: scale(0.97); }
-        .btn-scan.ready { background: linear-gradient(135deg, var(--neon-green), #00CC88); box-shadow: 0 0 30px rgba(0,255,170,0.2); }
+/* ============================================
+MATRIX (unchanged)
+============================================ */
+.matrix-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; background: var(--bg-card); border-radius: 12px; padding: 6px; border: 1px solid rgba(255,255,255,0.04); }
+.matrix-cell { aspect-ratio: 1; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 8px; color: rgba(255,255,255,0.3); transition: all 0.3s; }
+.matrix-cell.highlight-block { background: rgba(255,71,87,0.4); border: 1px solid var(--neon-red); color: #fff; }
+.matrix-cell.highlight-trigger { background: rgba(0,255,170,0.25); border: 1px solid var(--neon-green); color: #fff; }
+.matrix-legend { display: flex; justify-content: center; gap: 20px; font-size: 11px; color: var(--text-grey); margin-top: 8px; }
+.seesaw-container { display: flex; align-items: center; justify-content: center; gap: 16px; background: var(--bg-card); border-radius: 14px; padding: 14px; margin-top: 12px; border: 1px solid rgba(255,255,255,0.04); }
+.seesaw-item { text-align: center; }
+.seesaw-item .digit { font-size: 28px; font-weight: 700; }
+.seesaw-item .digit.top { color: var(--neon-orange); }
+.seesaw-item .digit.bottom { color: var(--neon-cyan); }
+.seesaw-item .pct { font-size: 13px; color: var(--text-grey); }
+.seesaw-line { flex: 1; height: 2px; background: linear-gradient(90deg, var(--neon-orange), var(--neon-cyan)); position: relative; opacity: 0.4; }
+.seesaw-line::after { content: '⟷'; position: absolute; left: 50%; top: -12px; transform: translateX(-50%); color: var(--text-grey); font-size: 16px; }
+.seesaw-label { text-align: center; font-size: 11px; color: var(--text-grey); margin-top: 6px; }
+.matrix-placeholder { display: flex; justify-content: center; align-items: center; padding: 20px 0; color: var(--text-grey); font-size: 14px; opacity: 0.5; }
 
-        .market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; margin: 10px 0; }
-        .market-card { background: var(--bg-card); border-radius: 10px; padding: 8px 4px; text-align: center; font-size: 11px; border: 1px solid rgba(255,255,255,0.04); transition: all 0.3s; }
-        .market-card .sym { font-weight: 600; font-size: 12px; }
-        .market-card .stat { font-size: 10px; color: var(--text-grey); }
-        .market-card .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
-        .market-card .dot.green { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
-        .market-card .dot.yellow { background: #FFD700; box-shadow: 0 0 10px #FFD700; }
-        .market-card .dot.grey { background: #555; }
-        .market-card.ready { border-color: rgba(0,255,170,0.2); box-shadow: 0 0 15px rgba(0,255,170,0.05); }
+/* ============================================
+ORACLE — MATCHES / DIFFERS (unchanged)
+============================================ */
+.oracle-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 8px 0 12px; }
+.oracle-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; color: #fff; }
+.oracle-btn:active { transform: scale(0.95); }
+.oracle-btn.matches { background: linear-gradient(135deg, #00CC88, var(--neon-green)); box-shadow: 0 0 30px rgba(0,255,170,0.15); }
+.oracle-btn.differs { background: linear-gradient(135deg, #CC2244, var(--neon-red)); box-shadow: 0 0 30px rgba(255,71,87,0.15); }
+.oracle-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.orb { width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #8E2DE2, #4A00E0); box-shadow: 0 0 50px rgba(74,0,224,0.3), inset 0 0 30px rgba(0,255,240,0.05); animation: orbPulse 3s ease-in-out infinite; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; color: rgba(255,255,255,0.15); }
+@keyframes orbPulse { 0%, 100% { box-shadow: 0 0 50px rgba(74,0,224,0.3); } 50% { box-shadow: 0 0 80px rgba(74,0,224,0.5), 0 0 120px rgba(0,255,240,0.05); } }
+.signal-card { background: var(--bg-card); border-radius: 16px; padding: 16px; border: 1px solid rgba(0,255,240,0.08); backdrop-filter: blur(10px); margin-top: 10px; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
+.signal-card .row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-grey); }
+.signal-card .big-digit { font-family: 'Orbitron', sans-serif; font-size: 56px; font-weight: 900; text-align: center; color: var(--neon-cyan); text-shadow: 0 0 40px rgba(0,255,240,0.15); line-height: 1; margin: 2px 0; }
+.signal-card .big-digit.differs { color: var(--neon-red); }
+.signal-card .big-digit.matches { color: var(--neon-green); }
+.signal-card .entry-text { text-align: center; font-size: 14px; color: var(--text-grey); margin: 2px 0 4px; }
+.signal-card .entry-text strong { color: var(--neon-cyan); }
+.signal-card .action-text { text-align: center; font-size: 15px; font-weight: 600; color: var(--neon-green); margin-bottom: 6px; }
+.signal-card .action-text.differs { color: var(--neon-red); }
+.signal-card .confidence-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+.signal-card .confidence-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+.signal-card .confidence-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--neon-orange), var(--neon-green)); transition: width 1.2s ease; width: 0%; }
+.signal-card .confidence-label { font-size: 14px; font-weight: 600; color: #fff; min-width: 44px; }
+.signal-card .bottom-row { display: flex; flex-wrap: wrap; gap: 4px; justify-content: space-between; font-size: 12px; color: var(--text-grey); margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.04); }
+.signal-card .key-status { display: flex; gap: 6px; justify-content: center; font-size: 11px; color: var(--text-grey); margin: 4px 0; }
+.signal-card .key-status span { padding: 0 2px; }
+.signal-card .confidence-level { text-align: center; font-size: 11px; margin-top: 4px; }
+.signal-card .placeholder-text { text-align: center; color: var(--text-grey); font-size: 14px; opacity: 0.5; }
 
-        .live-ticker { background: var(--bg-card); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: var(--text-grey); border: 1px solid rgba(255,255,255,0.04); font-family: 'Inter', monospace; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .live-ticker strong { color: var(--neon-cyan); }
+.btn-entry { padding: 10px 18px; border: none; border-radius: 10px; color: #fff; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; width: 100%; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-entry:active { transform: scale(0.96); }
+.btn-entry:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-entry.entry-finding { background: linear-gradient(135deg, #FFD700, #CC8800); box-shadow: 0 0 20px rgba(255,215,0,0.2); pointer-events: none; }
+.btn-entry.entry-finding .gear { display: inline-block; animation: spin 1.2s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.btn-entry.entry-confirmed { background: linear-gradient(135deg, var(--neon-green), #00CC88); box-shadow: 0 0 30px rgba(0,255,170,0.3); pointer-events: auto; }
+.btn-entry.entry-hold { background: linear-gradient(135deg, var(--neon-red), #CC2244); box-shadow: 0 0 30px rgba(255,71,87,0.2); pointer-events: auto; }
+.btn-entry.entry-default { background: linear-gradient(135deg, var(--neon-cyan), #0088AA); box-shadow: 0 0 20px rgba(0,255,240,0.15); }
 
-        #gathering-banner { display: none; background: rgba(0,255,170,0.08); border: 1px solid var(--neon-green); border-radius: 14px; padding: 12px 16px; margin: 6px 0 12px; text-align: center; color: var(--neon-green); font-weight: 600; font-size: 15px; box-shadow: 0 0 30px rgba(0,255,170,0.05); animation: fadeInBanner 0.6s ease; }
-        #gathering-banner.show { display: block; }
-        @keyframes fadeInBanner { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+/* ============================================
+OVER / UNDER & EVEN / ODD — FETCH SIGNAL
+============================================ */
+.fetch-row { display: flex; justify-content: center; margin: 8px 0 12px; }
+.btn-fetch { padding: 14px 32px; background: linear-gradient(135deg, var(--neon-gold), #CC8800); border: none; border-radius: 14px; color: #fff; font-family: 'Inter', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 30px rgba(255,215,0,0.15); width: 100%; }
+.btn-fetch:active { transform: scale(0.96); }
+.btn-fetch:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-fetch.evenodd { background: linear-gradient(135deg, var(--neon-purple), #6D28D9); box-shadow: 0 0 30px rgba(168,85,247,0.15); }
+.btn-fetch.hl { background: linear-gradient(135deg, var(--neon-blue), #0066CC); box-shadow: 0 0 30px rgba(0,191,255,0.15); }
+.btn-fetch.rf { background: linear-gradient(135deg, var(--neon-orange), #CC5500); box-shadow: 0 0 30px rgba(255,107,0,0.15); }
+.btn-fetch.acc { background: linear-gradient(135deg, var(--neon-purple), #4A00E0); box-shadow: 0 0 30px rgba(168,85,247,0.15); }
+.ou-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.ou-stat { background: var(--bg-card); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.04); }
+.ou-stat .label { font-size: 10px; color: var(--text-grey); }
+.ou-stat .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
 
-        /* ============================================
-           FREQUENCY CHART (unchanged)
-           ============================================ */
-        .chart-container { background: var(--bg-card); border-radius: 16px; padding: 16px; border: 1px solid rgba(255,255,255,0.04); }
-        .chart-bars { display: flex; align-items: flex-end; justify-content: space-between; height: 140px; padding-bottom: 20px; position: relative; }
-        .chart-bars .bar-group { display: flex; flex-direction: column; align-items: center; flex: 1; }
-        .chart-bars .bar { width: 18px; border-radius: 3px 3px 0 0; min-height: 4px; transition: height 0.4s ease; }
-        .chart-bars .bar-label { font-size: 10px; color: var(--text-grey); margin-top: 4px; }
-        .chart-baseline { position: absolute; left: 0; right: 0; top: 80%; border-top: 2px dashed rgba(255,255,255,0.1); pointer-events: none; }
-        .chart-baseline-label { position: absolute; right: 0; top: -8px; font-size: 9px; color: rgba(255,255,255,0.2); }
-        .chart-exceedance { position: absolute; top: 0; right: 0; background: rgba(255,107,0,0.12); border: 1px solid var(--neon-orange); border-radius: 16px; padding: 2px 10px; font-size: 10px; color: var(--neon-orange); }
-        .chart-placeholder { display: flex; justify-content: center; align-items: center; height: 140px; color: var(--text-grey); font-size: 14px; opacity: 0.5; flex-direction: column; }
-        .chart-placeholder span { font-size: 12px; opacity: 0.5; margin-top: 4px; }
+/* ============================================
+SIGNAL POPUP (unchanged)
+============================================ */
+#signal-popup { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(11,11,26,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: none; align-items: center; justify-content: center; z-index: 500; padding: 24px; flex-direction: column; }
+#signal-popup.active { display: flex; }
+#signal-popup .popup-card { background: var(--bg-dark); border-radius: 24px; padding: 24px; max-width: 400px; width: 100%; border: 1px solid rgba(0,255,240,0.1); box-shadow: 0 0 60px rgba(0,255,240,0.05); position: relative; }
+#signal-popup .popup-card .btn-back { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--text-grey); font-size: 24px; cursor: pointer; transition: color 0.3s; }
+#signal-popup .popup-card .btn-back:hover { color: #fff; }
+.popup-shooting { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 499; overflow: hidden; display: none; }
+.popup-shooting.active { display: block; }
+.shooting-star { position: absolute; width: 100px; height: 2px; background: linear-gradient(90deg, transparent, var(--neon-cyan)); border-radius: 2px; opacity: 0; animation: shootStar 2.5s linear infinite; }
+.shooting-star:nth-child(1) { top: 10%; left: -10%; animation-delay: 0.2s; }
+.shooting-star:nth-child(2) { top: 30%; left: -20%; animation-delay: 1.2s; width: 140px; }
+.shooting-star:nth-child(3) { top: 55%; left: -5%; animation-delay: 2.2s; background: linear-gradient(90deg, transparent, var(--neon-purple)); }
+.shooting-star:nth-child(4) { top: 75%; left: -15%; animation-delay: 0.8s; width: 80px; }
+.shooting-star:nth-child(5) { top: 90%; left: -10%; animation-delay: 1.8s; background: linear-gradient(90deg, transparent, var(--neon-gold)); }
+@keyframes shootStar {
+0% { transform: translateX(0) translateY(0) rotate(15deg); opacity: 0; }
+10% { opacity: 1; }
+70% { opacity: 1; }
+100% { transform: translateX(calc(100vw + 200px)) translateY(-60px) rotate(15deg); opacity: 0; }
+}
+.signal-loader { width: 50px; height: 50px; border: 3px solid rgba(168,85,247,0.1); border-top: 3px solid var(--neon-purple); border-radius: 50%; animation: spinLoader 0.8s linear infinite; margin: 0 auto 12px; z-index: 2; position: relative; }
+@keyframes spinLoader { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.signal-loading-text { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 700; color: var(--neon-cyan); text-shadow: 0 0 30px rgba(0,255,240,0.2); animation: pulseText 1.2s ease-in-out infinite; margin-bottom: 4px; z-index: 2; position: relative; }
+@keyframes pulseText { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; text-shadow: 0 0 60px rgba(0,255,240,0.4); } }
+.signal-progress-text { font-size: 14px; color: var(--text-grey); z-index: 2; position: relative; }
 
-        /* ============================================
-           MATRIX (unchanged)
-           ============================================ */
-        .matrix-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; background: var(--bg-card); border-radius: 12px; padding: 6px; border: 1px solid rgba(255,255,255,0.04); }
-        .matrix-cell { aspect-ratio: 1; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 8px; color: rgba(255,255,255,0.3); transition: all 0.3s; }
-        .matrix-cell.highlight-block { background: rgba(255,71,87,0.4); border: 1px solid var(--neon-red); color: #fff; }
-        .matrix-cell.highlight-trigger { background: rgba(0,255,170,0.25); border: 1px solid var(--neon-green); color: #fff; }
-        .matrix-legend { display: flex; justify-content: center; gap: 20px; font-size: 11px; color: var(--text-grey); margin-top: 8px; }
+.text-center { text-align: center; }
+.text-grey { color: var(--text-grey); }
+.text-sm { font-size: 13px; }
+.mt-8 { margin-top: 8px; }
+.mb-8 { margin-bottom: 8px; }
 
-        .seesaw-container { display: flex; align-items: center; justify-content: center; gap: 16px; background: var(--bg-card); border-radius: 14px; padding: 14px; margin-top: 12px; border: 1px solid rgba(255,255,255,0.04); }
-        .seesaw-item { text-align: center; }
-        .seesaw-item .digit { font-size: 28px; font-weight: 700; }
-        .seesaw-item .digit.top { color: var(--neon-orange); }
-        .seesaw-item .digit.bottom { color: var(--neon-cyan); }
-        .seesaw-item .pct { font-size: 13px; color: var(--text-grey); }
-        .seesaw-line { flex: 1; height: 2px; background: linear-gradient(90deg, var(--neon-orange), var(--neon-cyan)); position: relative; opacity: 0.4; }
-        .seesaw-line::after { content: '⟷'; position: absolute; left: 50%; top: -12px; transform: translateX(-50%); color: var(--text-grey); font-size: 16px; }
-        .seesaw-label { text-align: center; font-size: 11px; color: var(--text-grey); margin-top: 6px; }
-
-        .matrix-placeholder { display: flex; justify-content: center; align-items: center; padding: 20px 0; color: var(--text-grey); font-size: 14px; opacity: 0.5; }
-
-        /* ============================================
-           ORACLE — MATCHES / DIFFERS (unchanged)
-           ============================================ */
-        .oracle-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 8px 0 12px; }
-        .oracle-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; color: #fff; }
-        .oracle-btn:active { transform: scale(0.95); }
-        .oracle-btn.matches { background: linear-gradient(135deg, #00CC88, var(--neon-green)); box-shadow: 0 0 30px rgba(0,255,170,0.15); }
-        .oracle-btn.differs { background: linear-gradient(135deg, #CC2244, var(--neon-red)); box-shadow: 0 0 30px rgba(255,71,87,0.15); }
-        .oracle-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-        .orb { width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #8E2DE2, #4A00E0); box-shadow: 0 0 50px rgba(74,0,224,0.3), inset 0 0 30px rgba(0,255,240,0.05); animation: orbPulse 3s ease-in-out infinite; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; color: rgba(255,255,255,0.15); }
-        @keyframes orbPulse { 0%, 100% { box-shadow: 0 0 50px rgba(74,0,224,0.3); } 50% { box-shadow: 0 0 80px rgba(74,0,224,0.5), 0 0 120px rgba(0,255,240,0.05); } }
-
-        .signal-card { background: var(--bg-card); border-radius: 16px; padding: 16px; border: 1px solid rgba(0,255,240,0.08); backdrop-filter: blur(10px); margin-top: 10px; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
-        .signal-card .row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-grey); }
-        .signal-card .big-digit { font-family: 'Orbitron', sans-serif; font-size: 56px; font-weight: 900; text-align: center; color: var(--neon-cyan); text-shadow: 0 0 40px rgba(0,255,240,0.15); line-height: 1; margin: 2px 0; }
-        .signal-card .big-digit.differs { color: var(--neon-red); }
-        .signal-card .big-digit.matches { color: var(--neon-green); }
-        .signal-card .entry-text { text-align: center; font-size: 14px; color: var(--text-grey); margin: 2px 0 4px; }
-        .signal-card .entry-text strong { color: var(--neon-cyan); }
-        .signal-card .action-text { text-align: center; font-size: 15px; font-weight: 600; color: var(--neon-green); margin-bottom: 6px; }
-        .signal-card .action-text.differs { color: var(--neon-red); }
-        .signal-card .confidence-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
-        .signal-card .confidence-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
-        .signal-card .confidence-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--neon-orange), var(--neon-green)); transition: width 1.2s ease; width: 0%; }
-        .signal-card .confidence-label { font-size: 14px; font-weight: 600; color: #fff; min-width: 44px; }
-        .signal-card .bottom-row { display: flex; flex-wrap: wrap; gap: 4px; justify-content: space-between; font-size: 12px; color: var(--text-grey); margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.04); }
-        .signal-card .key-status { display: flex; gap: 6px; justify-content: center; font-size: 11px; color: var(--text-grey); margin: 4px 0; }
-        .signal-card .key-status span { padding: 0 2px; }
-        .signal-card .confidence-level { text-align: center; font-size: 11px; margin-top: 4px; }
-        .signal-card .placeholder-text { text-align: center; color: var(--text-grey); font-size: 14px; opacity: 0.5; }
-
-        .btn-entry {
-            padding: 10px 18px;
-            border: none;
-            border-radius: 10px;
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s;
-            width: 100%;
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .btn-entry:active { transform: scale(0.96); }
-        .btn-entry:disabled { opacity: 0.3; cursor: not-allowed; }
-        .btn-entry.entry-finding {
-            background: linear-gradient(135deg, #FFD700, #CC8800);
-            box-shadow: 0 0 20px rgba(255,215,0,0.2);
-            pointer-events: none;
-        }
-        .btn-entry.entry-finding .gear {
-            display: inline-block;
-            animation: spin 1.2s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .btn-entry.entry-confirmed {
-            background: linear-gradient(135deg, var(--neon-green), #00CC88);
-            box-shadow: 0 0 30px rgba(0,255,170,0.3);
-            pointer-events: auto;
-        }
-        .btn-entry.entry-hold {
-            background: linear-gradient(135deg, var(--neon-red), #CC2244);
-            box-shadow: 0 0 30px rgba(255,71,87,0.2);
-            pointer-events: auto;
-        }
-        .btn-entry.entry-default {
-            background: linear-gradient(135deg, var(--neon-cyan), #0088AA);
-            box-shadow: 0 0 20px rgba(0,255,240,0.15);
-        }
-
-        /* ============================================
-           OVER / UNDER & EVEN / ODD — FETCH SIGNAL
-           ============================================ */
-        .fetch-row { display: flex; justify-content: center; margin: 8px 0 12px; }
-        .btn-fetch {
-            padding: 14px 32px;
-            background: linear-gradient(135deg, var(--neon-gold), #CC8800);
-            border: none; border-radius: 14px; color: #fff;
-            font-family: 'Inter', sans-serif; font-size: 17px; font-weight: 700;
-            letter-spacing: 1px; cursor: pointer; transition: all 0.3s;
-            box-shadow: 0 0 30px rgba(255,215,0,0.15);
-            width: 100%;
-        }
-        .btn-fetch:active { transform: scale(0.96); }
-        .btn-fetch:disabled { opacity: 0.3; cursor: not-allowed; }
-        .btn-fetch.evenodd { background: linear-gradient(135deg, var(--neon-purple), #6D28D9); box-shadow: 0 0 30px rgba(168,85,247,0.15); }
-        .btn-fetch.hl { background: linear-gradient(135deg, var(--neon-blue), #0066CC); box-shadow: 0 0 30px rgba(0,191,255,0.15); }
-        .btn-fetch.rf { background: linear-gradient(135deg, var(--neon-orange), #CC5500); box-shadow: 0 0 30px rgba(255,107,0,0.15); }
-        .btn-fetch.acc { background: linear-gradient(135deg, var(--neon-purple), #4A00E0); box-shadow: 0 0 30px rgba(168,85,247,0.15); }
-
-        .ou-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-        .ou-stat { background: var(--bg-card); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.04); }
-        .ou-stat .label { font-size: 10px; color: var(--text-grey); }
-        .ou-stat .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
-
-        /* ============================================
-           SIGNAL POPUP (unchanged)
-           ============================================ */
-        #signal-popup {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(11,11,26,0.92); backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            display: none; align-items: center; justify-content: center;
-            z-index: 500; padding: 24px; flex-direction: column;
-        }
-        #signal-popup.active { display: flex; }
-        #signal-popup .popup-card { background: var(--bg-dark); border-radius: 24px; padding: 24px; max-width: 400px; width: 100%; border: 1px solid rgba(0,255,240,0.1); box-shadow: 0 0 60px rgba(0,255,240,0.05); position: relative; }
-        #signal-popup .popup-card .btn-back { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--text-grey); font-size: 24px; cursor: pointer; transition: color 0.3s; }
-        #signal-popup .popup-card .btn-back:hover { color: #fff; }
-        .popup-shooting { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 499; overflow: hidden; display: none; }
-        .popup-shooting.active { display: block; }
-        .shooting-star {
-            position: absolute; width: 100px; height: 2px;
-            background: linear-gradient(90deg, transparent, var(--neon-cyan));
-            border-radius: 2px; opacity: 0; animation: shootStar 2.5s linear infinite;
-        }
-        .shooting-star:nth-child(1) { top: 10%; left: -10%; animation-delay: 0.2s; }
-        .shooting-star:nth-child(2) { top: 30%; left: -20%; animation-delay: 1.2s; width: 140px; }
-        .shooting-star:nth-child(3) { top: 55%; left: -5%; animation-delay: 2.2s; background: linear-gradient(90deg, transparent, var(--neon-purple)); }
-        .shooting-star:nth-child(4) { top: 75%; left: -15%; animation-delay: 0.8s; width: 80px; }
-        .shooting-star:nth-child(5) { top: 90%; left: -10%; animation-delay: 1.8s; background: linear-gradient(90deg, transparent, var(--neon-gold)); }
-        @keyframes shootStar {
-            0% { transform: translateX(0) translateY(0) rotate(15deg); opacity: 0; }
-            10% { opacity: 1; }
-            70% { opacity: 1; }
-            100% { transform: translateX(calc(100vw + 200px)) translateY(-60px) rotate(15deg); opacity: 0; }
-        }
-
-        .signal-loader { width: 50px; height: 50px; border: 3px solid rgba(168,85,247,0.1); border-top: 3px solid var(--neon-purple); border-radius: 50%; animation: spinLoader 0.8s linear infinite; margin: 0 auto 12px; z-index: 2; position: relative; }
-        @keyframes spinLoader { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .signal-loading-text { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 700; color: var(--neon-cyan); text-shadow: 0 0 30px rgba(0,255,240,0.2); animation: pulseText 1.2s ease-in-out infinite; margin-bottom: 4px; z-index: 2; position: relative; }
-        @keyframes pulseText { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; text-shadow: 0 0 60px rgba(0,255,240,0.4); } }
-
-        .signal-progress-text { font-size: 14px; color: var(--text-grey); z-index: 2; position: relative; }
-
-        .text-center { text-align: center; }
-        .text-grey { color: var(--text-grey); }
-        .text-sm { font-size: 13px; }
-        .mt-8 { margin-top: 8px; }
-        .mb-8 { margin-bottom: 8px; }
-
-        @media (max-width: 480px) {
-            #app { padding: 14px 12px; }
-            .app-title { font-size: 18px; }
-            .market-grid { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); }
-            .signal-card .big-digit { font-size: 44px; }
-            .orb { width: 60px; height: 60px; font-size: 18px; }
-            .btn-entry { font-size: 12px; padding: 8px 12px; }
-        }
-    </style>
+@media (max-width: 480px) {
+#app { padding: 14px 12px; }
+.app-title { font-size: 18px; }
+.market-grid { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); }
+.signal-card .big-digit { font-size: 44px; }
+.orb { width: 60px; height: 60px; font-size: 18px; }
+.btn-entry { font-size: 12px; padding: 8px 12px; }
+}
+</style>
 </head>
 <body>
 
-    <!-- ============================================
-    LOCK SCREEN (unchanged)
-    ============================================ -->
-    <div id="lock-overlay">
-        <div class="lock-logo">EMBRAZE SOLACE</div>
-        <div class="lock-subtitle">TRADINGANALYSISTOOL</div>
-        <div class="lock-tagline">Understanding the Logic in Randomness</div>
-        <div class="lock-description">
-            <strong>Embrace Solace</strong> is a non-predictive analytical tool designed to navigate the randomness of Deriv's synthetic indices using <strong>real live tick data</strong> from the Deriv WebSocket API.
-            <br><br>
-            Scan 17 markets. Detect patterns. Generate signals with confidence.
-        </div>
-        <input class="lock-input" id="lockPassword" type="password" placeholder="Enter Password" maxlength="20" />
-        <div class="lock-error" id="lockError">❌ Incorrect Password</div>
-        <button class="btn-unlock" id="btnUnlock">🔓 UNLOCK</button>
-        <div class="lock-footer">
-            <div class="contact"><span>📧 embraze077@gmail.com</span><span>📱 0691408228</span></div>
-            <div class="disclaimer">⚠️ Educational &amp; Research Purposes Only. Not Financial Advice.</div>
-        </div>
-    </div>
-
-    <!-- ============================================
-    SIGNAL POPUP (unchanged)
-    ============================================ -->
-    <div class="popup-shooting" id="popupShooting">
-        <div class="shooting-star"></div><div class="shooting-star"></div>
-        <div class="shooting-star"></div><div class="shooting-star"></div>
-        <div class="shooting-star"></div>
-    </div>
-    <div id="signal-popup">
-        <div class="popup-card">
-            <button class="btn-back" id="popupBack">✕</button>
-            <div id="signalLoaderContainer" style="text-align:center; padding:10px 0;">
-                <div class="signal-loader" id="signalLoader"></div>
-                <div class="signal-loading-text" id="signalLoadingText">GENERATING SIGNAL...</div>
-                <div class="signal-progress-text" id="signalProgressText">⏳ Analyzing 17 markets...</div>
-            </div>
-            <div id="signalResultContainer" style="display:none;">
-                <div class="signal-card" style="border-color: rgba(0,255,240,0.2);">
-                    <div class="row"><span id="popupMarket">--</span><span id="popupEntropy">H = --</span></div>
-                    <div class="big-digit" id="popupBigDigit">--</div>
-                    <div class="entry-text" id="popupEntryText">Entry: --</div>
-                    <div class="action-text" id="popupActionText">--</div>
-                    <div class="key-status" id="popupKeyStatus"></div>
-                    <div class="confidence-row">
-                        <span class="confidence-label" id="popupConfidenceLabel">--</span>
-                        <div class="confidence-bar"><div class="confidence-fill" id="popupConfidenceFill" style="width:0%;"></div></div>
-                    </div>
-                    <div class="bottom-row" id="popupBottomRow"><span>--</span><span>--</span></div>
-                    <div class="confidence-level" id="popupConfidenceLevel"></div>
-                    <div class="text-center text-grey text-sm" style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.04);">NEURAL PATTERN ANALYSIS</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================
-    MAIN APP (unchanged)
-    ============================================ -->
-    <div id="app" style="display:none;">
-
-        <div class="header-row">
-            <div class="app-title">EMBRAZE <span>SOLACE</span></div>
-            <div style="font-size:12px; color:var(--text-grey);">v3.2</div>
-        </div>
-
-        <!-- SECTION 1: DASHBOARD -->
-        <div class="section">
-            <button class="btn-scan" id="btnScan">🔮 SCAN ALL MARKETS</button>
-            <div id="gathering-banner">✅ Gathering Complete — 17 markets ready</div>
-            <div class="market-grid" id="marketGrid"></div>
-            <div class="live-ticker" id="liveTicker">⏳ Connecting to Deriv WebSocket...</div>
-        </div>
-
-        <!-- SECTION 2: FREQUENCY CHART -->
-        <div class="section">
-            <div class="section-title">📊 Frequency Distribution <span style="font-size:12px; color:var(--text-grey);" id="chartMarketLabel"></span></div>
-            <div class="chart-container" id="chartContainer">
-                <div class="chart-placeholder" id="chartPlaceholder">⏳ Awaiting signal<br><span>Generate a signal to see frequency distribution</span></div>
-                <div class="chart-bars" id="chartBars" style="display:none;"></div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-                    <span class="text-grey text-sm" id="chartSubtitle">Preceded by live ticks from Deriv</span>
-                    <div class="chart-exceedance" id="exceedanceBadge" style="display:none;">🔥 +0% Exceedance</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SECTION 3: RELATIONSHIP MATRIX -->
-        <div class="section">
-            <div class="section-title">🌀 Digit Relationship Matrix <span style="font-size:12px; color:var(--text-grey);" id="matrixMarketLabel"></span></div>
-            <div id="matrixContainer">
-                <div class="matrix-placeholder" id="matrixPlaceholder">⏳ Awaiting signal<br><span style="font-size:12px;">Generate a signal to see the relationship matrix</span></div>
-                <div class="matrix-grid" id="matrixGrid" style="display:none;"></div>
-            </div>
-            <div class="matrix-legend" id="matrixLegend" style="display:none;"><span>🔴 Blocked</span><span>🟢 Trigger</span></div>
-            <div class="seesaw-container" id="seesawContainer" style="display:none;">
-                <div class="seesaw-item"><div class="digit top" id="topDigit">--</div><div class="pct" id="topPct">--</div></div>
-                <div class="seesaw-line"></div>
-                <div class="seesaw-item"><div class="digit bottom" id="bottomDigit">--</div><div class="pct" id="bottomPct">--</div></div>
-            </div>
-            <div class="seesaw-label" id="seesawLabel" style="display:none;">INVERSE RELATIONSHIP DETECTED</div>
-        </div>
-
-        <!-- SECTION 4: MATCHES / DIFFERS -->
-        <div class="section">
-            <div class="section-title">⚡ Execute Trade</div>
-            <div class="oracle-row">
-                <button class="oracle-btn matches" id="btnMatches" disabled>MATCHES</button>
-                <div class="orb" id="oracleOrb">✦</div>
-                <button class="oracle-btn differs" id="btnDiffers" disabled>DIFFERS</button>
-            </div>
-            <div class="signal-card" id="oracleSignalCard">
-                <div class="placeholder-text">⏳ Press MATCHES or DIFFERS to generate a signal</div>
-            </div>
-            <button class="btn-entry entry-default" id="btnFindEntryMD" disabled>🔍 FIND ENTRY</button>
-        </div>
-
-        <!-- SECTION 5: OVER / UNDER -->
-        <div class="section">
-            <div class="section-title">⚖️ Over / Under</div>
-            <div class="fetch-row"><button class="btn-fetch" id="btnOverUnderFetch">📊 FETCH SIGNAL</button></div>
-            <div class="signal-card" id="ouSignalCard">
-                <div class="placeholder-text">⏳ Press FETCH SIGNAL to scan markets</div>
-            </div>
-            <button class="btn-entry entry-default" id="btnFindEntryOU" disabled>🔍 FIND ENTRY</button>
-            <div class="ou-stats">
-                <div class="ou-stat"><div class="label">Market</div><div class="value" id="ouMarket" style="font-size:14px;">--</div></div>
-                <div class="ou-stat"><div class="label">Confidence</div><div class="value" id="ouConfidenceValue">--</div></div>
-                <div class="ou-stat"><div class="label">Edge</div><div class="value" id="ouEdge">--</div></div>
-                <div class="ou-stat"><div class="label">Observed Win %</div><div class="value" id="ouObserved">--</div></div>
-            </div>
-        </div>
-
-        <!-- SECTION 6: EVEN / ODD -->
-        <div class="section">
-            <div class="section-title">🎯 Even / Odd</div>
-            <div class="fetch-row"><button class="btn-fetch evenodd" id="btnEvenOddFetch">📊 FETCH SIGNAL</button></div>
-            <div class="signal-card" id="eoSignalCard">
-                <div class="placeholder-text">⏳ Press FETCH SIGNAL to scan markets</div>
-            </div>
-            <button class="btn-entry entry-default" id="btnFindEntryEO" disabled>🔍 FIND ENTRY</button>
-            <div class="ou-stats">
-                <div class="ou-stat"><div class="label">Market</div><div class="value" id="eoMarket" style="font-size:14px;">--</div></div>
-                <div class="ou-stat"><div class="label">Confidence</div><div class="value" id="eoConfidenceValue">--</div></div>
-                <div class="ou-stat"><div class="label">PMR</div><div class="value" id="eoPMR">--</div></div>
-                <div class="ou-stat"><div class="label">Z-Score</div><div class="value" id="eoZScore">--</div></div>
-            </div>
-        </div>
-
-        <!-- SECTION 7: RISE / FALL (placeholder) -->
-        <div class="section">
-            <div class="section-title">📈 Rise / Fall</div>
-            <div class="fetch-row"><button class="btn-fetch rf" id="btnRiseFallFetch">📊 FETCH SIGNAL</button></div>
-            <div class="signal-card" id="rfSignalCard">
-                <div class="placeholder-text">⏳ Press FETCH SIGNAL to scan markets</div>
-            </div>
-            <div class="ou-stats">
-                <div class="ou-stat"><div class="label">Market</div><div class="value" id="rfMarket" style="font-size:14px;">--</div></div>
-                <div class="ou-stat"><div class="label">Direction</div><div class="value" id="rfDirection">--</div></div>
-                <div class="ou-stat"><div class="label">Duration</div><div class="value" id="rfDuration">--</div></div>
-                <div class="ou-stat"><div class="label">Confidence</div><div class="value" id="rfConfidence">--</div></div>
-            </div>
-        </div>
-
-        <!-- SECTION 8: HIGHER / LOWER (placeholder) -->
-        <div class="section">
-            <div class="section-title">📊 Higher / Lower</div>
-            <div class="fetch-row"><button class="btn-fetch hl" id="btnHigherLowerFetch">📊 FETCH SIGNAL</button></div>
-            <div class="signal-card" id="hlSignalCard">
-                <div class="placeholder-text">⏳ Press FETCH SIGNAL to scan markets</div>
-            </div>
-            <div class="ou-stats">
-                <div class="ou-stat"><div class="label">Market</div><div class="value" id="hlMarket" style="font-size:14px;">--</div></div>
-                <div class="ou-stat"><div class="label">Direction</div><div class="value" id="hlDirection">--</div></div>
-                <div class="ou-stat"><div class="label">Barrier</div><div class="value" id="hlBarrier">--</div></div>
-                <div class="ou-stat"><div class="label">Confidence</div><div class="value" id="hlConfidence">--</div></div>
-            </div>
-        </div>
-
-        <!-- SECTION 9: ACCUMULATORS (placeholder) -->
-        <div class="section">
-            <div class="section-title">🏛️ Accumulators</div>
-            <div class="fetch-row"><button class="btn-fetch acc" id="btnAccumulatorFetch">📊 FETCH SIGNAL</button></div>
-            <div class="signal-card" id="accSignalCard">
-                <div class="placeholder-text">⏳ Press FETCH SIGNAL to scan markets</div>
-            </div>
-            <div class="ou-stats">
-                <div class="ou-stat"><div class="label">Market</div><div class="value" id="accMarket" style="font-size:14px;">--</div></div>
-                <div class="ou-stat"><div class="label">Ticks</div><div class="value" id="accTicks">--</div></div>
-                <div class="ou-stat"><div class="label">Growth</div><div class="value" id="accGrowth">--</div></div>
-                <div class="ou-stat"><div class="label">Confidence</div><div class="value" id="accConfidence">--</div></div>
-            </div>
-        </div>
-
-        <div class="text-center text-grey text-sm" style="padding:8px 0 4px;">
-            ⚠️ Educational &amp; Research Purposes Only. Not Financial Advice.
-        </div>
-    </div>
-
-    <!-- ============================================
-    JAVASCRIPT — ALL PATCHES INTEGRATED
-    ============================================ -->
-    <script>
-        // ============================================================
-        // 1. CONSTANTS & CONFIG
-        // ============================================================
-
-        const APP_PASSWORD = 'SUCCESSV12';
-        const DERIV_WS = 'wss://ws.derivws.com/websockets/v3?app_id=1089';
-        const REQUIRED_TICKS = 100;
-        const ANALYSIS_WINDOW = 100;
-        const SIGNAL_DELAY_MS = 10000;
-
-        const MARKETS = [
-            'R_10', 'R_25', 'R_50', 'R_75', 'R_100',
-            '1HZ10V', '1HZ25V', '1HZ50V', '1HZ75V', '1HZ100V',
-            'JD10', 'JD25', 'JD50', 'JD75', 'JD100',
-            'RDBULL', 'RDBEAR'
-        ];
-
-        const HL_BARRIERS = {
-            'R_10': { higher: -0.18, lower: 0.18, duration: 5, payout: '~13%' },
-            '1HZ10V': { higher: -0.26, lower: 0.26, duration: 5, payout: '~13%' },
-            'R_25': { higher: -0.24, lower: 0.24, duration: 5, payout: '~13%' },
-            '1HZ25V': { higher: -57, lower: 57, duration: 5, payout: '~13%' },
-            'R_50': { higher: -0.018, lower: 0.018, duration: 5, payout: '~13%' },
-            '1HZ50V': { higher: -41, lower: 41, duration: 5, payout: '~13%' },
-            'R_75': { higher: -11.6, lower: 11.6, duration: 5, payout: '~13%' },
-            '1HZ75V': { higher: -1.03, lower: 1.03, duration: 5, payout: '~13%' },
-            'R_100': { higher: -0.11, lower: 0.11, duration: 5, payout: '~13%' },
-            '1HZ100V': { higher: -0.22, lower: 0.22, duration: 5, payout: '~13%' }
-        };
-
-        const tickBuffers = {};
-        const candleBuffers = {};
-        let appState = 'IDLE';
-        let ws = null;
-        let isGatheringComplete = false;
-        let selectedMarket = null;
-
-        // ============================================================
-        // 2. ZERO-DIGIT + SYMBOL DECIMAL FIX PATCH
-        // ============================================================
-
-        function decimalsForSymbol(sym) {
-            if (!sym) return 3;
-
-            const s = String(sym).toUpperCase().replace(/s+/g, ' ').trim();
-
-            const twoDpExact = new Set([
-                'VOLATILITY 10 (1S)',
-                'VOLATILITY 25 (1S)',
-                'VOLATILITY 50 (1S)',
-                'VOLATILITY 75 (1S)',
-                'VOLATILITY 100 (1S)',
-                'VOLATILITY 100 1S',
-                'R_100_1S',
-                'JUMP 10',
-                'JUMP 25',
-                'JUMP 50',
-                'JUMP 75',
-                'JUMP 100',
-                'J10',
-                'J25',
-                'J50',
-                'J75',
-                'J100'
-            ]);
-
-            const fourDpExact = new Set([
-                'VOLATILITY 50',
-                'VOLATILITY 75',
-                'BULL',
-                'BEAR',
-                'R_50',
-                'R_75'
-            ]);
-
-            const threeDpExact = new Set([
-                'VOLATILITY 10',
-                'VOLATILITY 25',
-                'R_10',
-                'R_25'
-            ]);
-
-            if (twoDpExact.has(s)) return 2;
-            if (fourDpExact.has(s)) return 4;
-            if (threeDpExact.has(s)) return 3;
-
-            if (s.includes('(1S)')) return 2;
-            if (s.includes('JUMP')) return 2;
-
-            if (s.includes('100')) return 2;
-            if (s.includes('50') || s.includes('75') || s.includes('BULL') || s.includes('BEAR')) return 4;
-            if (s.includes('10') || s.includes('25')) return 3;
-
-            return 3;
-        }
-
-        function extractLastDigit(price) {
-            if (price === null || price === undefined) return null;
-            const s = String(price).trim();
-            const match = s.match(/(\d)(?!.*\d)/);
-            return match ? parseInt(match[1], 10) : null;
-        }
-
-        function getTickDigit(sym, price) {
-            if (price === null || price === undefined) return null;
-
-            const dp = decimalsForSymbol(sym);
-            const n = Number(price);
-
-            if (!Number.isFinite(n)) return null;
-
-            const normalizedPrice = n.toFixed(dp);
-            return extractLastDigit(normalizedPrice);
-        }
-
-        // ============================================================
-        // 3. CONNECTION STABILITY PATCH
-        // ============================================================
-
-        let reconnectAllowed = true;
-        let reconnectTimer = null;
-        let heartbeatTimer = null;
-        let lastVisibilityState = document.visibilityState;
-        let hasInitializedOnce = false;
-
-        function startHeartbeat() {
-            stopHeartbeat();
-            heartbeatTimer = setInterval(() => {
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    try {
-                        ws.send(JSON.stringify({ ping: 1 }));
-                    } catch (e) {}
-                }
-            }, 30000);
-        }
-
-        function stopHeartbeat() {
-            if (heartbeatTimer) {
-                clearInterval(heartbeatTimer);
-                heartbeatTimer = null;
-            }
-        }
-
-        function scheduleReconnect() {
-            if (!reconnectAllowed) return;
-            if (reconnectTimer) return;
-
-            reconnectTimer = setTimeout(() => {
-                reconnectTimer = null;
-                if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
-                    initWebSocket(true);
-                }
-            }, 5000);
-        }
-
-        function preserveStateOnHide() {
-            lastVisibilityState = document.visibilityState;
-            if (document.hidden) {
-                reconnectAllowed = false;
-            } else {
-                reconnectAllowed = true;
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    refreshLiveUI();
-                } else if (!ws || ws.readyState === WebSocket.CLOSED) {
-                    initWebSocket(true);
-                }
-            }
-        }
-
-        function refreshLiveUI() {
-            document.getElementById('liveTicker').textContent = '✅ Connected. Collecting ticks and candles...';
-            if (isGatheringComplete) {
-                document.getElementById('liveTicker').innerHTML = '✅ <strong>Gathering Complete</strong> — Live connection active.';
-            }
-        }
-
-        document.addEventListener('visibilitychange', preserveStateOnHide);
-        window.addEventListener('focus', () => {
-            reconnectAllowed = true;
-            if (!ws || ws.readyState === WebSocket.CLOSED) {
-                initWebSocket(true);
-            } else if (ws.readyState === WebSocket.OPEN) {
-                refreshLiveUI();
-            }
-        });
-
-        window.addEventListener('beforeunload', () => {
-            stopHeartbeat();
-        });
-
-        // ============================================================
-        // 4. LOCK SCREEN
-        // ============================================================
-
-        document.getElementById('btnUnlock').addEventListener('click', unlockApp);
-        document.getElementById('lockPassword').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') unlockApp();
-        });
-
-        function unlockApp() {
-            const input = document.getElementById('lockPassword');
-            const error = document.getElementById('lockError');
-            if (input.value === APP_PASSWORD) {
-                error.classList.remove('show');
-                document.getElementById('lock-overlay').classList.add('hidden');
-                document.getElementById('app').style.display = 'block';
-                initWebSocket();
-            } else {
-                error.textContent = '❌ Incorrect Password. Try again.';
-                error.classList.add('show');
-                input.value = '';
-                input.focus();
-            }
-        }
-
-        // ============================================================
-        // 5. DERIV WEBSOCKET + CANDLE API (with reconnect flag)
-        // ============================================================
-
-        function initWebSocket(isReconnect) {
-            if (!isReconnect) {
-                // First time init: reset buffers
-                MARKETS.forEach(sym => {
-                    tickBuffers[sym] = [];
-                    candleBuffers[sym] = [];
-                });
-            }
-
-            document.getElementById('liveTicker').textContent = '⏳ Connecting to Deriv WebSocket...';
-            appState = 'COLLECTING';
-
-            if (ws) {
-                try { ws.close(); } catch (e) {}
-                ws = null;
-            }
-
-            ws = new WebSocket(DERIV_WS);
-
-            ws.onopen = function() {
-                document.getElementById('liveTicker').textContent = '✅ Connected. Collecting ticks and candles...';
-                MARKETS.forEach(sym => {
-                    ws.send(JSON.stringify({ ticks: sym, subscribe: 1 }));
-                });
-                const volMarkets = Object.keys(HL_BARRIERS);
-                volMarkets.forEach(sym => {
-                    ws.send(JSON.stringify({
-                        candles: sym,
-                        granularity: 60,
-                        count: 100,
-                        end: 'latest'
-                    }));
-                });
-                if (!isReconnect) {
-                    renderMarketCards();
-                }
-                startHeartbeat();
-                refreshLiveUI();
-            };
-
-            ws.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.msg_type === 'tick') {
-                        const tick = data.tick;
-                        const sym = tick.symbol;
-                        const price = tick.quote;
-                        // --- PATCHED: use getTickDigit with symbol ---
-                        const digit = getTickDigit(sym, price);
-
-                        if (digit === null || Number.isNaN(digit)) {
-                            console.warn('Bad digit parse', sym, price);
-                            return;
-                        }
-
-                        if (tickBuffers[sym]) {
-                            tickBuffers[sym].push({ price, digit });
-                            if (tickBuffers[sym].length > 1000) tickBuffers[sym].shift();
-                            updateMarketCard(sym, tickBuffers[sym].length);
-                        }
-                        const totalCollected = MARKETS.reduce((sum, s) => sum + (tickBuffers[s]?.length || 0), 0);
-                        const totalNeeded = MARKETS.length * REQUIRED_TICKS;
-                        document.getElementById('liveTicker').innerHTML =
-                            `📊 Collected ${totalCollected} / ${totalNeeded} ticks across ${MARKETS.length} markets`;
-                        checkGatheringComplete();
-                    } else if (data.msg_type === 'candles') {
-                        const candles = data.candles;
-                        const sym = data.echo_req.candles;
-                        if (candleBuffers[sym]) {
-                            candleBuffers[sym] = candles.slice(-100);
-                        }
-                    }
-                } catch (e) { /* ignore */ }
-            };
-
-            ws.onerror = function() {
-                document.getElementById('liveTicker').textContent = '❌ WebSocket error. Reconnecting...';
-                stopHeartbeat();
-                scheduleReconnect();
-            };
-
-            ws.onclose = function() {
-                document.getElementById('liveTicker').textContent = '❌ Disconnected. Reconnecting...';
-                stopHeartbeat();
-                scheduleReconnect();
-            };
-        }
-
-        // ============================================================
-        // 6. GATHERING COMPLETE (unchanged)
-        // ============================================================
-        function checkGatheringComplete() {
-            if (isGatheringComplete) return;
-            const allReady = MARKETS.every(sym => (tickBuffers[sym]?.length || 0) >= REQUIRED_TICKS);
-            if (allReady) {
-                isGatheringComplete = true;
-                appState = 'READY';
-                document.getElementById('gathering-banner').classList.add('show');
-                document.getElementById('liveTicker').innerHTML = '✅ <strong>Gathering Complete</strong> — All 17 markets ready.';
-                document.getElementById('btnScan').classList.add('ready');
-                document.getElementById('btnScan').innerHTML = '✅ ALL MARKETS READY';
-
-                const allAtHundred = MARKETS.every(sym => (tickBuffers[sym]?.length || 0) >= 100);
-                document.getElementById('btnMatches').disabled = !allAtHundred;
-                document.getElementById('btnDiffers').disabled = !allAtHundred;
-                document.getElementById('btnOverUnderFetch').disabled = !allAtHundred;
-                document.getElementById('btnEvenOddFetch').disabled = !allAtHundred;
-                document.getElementById('btnRiseFallFetch').disabled = !allAtHundred;
-                document.getElementById('btnHigherLowerFetch').disabled = !allAtHundred;
-                document.getElementById('btnAccumulatorFetch').disabled = !allAtHundred;
-            }
-        }
-
-        // ============================================================
-        // 7. UI HELPERS (unchanged)
-        // ============================================================
-        function renderMarketCards() {
-            const grid = document.getElementById('marketGrid');
-            grid.innerHTML = '';
-            MARKETS.forEach(sym => {
-                const card = document.createElement('div');
-                card.className = 'market-card';
-                card.id = `card-${sym}`;
-                card.innerHTML = `
-                    <div class="sym">${sym}</div>
-                    <div class="stat"><span class="dot grey" id="dot-${sym}"></span> <span id="stat-${sym}">0/${REQUIRED_TICKS}</span></div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function updateMarketCard(sym, count) {
-            const dot = document.getElementById(`dot-${sym}`);
-            const stat = document.getElementById(`stat-${sym}`);
-            if (dot) {
-                const isReady = count >= REQUIRED_TICKS;
-                dot.className = 'dot ' + (isReady ? 'green' : 'yellow');
-                if (isReady) dot.style.boxShadow = '0 0 10px var(--neon-green)';
-            }
-            if (stat) stat.textContent = `${count}/${REQUIRED_TICKS}`;
-            const card = document.getElementById(`card-${sym}`);
-            if (card && count >= REQUIRED_TICKS) card.classList.add('ready');
-        }
-
-        function updateSignalCardPlaceholder() {
-            document.getElementById('oracleSignalCard').innerHTML = `<div class="placeholder-text">⏳ Press MATCHES or DIFFERS to generate a signal</div>`;
-            document.getElementById('ouSignalCard').innerHTML = `<div class="placeholder-text">⏳ Press FETCH SIGNAL to scan markets</div>`;
-            document.getElementById('eoSignalCard').innerHTML = `<div class="placeholder-text">⏳ Press FETCH SIGNAL to scan markets</div>`;
-        }
-
-        function showChartPlaceholder() {
-            document.getElementById('chartPlaceholder').style.display = 'flex';
-            document.getElementById('chartBars').style.display = 'none';
-            document.getElementById('chartMarketLabel').textContent = '';
-            document.getElementById('exceedanceBadge').style.display = 'none';
-        }
-
-        function showMatrixPlaceholder() {
-            document.getElementById('matrixPlaceholder').style.display = 'flex';
-            document.getElementById('matrixGrid').style.display = 'none';
-            document.getElementById('matrixLegend').style.display = 'none';
-            document.getElementById('seesawContainer').style.display = 'none';
-            document.getElementById('seesawLabel').style.display = 'none';
-            document.getElementById('matrixMarketLabel').textContent = '';
-        }
-
-        // ============================================================
-        // 8. FIND BEST MARKET (unchanged)
-        // ============================================================
-        function findBestMarket() {
-            let best = null;
-            let bestScore = -Infinity;
-            MARKETS.forEach(sym => {
-                const data = tickBuffers[sym];
-                if (!data || data.length < REQUIRED_TICKS) return;
-                const digits = data.map(t => t.digit);
-                const freq = Array(10).fill(0);
-                digits.forEach(d => freq[d]++);
-                const total = digits.length;
-                let topDigit = 0, topPct = 0, bottomDigit = 0, bottomPct = 100;
-                freq.forEach((v, i) => {
-                    const pct = (v / total) * 100;
-                    if (pct > topPct) { topPct = pct; topDigit = i; }
-                    if (pct < bottomPct) { bottomPct = pct; bottomDigit = i; }
-                });
-                let triggerDigit = 3, minFollow = 1;
-                for (let i = 0; i < 10; i++) {
-                    let count = 0, follow = 0;
-                    for (let j = 0; j < digits.length - 1; j++) {
-                        if (digits[j] === i) { count++; if (digits[j + 1] === topDigit) follow++; }
-                    }
-                    if (count > 5) {
-                        const ratio = follow / count;
-                        if (ratio < minFollow) { minFollow = ratio; triggerDigit = i; }
-                    }
-                }
-                const ratio = Math.max(minFollow, 0.01);
-                const suppressionRatio = ratio / 0.10;
-                let entropy = 0;
-                freq.forEach(v => { const p = v / total; if (p > 0) entropy -= p * Math.log2(p); });
-                const entropyScore = Math.min(entropy / 3.32, 1) * 100;
-                const srScore = Math.max(0, Math.min(1, (1 - suppressionRatio) * 1.5)) * 100;
-                const topScore = Math.min(topPct / 15, 1) * 100;
-                const confidence = Math.min((entropyScore * 0.3) + (srScore * 0.4) + (topScore * 0.3), 99);
-                const score = confidence + (topPct * 2) + (1 / suppressionRatio);
-                if (score > bestScore) {
-                    bestScore = score;
-                    best = { market: sym, topDigit, topPct, bottomDigit, bottomPct, triggerDigit, suppressionRatio, entropy, confidence, data: digits };
-                }
-            });
-            return best;
-        }
-
-        // ============================================================
-        // 9. FREQUENCY CHART & MATRIX UPDATES (unchanged)
-        // ============================================================
-        function updateFrequencyChart(market) {
-            const data = tickBuffers[market];
-            if (!data || data.length < 10) { showChartPlaceholder(); return; }
-            const digits = data.map(t => t.digit);
-            document.getElementById('chartPlaceholder').style.display = 'none';
-            document.getElementById('chartBars').style.display = 'flex';
-            const freq = Array(10).fill(0);
-            digits.forEach(d => freq[d]++);
-            const total = digits.length;
-            const container = document.getElementById('chartBars');
-            container.innerHTML = '';
-            const baseline = document.createElement('div');
-            baseline.className = 'chart-baseline';
-            baseline.innerHTML = '<span class="chart-baseline-label">Baseline: 10%</span>';
-            container.appendChild(baseline);
-            const maxPct = Math.max(...freq.map(v => (v / total) * 100));
-            const maxHeight = 120;
-            freq.forEach((val, i) => {
-                const pct = (val / total) * 100;
-                const height = Math.max((pct / 15) * maxHeight, 4);
-                const isExceed = pct > 10;
-                const color = isExceed ? '#FF6B00' : pct < 10 ? '#00BFFF' : '#00FFF0';
-                const group = document.createElement('div');
-                group.className = 'bar-group';
-                group.innerHTML = `<div class="bar" style="height:${height}px; background:${color}; box-shadow: 0 0 ${isExceed ? 20 : 8}px ${color}40;"></div><div class="bar-label">${i}</div>`;
-                container.appendChild(group);
-            });
-            const badge = document.getElementById('exceedanceBadge');
-            if (maxPct > 10) { badge.style.display = 'flex'; badge.innerHTML = `🔥 +${(maxPct - 10).toFixed(1)}% Exceedance`; }
-            else { badge.style.display = 'none'; }
-            document.getElementById('chartMarketLabel').textContent = `(${market})`;
-        }
-
-        function updateMatrixAndSeesaw(market) {
-            const data = tickBuffers[market];
-            if (!data || data.length < 20) { showMatrixPlaceholder(); return; }
-            const digits = data.map(t => t.digit);
-            document.getElementById('matrixPlaceholder').style.display = 'none';
-            document.getElementById('matrixGrid').style.display = 'grid';
-            document.getElementById('matrixLegend').style.display = 'flex';
-            document.getElementById('seesawContainer').style.display = 'flex';
-            document.getElementById('seesawLabel').style.display = 'block';
-            const freq = Array(10).fill(0);
-            digits.forEach(d => freq[d]++);
-            const total = digits.length;
-            let topDigit = 0, topPct = 0, bottomDigit = 0, bottomPct = 100;
-            freq.forEach((v, i) => {
-                const pct = (v / total) * 100;
-                if (pct > topPct) { topPct = pct; topDigit = i; }
-                if (pct < bottomPct) { bottomPct = pct; bottomDigit = i; }
-            });
-            let triggerDigit = 3, minFollow = 1;
-            for (let i = 0; i < 10; i++) {
-                let count = 0, follow = 0;
-                for (let j = 0; j < digits.length - 1; j++) {
-                    if (digits[j] === i) { count++; if (digits[j + 1] === topDigit) follow++; }
-                }
-                if (count > 5) { const ratio = follow / count; if (ratio < minFollow) { minFollow = ratio; triggerDigit = i; } }
-            }
-
-            let preferFollower = -1, maxFollowRatio = -1;
-            for (let j = 0; j < 10; j++) {
-                if (j === topDigit) continue;
-                let cnt = 0, fol = 0;
-                for (let k = 0; k < digits.length - 1; k++) {
-                    if (digits[k] === triggerDigit) { cnt++; if (digits[k + 1] === j) fol++; }
-                }
-                if (cnt > 5) {
-                    const r = fol / cnt;
-                    if (r > maxFollowRatio) { maxFollowRatio = r; preferFollower = j; }
-                }
-            }
-            if (preferFollower === -1) preferFollower = (triggerDigit + 1) % 10;
-
-            document.getElementById('topDigit').textContent = topDigit;
-            document.getElementById('topPct').textContent = topPct.toFixed(1) + '%';
-            document.getElementById('bottomDigit').textContent = bottomDigit;
-            document.getElementById('bottomPct').textContent = bottomPct.toFixed(1) + '%';
-            const grid = document.getElementById('matrixGrid');
-            grid.innerHTML = '';
-            for (let i = 0; i < 10; i++) {
-                for (let j = 0; j < 10; j++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'matrix-cell';
-                    if (i === triggerDigit && j === topDigit) { cell.classList.add('highlight-block'); cell.textContent = '⛔'; }
-                    else if (i === triggerDigit && j === preferFollower) { cell.classList.add('highlight-trigger'); cell.textContent = '▶'; }
-                    else { const op = 0.05 + Math.random() * 0.2; cell.style.background = `rgba(168,85,247,${op})`; }
-                    grid.appendChild(cell);
-                }
-            }
-            document.getElementById('matrixMarketLabel').textContent = `(${market})`;
-        }
-
-        // ============================================================
-        // 10. RELAXED SCORING BLOCK — FULL PATCH
-        // ============================================================
-
-        const MIN_CONFIDENCE = 52;
-        const MIN_SIGNAL_SCORE = 0.22;
-        const MAX_DRIFT = 0.30;
-        const LIVE_CONFIRM_WINDOW = 18;
-        const ENTRY_THRESHOLD = 0.48;
-
-        function signalQuality(score) {
-            const c = norm(score) * 100;
-            if (c >= 68) return { level: 'HIGH', color: '#00FFAA' };
-            if (c >= 52) return { level: 'MEDIUM', color: '#FFD700' };
-            return { level: 'LOW', color: '#FF6B00' };
-        }
-
-        function latestWindow(arr, size) {
-            return arr.slice(-Math.min(size, arr.length));
-        }
-
-        function frequency(arr) {
-            const c = {};
-            arr.forEach(d => { c[d] = (c[d] || 0) + 1; });
-            const n = arr.length || 1;
-            const f = {};
-            for (let i = 0; i < 10; i++) f[i] = (c[i] || 0) / n;
-            return f;
-        }
-
-        function entropyFreq(f) {
-            let h = 0;
-            for (let i = 0; i < 10; i++) {
-                const p = f[i];
-                if (p > 0) h -= p * Math.log(p);
-            }
-            return h;
-        }
-
-        function concentrationFreq(f) {
-            let mx = 0;
-            for (let i = 0; i < 10; i++) if (f[i] > mx) mx = f[i];
-            return mx;
-        }
-
-        function transitionRate(arr) {
-            if (arr.length < 2) return 0;
-            let c = 0;
-            for (let i = 1; i < arr.length; i++) if (arr[i] !== arr[i - 1]) c++;
-            return c / (arr.length - 1);
-        }
-
-        function matchScore(digits, digit, windowSize = 100) {
-            const window = latestWindow(digits, windowSize);
-            const freq = frequency(window);
-            const f = freq[digit] || 0;
-
-            const k = 5;
-            const step = Math.max(1, Math.floor(window.length / k));
-            let blocksAbove = 0;
-
-            for (let i = 0; i < k; i++) {
-                const end = window.length - i * step;
-                const start = Math.max(0, end - windowSize);
-                const w = window.slice(start, end);
-                if (w.length === 0) continue;
-                const cnt = w.filter(d => d === digit).length;
-                if (cnt / w.length >= 0.12) blocksAbove++;
-            }
-
-            const persist = blocksAbove / k;
-            const ent = entropyFreq(freq);
-            const conc = concentrationFreq(freq);
-            const trans = transitionRate(window);
-
-            const score = f * 1.18 + persist * 0.95 + conc * 0.70 - ent * 0.48 - trans * 0.18;
-            return { score, features: { f, persist, ent, conc, trans, freq } };
-        }
-
-        function differScore(digits, digit, windowSize = 100) {
-            const window = latestWindow(digits, windowSize);
-            const freq = frequency(window);
-            const f = freq[digit] || 0;
-
-            const k = 5;
-            const step = Math.max(1, Math.floor(window.length / k));
-            let blocksAbove = 0;
-
-            for (let i = 0; i < k; i++) {
-                const end = window.length - i * step;
-                const start = Math.max(0, end - windowSize);
-                const w = window.slice(start, end);
-                if (w.length === 0) continue;
-                const cnt = w.filter(d => d === digit).length;
-                if (cnt / w.length >= 0.12) blocksAbove++;
-            }
-
-            const persist = blocksAbove / k;
-            const ent = entropyFreq(freq);
-            const conc = concentrationFreq(freq);
-            const trans = transitionRate(window);
-
-            const score = ent * 0.42 + trans * 0.22 - f * 0.25 - persist * 0.12;
-            return { score, features: { f, persist, ent, conc, trans, freq } };
-        }
-
-        function overUnderScore(digits, mode, barrier, windowSize = 100) {
-            const window = latestWindow(digits, windowSize);
-            const freq = frequency(window);
-
-            let mass = 0;
-            if (mode === 'OVER') {
-                for (let d = barrier + 1; d < 10; d++) mass += freq[d];
-            } else {
-                for (let d = 0; d < barrier; d++) mass += freq[d];
-            }
-
-            const vals = window.map(d => mode === 'OVER' ? Math.max(0, d - barrier) : Math.max(0, barrier - d));
-            const margin = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-
-            const k = 5;
-            const step = Math.max(1, Math.floor(window.length / k));
-            let blocksAbove = 0;
-
-            for (let i = 0; i < k; i++) {
-                const end = window.length - i * step;
-                const start = Math.max(0, end - windowSize);
-                const w = window.slice(start, end);
-                if (w.length === 0) continue;
-                const cnt = w.filter(d => mode === 'OVER' ? d > barrier : d < barrier).length;
-                if (cnt / w.length >= 0.55) blocksAbove++;
-            }
-
-            const persist = blocksAbove / k;
-            const ent = entropyFreq(freq);
-            const conc = concentrationFreq(freq);
-            const reject = transitionRate(window);
-
-            const score = mass * 1.28 + margin * 0.78 + persist * 1.00 + conc * 0.58 - ent * 0.55 - reject * 0.78;
-            return { score, features: { mass, margin, persist, ent, conc, reject, freq } };
-        }
-
-        function evenOddScore(digits, side, windowSize = 100) {
-            const window = latestWindow(digits, windowSize);
-            const freq = frequency(window);
-            const target = side === 'EVEN' ? [0, 2, 4, 6, 8] : [1, 3, 5, 7, 9];
-
-            let mass = 0;
-            target.forEach(d => { mass += freq[d]; });
-
-            const vals = window.map(d => target.includes(d) ? 1 : 0);
-            const margin = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-
-            const k = 5;
-            const step = Math.max(1, Math.floor(window.length / k));
-            let blocksAbove = 0;
-
-            for (let i = 0; i < k; i++) {
-                const end = window.length - i * step;
-                const start = Math.max(0, end - windowSize);
-                const w = window.slice(start, end);
-                if (w.length === 0) continue;
-                const cnt = w.filter(d => target.includes(d)).length;
-                if (cnt / w.length >= 0.55) blocksAbove++;
-            }
-
-            const persist = blocksAbove / k;
-            const ent = entropyFreq(freq);
-            const conc = concentrationFreq(freq);
-
-            let flips = 0;
-            for (let i = 1; i < window.length; i++) {
-                const prev = target.includes(window[i - 1]);
-                const cur = target.includes(window[i]);
-                if (prev !== cur) flips++;
-            }
-            const flipRate = window.length > 1 ? flips / (window.length - 1) : 0;
-
-            const score = mass * 1.28 + margin * 0.78 + persist * 1.00 + conc * 0.58 - ent * 0.55 - flipRate * 0.78;
-            return { score, features: { mass, margin, persist, ent, conc, flipRate, freq } };
-        }
-
-        function confirmEntry(digits, selectedDigit, signalScore, liveWindow = LIVE_CONFIRM_WINDOW, threshold = ENTRY_THRESHOLD, engineType = 'match') {
-            const live = latestWindow(digits, liveWindow);
-            let liveScore = 0;
-
-            if (engineType === 'match') liveScore = matchScore(live, selectedDigit, Math.min(100, live.length)).score;
-            else if (engineType === 'differ') liveScore = differScore(live, selectedDigit, Math.min(100, live.length)).score;
-            else if (engineType === 'ou' || engineType === 'eo') liveScore = signalScore * 0.92;
-            else liveScore = signalScore * 0.90;
-
-            const drift = Math.abs(signalScore - liveScore);
-            const entryScore = 0.46 * norm(signalScore) + 0.34 * norm(liveScore) - 0.14 * drift;
-            const status = (entryScore >= threshold && drift <= MAX_DRIFT) ? 'CONFIRM' : 'HOLD';
-
-            return { status, entryScore, liveScore, drift };
-        }
-
-        function norm(x) {
-            return 1 / (1 + Math.exp(-x));
-        }
-
-        // ============================================================
-        // 11. SIGNAL LOADING MANAGEMENT (PATCH)
-        // ============================================================
-
-        const signalTimers = {};
-        const activeSignalLoaders = {};
-
-        function beginSignalLoading(key, message, subtitle) {
-            if (activeSignalLoaders[key]) {
-                console.warn(`Signal ${key} already loading.`);
-                return false;
-            }
-            activeSignalLoaders[key] = true;
-            renderLoadingPopup(message, subtitle);
-            return true;
-        }
-
-        function endSignalLoading(key) {
-            delete activeSignalLoaders[key];
-            if (signalTimers[key]) {
-                clearTimeout(signalTimers[key]);
-                delete signalTimers[key];
-            }
-            // Do NOT hide popup here—caller will hide after rendering result
-        }
-
-        function failSignalLoading(key, errorMsg) {
-            delete activeSignalLoaders[key];
-            if (signalTimers[key]) {
-                clearTimeout(signalTimers[key]);
-                delete signalTimers[key];
-            }
-            hidePopup();
-            alert(errorMsg);
-        }
-
-        // ============================================================
-        // 12. POPUP HELPERS (unchanged)
-        // ============================================================
-        function renderLoadingPopup(message, subtitle) {
-            const popup = document.getElementById('signal-popup');
-            const shoot = document.getElementById('popupShooting');
-            const loaderContainer = document.getElementById('signalLoaderContainer');
-            const resultContainer = document.getElementById('signalResultContainer');
-            const loadingText = document.getElementById('signalLoadingText');
-            const progressText = document.getElementById('signalProgressText');
-
-            popup.classList.add('active');
-            shoot.classList.add('active');
-            loaderContainer.style.display = 'block';
-            resultContainer.style.display = 'none';
-            loadingText.textContent = message || 'GENERATING SIGNAL...';
-            progressText.textContent = subtitle || '⏳ Analyzing live ticks...';
-        }
-
-        function hidePopup() {
-            document.getElementById('signal-popup').classList.remove('active');
-            document.getElementById('popupShooting').classList.remove('active');
-        }
-
-        function setSignalCard(html) {
-            document.getElementById('oracleSignalCard').innerHTML = html;
-        }
-
-        function setOUCard(html) {
-            document.getElementById('ouSignalCard').innerHTML = html;
-        }
-
-        function setEOCard(html) {
-            document.getElementById('eoSignalCard').innerHTML = html;
-        }
-
-        // ============================================================
-        // 13. SIGNAL GENERATORS (PATCHED)
-        // ============================================================
-
-        function generateMatchesSignal() {
-            const key = 'md';
-            if (!beginSignalLoading(key, 'GENERATING MATCH SIGNAL...', '⏳ Analyzing latest ticks for Matches...')) return;
-
-            const best = findBestMarket();
-            if (!best) return failSignalLoading(key, '⏳ No market has enough data yet.');
-
-            const data = tickBuffers[best.market];
-            if (!data || data.length < ANALYSIS_WINDOW) {
-                return failSignalLoading(key, `⏳ Need at least ${ANALYSIS_WINDOW} ticks.`);
-            }
-
-            signalTimers[key] = setTimeout(() => {
-                try {
-                    const digits = data.map(t => t.digit);
-                    const window = latestWindow(digits, ANALYSIS_WINDOW);
-
-                    let bestMatch = { digit: 0, score: -Infinity, features: null };
-                    for (let d = 0; d < 10; d++) {
-                        const ms = matchScore(window, d, ANALYSIS_WINDOW);
-                        if (ms.score > bestMatch.score) bestMatch = { digit: d, score: ms.score, features: ms.features };
-                    }
-
-                    currentSignal.match = { market: best.market, entropy: best.entropy, bestMatch };
-                    currentSignal.activeEngine = 'match';
-
-                    const q = signalQuality(bestMatch.score);
-                    const confidence = norm(bestMatch.score) * 100;
-
-                    setSignalCard(`
-                        <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
-                        <div class="big-digit matches">${bestMatch.digit}</div>
-                        <div class="entry-text"><strong>Match Digit: ${bestMatch.digit}</strong></div>
-                        <div class="action-text matches">MATCH ON ${bestMatch.digit}</div>
-                        <div class="confidence-row">
-                            <span class="confidence-label">${confidence.toFixed(1)}%</span>
-                            <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%;"></div></div>
-                        </div>
-                        <div class="bottom-row">
-                            <span>DFR: ${(bestMatch.features.f * 100).toFixed(1)}%</span>
-                            <span>Z: ${((bestMatch.features.f - 0.10) / 0.03).toFixed(2)}</span>
-                            <span>PERS: ${bestMatch.features.persist > 0.6 ? 'HIGH' : bestMatch.features.persist > 0.4 ? 'MEDIUM' : 'LOW'}</span>
-                        </div>
-                        <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
-                    `);
-
-                    document.getElementById('btnFindEntryMD').disabled = false;
-                    document.getElementById('btnFindEntryMD').className = 'btn-entry entry-default';
-                    document.getElementById('btnFindEntryMD').textContent = '🔍 FIND ENTRY';
-
-                    updateFrequencyChart(best.market);
-                    updateMatrixAndSeesaw(best.market);
-                    hidePopup();
-                } catch (e) {
-                    console.error(e);
-                    failSignalLoading(key, '❌ Failed to generate match signal.');
-                    return;
-                } finally {
-                    endSignalLoading(key);
-                }
-            }, SIGNAL_DELAY_MS);
-        }
-
-        function generateDiffersSignal() {
-            const key = 'df';
-            if (!beginSignalLoading(key, 'GENERATING DIFFER SIGNAL...', '⏳ Analyzing latest ticks for Differs...')) return;
-
-            const best = findBestMarket();
-            if (!best) return failSignalLoading(key, '⏳ No market has enough data yet.');
-
-            const data = tickBuffers[best.market];
-            if (!data || data.length < ANALYSIS_WINDOW) {
-                return failSignalLoading(key, `⏳ Need at least ${ANALYSIS_WINDOW} ticks.`);
-            }
-
-            signalTimers[key] = setTimeout(() => {
-                try {
-                    const digits = data.map(t => t.digit);
-                    const window = latestWindow(digits, ANALYSIS_WINDOW);
-
-                    let bestDiffer = { digit: 0, score: -Infinity, features: null };
-                    for (let d = 0; d < 10; d++) {
-                        const ds = differScore(window, d, ANALYSIS_WINDOW);
-                        if (ds.score > bestDiffer.score) bestDiffer = { digit: d, score: ds.score, features: ds.features };
-                    }
-
-                    currentSignal.differ = { market: best.market, entropy: best.entropy, bestDiffer };
-                    currentSignal.activeEngine = 'differ';
-
-                    const q = signalQuality(bestDiffer.score);
-                    const confidence = norm(bestDiffer.score) * 100;
-
-                    setSignalCard(`
-                        <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
-                        <div class="big-digit differs">${bestDiffer.digit}</div>
-                        <div class="entry-text"><strong>Differ Digit: ${bestDiffer.digit}</strong></div>
-                        <div class="action-text differs">DIFFER ON ${bestDiffer.digit}</div>
-                        <div class="confidence-row">
-                            <span class="confidence-label">${confidence.toFixed(1)}%</span>
-                            <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%;"></div></div>
-                        </div>
-                        <div class="bottom-row">
-                            <span>DFR: ${(bestDiffer.features.f * 100).toFixed(1)}%</span>
-                            <span>Z: ${((bestDiffer.features.f - 0.10) / 0.03).toFixed(2)}</span>
-                            <span>Trigger: DIFFER</span>
-                        </div>
-                        <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
-                    `);
-
-                    document.getElementById('btnFindEntryMD').disabled = false;
-                    document.getElementById('btnFindEntryMD').className = 'btn-entry entry-default';
-                    document.getElementById('btnFindEntryMD').textContent = '🔍 FIND ENTRY';
-
-                    updateFrequencyChart(best.market);
-                    updateMatrixAndSeesaw(best.market);
-                    hidePopup();
-                } catch (e) {
-                    console.error(e);
-                    failSignalLoading(key, '❌ Failed to generate differ signal.');
-                    return;
-                } finally {
-                    endSignalLoading(key);
-                }
-            }, SIGNAL_DELAY_MS);
-        }
-
-        function generateOverUnderSignal() {
-            const key = 'ou';
-            if (!beginSignalLoading(key, 'GENERATING OVER/UNDER SIGNAL...', '⏳ Analyzing latest ticks for Over/Under...')) return;
-
-            const best = findBestMarket();
-            if (!best) return failSignalLoading(key, '⏳ No market has enough data yet.');
-
-            const data = tickBuffers[best.market];
-            if (!data || data.length < ANALYSIS_WINDOW) {
-                return failSignalLoading(key, `⏳ Need at least ${ANALYSIS_WINDOW} ticks.`);
-            }
-
-            signalTimers[key] = setTimeout(() => {
-                try {
-                    const digits = data.map(t => t.digit);
-                    const window = latestWindow(digits, ANALYSIS_WINDOW);
-
-                    let bestSetup = null;
-                    let bestScore = -Infinity;
-                    const modes = ['OVER', 'UNDER'];
-                    const barriers = { OVER: [0, 1, 2, 3], UNDER: [6, 7, 8, 9] };
-
-                    modes.forEach(mode => {
-                        barriers[mode].forEach(barrier => {
-                            const res = overUnderScore(window, mode, barrier, ANALYSIS_WINDOW);
-                            if (res.score > bestScore) bestScore = res.score, bestSetup = { mode, barrier, score: res.score, features: res.features };
-                        });
-                    });
-
-                    if (!bestSetup) { failSignalLoading(key, '❌ No Over/Under setup found.'); return; }
-
-                    currentSignal.ou = { market: best.market, entropy: best.entropy, bestSetup };
-                    currentSignal.activeEngine = 'ou';
-
-                    const q = signalQuality(bestSetup.score);
-                    const confidence = norm(bestSetup.score) * 100;
-
-                    setOUCard(`
-                        <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
-                        <div class="big-digit" style="color:var(--neon-gold);">${bestSetup.barrier}</div>
-                        <div class="entry-text"><strong>${bestSetup.mode} ${bestSetup.barrier}</strong></div>
-                        <div class="action-text" style="color:var(--neon-gold);">${bestSetup.mode} ${bestSetup.barrier}</div>
-                        <div class="confidence-row">
-                            <span class="confidence-label" style="color:${q.color};">${confidence.toFixed(1)}%</span>
-                            <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%; background: linear-gradient(90deg, #FF6B00, ${q.color});"></div></div>
-                        </div>
-                        <div class="bottom-row">
-                            <span>Observed: ${(bestSetup.features.mass * 100).toFixed(1)}%</span>
-                            <span>Edge: ${((bestSetup.features.mass - 0.5) * 100).toFixed(1)}%</span>
-                        </div>
-                        <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
-                    `);
-
-                    document.getElementById('ouMarket').textContent = best.market;
-                    document.getElementById('ouConfidenceValue').textContent = `${confidence.toFixed(1)}%`;
-                    document.getElementById('ouEdge').textContent = `${((bestSetup.features.mass - 0.5) * 100).toFixed(1)}%`;
-                    document.getElementById('ouObserved').textContent = `${(bestSetup.features.mass * 100).toFixed(1)}%`;
-
-                    document.getElementById('btnFindEntryOU').disabled = false;
-                    document.getElementById('btnFindEntryOU').className = 'btn-entry entry-default';
-                    document.getElementById('btnFindEntryOU').textContent = '🔍 FIND ENTRY';
-
-                    updateFrequencyChart(best.market);
-                    updateMatrixAndSeesaw(best.market);
-                    hidePopup();
-                } catch (e) {
-                    console.error(e);
-                    failSignalLoading(key, '❌ Failed to generate Over/Under signal.');
-                    return;
-                } finally {
-                    endSignalLoading(key);
-                }
-            }, SIGNAL_DELAY_MS);
-        }
-
-        function generateEvenOddSignal() {
-            const key = 'eo';
-            if (!beginSignalLoading(key, 'GENERATING EVEN/ODD SIGNAL...', '⏳ Analyzing latest ticks for Even/Odd...')) return;
-
-            const best = findBestMarket();
-            if (!best) return failSignalLoading(key, '⏳ No market has enough data yet.');
-
-            const data = tickBuffers[best.market];
-            if (!data || data.length < ANALYSIS_WINDOW) {
-                return failSignalLoading(key, `⏳ Need at least ${ANALYSIS_WINDOW} ticks.`);
-            }
-
-            signalTimers[key] = setTimeout(() => {
-                try {
-                    const digits = data.map(t => t.digit);
-                    const window = latestWindow(digits, ANALYSIS_WINDOW);
-
-                    const evenRes = evenOddScore(window, 'EVEN', ANALYSIS_WINDOW);
-                    const oddRes = evenOddScore(window, 'ODD', ANALYSIS_WINDOW);
-
-                    const bestSide = evenRes.score > oddRes.score ? 'EVEN' : 'ODD';
-                    const bestScore = Math.max(evenRes.score, oddRes.score);
-                    const bestFeatures = evenRes.score > oddRes.score ? evenRes.features : oddRes.features;
-
-                    currentSignal.eo = {
-                        market: best.market,
-                        entropy: best.entropy,
-                        bestSide,
-                        bestScore,
-                        bestFeatures
-                    };
-                    currentSignal.activeEngine = 'eo';
-
-                    const q = signalQuality(bestScore);
-                    const confidence = norm(bestScore) * 100;
-
-                    setEOCard(`
-                        <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
-                        <div class="big-digit" style="color:${bestSide === 'EVEN' ? '#00BFFF' : '#FF6B00'};">${bestSide}</div>
-                        <div class="entry-text"><strong>Side: ${bestSide}</strong></div>
-                        <div class="action-text" style="color:${bestSide === 'EVEN' ? '#00BFFF' : '#FF6B00'};">${bestSide}</div>
-                        <div class="confidence-row">
-                            <span class="confidence-label" style="color:${q.color};">${confidence.toFixed(1)}%</span>
-                            <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%; background: linear-gradient(90deg, #FF6B00, ${q.color});"></div></div>
-                        </div>
-                        <div class="bottom-row">
-                            <span>PMR: ${bestScore.toFixed(3)}</span>
-                            <span>Z: ${((bestScore - 0.5) / 0.05).toFixed(2)}</span>
-                        </div>
-                        <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
-                    `);
-
-                    document.getElementById('eoMarket').textContent = best.market;
-                    document.getElementById('eoConfidenceValue').textContent = `${confidence.toFixed(1)}%`;
-                    document.getElementById('eoPMR').textContent = bestScore.toFixed(3);
-                    document.getElementById('eoZScore').textContent = ((bestScore - 0.5) / 0.05).toFixed(2);
-
-                    document.getElementById('btnFindEntryEO').disabled = false;
-                    document.getElementById('btnFindEntryEO').className = 'btn-entry entry-default';
-                    document.getElementById('btnFindEntryEO').textContent = '🔍 FIND ENTRY';
-
-                    updateFrequencyChart(best.market);
-                    updateMatrixAndSeesaw(best.market);
-                    hidePopup();
-                } catch (e) {
-                    console.error(e);
-                    failSignalLoading(key, '❌ Failed to generate Even/Odd signal.');
-                    return;
-                } finally {
-                    endSignalLoading(key);
-                }
-            }, SIGNAL_DELAY_MS);
-        }
-
-        // ============================================================
-        // 14. FIND ENTRY (unchanged, uses updated confirmEntry)
-        // ============================================================
-
-        function findEntryForMatchesDiffers() {
-            if (!currentSignal.activeEngine || (currentSignal.activeEngine !== 'match' && currentSignal.activeEngine !== 'differ')) {
-                alert('⚠️ Please generate a MATCH or DIFFER signal first.');
-                return;
-            }
-
-            const btn = document.getElementById('btnFindEntryMD');
-            btn.disabled = true;
-            btn.className = 'btn-entry entry-finding';
-            btn.innerHTML = '⏳ <span class="gear">⚙️</span> Finding entry...';
-
-            setTimeout(() => {
-                const active = currentSignal.activeEngine;
-                const signalData = active === 'match' ? currentSignal.match : currentSignal.differ;
-                const data = tickBuffers[signalData.market];
-
-                if (!data || data.length < ANALYSIS_WINDOW) {
-                    btn.className = 'btn-entry entry-hold';
-                    btn.innerHTML = '❌ HOLD (No data)';
-                    btn.disabled = false;
-                    return;
-                }
-
-                const digits = data.map(t => t.digit);
-                const selectedDigit = active === 'match' ? signalData.bestMatch.digit : signalData.bestDiffer.digit;
-                const signalScore = active === 'match' ? signalData.bestMatch.score : signalData.bestDiffer.score;
-                const confirm = confirmEntry(digits, selectedDigit, signalScore, LIVE_CONFIRM_WINDOW, ENTRY_THRESHOLD, active);
-
-                if (confirm.status === 'CONFIRM') {
-                    btn.className = 'btn-entry entry-confirmed';
-                    btn.innerHTML = '✅ ENTER NOW';
-                    btn.disabled = false;
-
-                    const card = document.getElementById('oracleSignalCard');
-                    card.innerHTML += `
-                        <div style="margin-top:10px; padding:10px; background:rgba(0,255,170,0.08); border-radius:8px; border:1px solid #00FFAA;">
-                            <div style="color:#00FFAA; font-weight:bold;">✅ ENTRY CONFIRMED</div>
-                            <div style="font-size:12px; color:var(--text-grey);">
-                                ${active.toUpperCase()} ${selectedDigit} | Score: ${confirm.entryScore.toFixed(3)}
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    btn.className = 'btn-entry entry-hold';
-                    btn.innerHTML = '⏳ HOLD (No entry)';
-                    btn.disabled = false;
-                }
-            }, 1000);
-        }
-
-        function findEntryForOverUnder() {
-            if (!currentSignal.ou) {
-                alert('⚠️ Please generate an OVER/UNDER signal first.');
-                return;
-            }
-
-            const btn = document.getElementById('btnFindEntryOU');
-            btn.disabled = true;
-            btn.className = 'btn-entry entry-finding';
-            btn.innerHTML = '⏳ <span class="gear">⚙️</span> Finding entry...';
-
-            setTimeout(() => {
-                const { market, bestSetup } = currentSignal.ou;
-                const data = tickBuffers[market];
-
-                if (!data || data.length < ANALYSIS_WINDOW) {
-                    btn.className = 'btn-entry entry-hold';
-                    btn.innerHTML = '❌ HOLD (No data)';
-                    btn.disabled = false;
-                    return;
-                }
-
-                const digits = data.map(t => t.digit);
-                const confirm = confirmEntry(digits, 0, bestSetup.score, LIVE_CONFIRM_WINDOW, ENTRY_THRESHOLD, 'ou');
-
-                if (confirm.status === 'CONFIRM') {
-                    btn.className = 'btn-entry entry-confirmed';
-                    btn.innerHTML = '✅ ENTER NOW';
-                    btn.disabled = false;
-                } else {
-                    btn.className = 'btn-entry entry-hold';
-                    btn.innerHTML = '⏳ HOLD (No entry)';
-                    btn.disabled = false;
-                }
-            }, 1000);
-        }
-
-        function findEntryForEvenOdd() {
-            if (!currentSignal.eo) {
-                alert('⚠️ Please generate an EVEN/ODD signal first.');
-                return;
-            }
-
-            const btn = document.getElementById('btnFindEntryEO');
-            btn.disabled = true;
-            btn.className = 'btn-entry entry-finding';
-            btn.innerHTML = '⏳ <span class="gear">⚙️</span> Finding entry...';
-
-            setTimeout(() => {
-                const { market, bestSide, bestScore } = currentSignal.eo;
-                const data = tickBuffers[market];
-
-                if (!data || data.length < ANALYSIS_WINDOW) {
-                    btn.className = 'btn-entry entry-hold';
-                    btn.innerHTML = '❌ HOLD (No data)';
-                    btn.disabled = false;
-                    return;
-                }
-
-                const digits = data.map(t => t.digit);
-                const confirm = confirmEntry(digits, 0, bestScore, LIVE_CONFIRM_WINDOW, ENTRY_THRESHOLD, 'eo');
-
-                if (confirm.status === 'CONFIRM') {
-                    btn.className = 'btn-entry entry-confirmed';
-                    btn.innerHTML = '✅ ENTER NOW';
-                    btn.disabled = false;
-                } else {
-                    btn.className = 'btn-entry entry-hold';
-                    btn.innerHTML = '⏳ HOLD (No entry)';
-                    btn.disabled = false;
-                }
-            }, 1000);
-        }
-
-        // ============================================================
-        // 15. EVENT LISTENERS (unchanged)
-        // ============================================================
-        document.getElementById('btnMatches').addEventListener('click', generateMatchesSignal);
-        document.getElementById('btnDiffers').addEventListener('click', generateDiffersSignal);
-        document.getElementById('btnOverUnderFetch').addEventListener('click', generateOverUnderSignal);
-        document.getElementById('btnEvenOddFetch').addEventListener('click', generateEvenOddSignal);
-        document.getElementById('btnFindEntryMD').addEventListener('click', findEntryForMatchesDiffers);
-        document.getElementById('btnFindEntryOU').addEventListener('click', findEntryForOverUnder);
-        document.getElementById('btnFindEntryEO').addEventListener('click', findEntryForEvenOdd);
-        document.getElementById('popupBack').addEventListener('click', hidePopup);
-
-        document.getElementById('signal-popup').addEventListener('click', function(e) {
-            if (e.target === this) hidePopup();
-        });
-
-        document.getElementById('btnScan').addEventListener('click', function() {
-            if (appState === 'READY' || appState === 'SIGNAL_READY') {
-                const best = findBestMarket();
-                if (best) {
-                    selectedMarket = best.market;
-                    updateFrequencyChart(best.market);
-                    updateMatrixAndSeesaw(best.market);
-                    document.getElementById('liveTicker').innerHTML = '🔄 Refreshed with latest ticks. Best: ' + best.market;
-                }
-            } else {
-                alert('⏳ Still collecting ticks. Please wait.');
-            }
-        });
-
-        // ============================================================
-        // 16. INITIAL SETUP
-        // ============================================================
-        console.log('🔮 Embrace Solace v3.2 — Signal Loading Management Patch Applied');
-        console.log(`📊 ${MARKETS.length} markets configured.`);
-        showChartPlaceholder();
-        showMatrixPlaceholder();
-        updateSignalCardPlaceholder();
-    </script>
+<div id="lock-overlay">
+<div class="lock-logo">EMBRAZE SOLACE</div>
+<div class="lock-subtitle">TRADINGANALYSISTOOL</div>
+<div class="lock-tagline">Understanding the Logic in Randomness</div>
+<div class="lock-description">
+<strong>Embrace Solace</strong> is a non-predictive analytical tool designed to navigate the randomness of Deriv's synthetic indices using <strong>real live tick data</strong> from the Deriv WebSocket API.
+<br><br>
+Scan 17 markets. Detect patterns. Generate signals with confidence.
+</div>
+<input class="lock-input" id="lockPassword" type="password" placeholder="Enter Password" maxlength="20" />
+<div class="lock-error" id="lockError">❌ Incorrect Password</div>
+<button class="btn-unlock" id="btnUnlock">🔓 UNLOCK</button>
+<div class="lock-footer">
+<div class="contact"><span>📧 embraze077@gmail.com</span><span>📱 0691408228</span></div>
+<div class="disclaimer">⚠️ Educational & Research Purposes Only. Not Financial Advice.</div>
+</div>
+</div>
+
+<div class="popup-shooting" id="popupShooting">
+<div class="shooting-star"></div><div class="shooting-star"></div>
+<div class="shooting-star"></div><div class="shooting-star"></div>
+<div class="shooting-star"></div>
+</div>
+<div id="signal-popup">
+<div class="popup-card">
+<button class="btn-back" id="popupBack">✕</button>
+<div id="signalLoaderContainer" style="text-align:center; padding:10px 0;">
+<div class="signal-loader" id="signalLoader"></div>
+<div class="signal-loading-text" id="signalLoadingText">GENERATING SIGNAL...</div>
+<div class="signal-progress-text" id="signalProgressText">⏳ Analyzing 17 markets...</div>
+</div>
+<div id="signalResultContainer" style="display:none;">
+<div class="signal-card" style="border-color: rgba(0,255,240,0.2);">
+<div class="row"><span id="popupMarket">--</span><span id="popupEntropy">H = --</span></div>
+<div class="big-digit" id="popupBigDigit">--</div>
+<div class="entry-text" id="popupEntryText">Entry: --</div>
+<div class="action-text" id="popupActionText">--</div>
+<div class="key-status" id="popupKeyStatus"></div>
+<div class="confidence-row">
+<span class="confidence-label" id="popupConfidenceLabel">--</span>
+<div class="confidence-bar"><div class="confidence-fill" id="popupConfidenceFill" style="width:0%;"></div></div>
+</div>
+<div class="bottom-row" id="popupBottomRow"><span>--</span><span>--</span></div>
+<div class="confidence-level" id="popupConfidenceLevel"></div>
+<div class="text-center text-grey text-sm" style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.04);">NEURAL PATTERN ANALYSIS</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="app" style="display:none;">
+<div class="header-row">
+<div class="app-title">EMBRAZE <span>SOLACE</span></div>
+<div style="font-size:12px; color:var(--text-grey);">v3.2</div>
+</div>
+
+<div class="section">
+<button class="btn-scan" id="btnScan">🔮 SCAN ALL MARKETS</button>
+<div id="gathering-banner">✅ Gathering Complete — 17 markets ready</div>
+<div class="market-grid" id="marketGrid"></div>
+<div class="live-ticker" id="liveTicker">⏳ Connecting to Deriv WebSocket...</div>
+</div>
+
+<div class="section">
+<div class="section-title">📊 Frequency Distribution <span style="font-size:12px; color:var(--text-grey);" id="chartMarketLabel"></span></div>
+<div class="chart-container" id="chartContainer">
+<div class="chart-placeholder" id="chartPlaceholder">⏳ Awaiting signal<br><span>Generate a signal to see frequency distribution</span></div>
+<div class="chart-bars" id="chartBars" style="display:none;"></div>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title">⛓️ Digit Relationship Matrix & Seesaw</div>
+<div class="matrix-placeholder" id="matrixPlaceholder">⏳ Awaiting tick data streams...</div>
+<div id="matrixActualContent" style="display:none;">
+<div class="matrix-grid" id="matrixGridContainer"></div>
+<div class="matrix-legend">
+<span>🔴 High Density Trap</span>
+<span>🟢 Target Breakout Entry</span>
+</div>
+<div class="seesaw-container">
+<div class="seesaw-item"><div class="digit top" id="seesawTopDigit">-</div><div class="pct" id="seesawTopPct">0%</div></div>
+<div class="seesaw-line"></div>
+<div class="seesaw-item"><div class="digit bottom" id="seesawBottomDigit">-</div><div class="pct" id="seesawBottomPct">0%</div></div>
+</div>
+<div class="seesaw-label">Top Dominant Peak vs Bottom Dormant Valley (60‑Tick Window)</div>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title">⚡ Oracle Neural Pattern Scanners</div>
+<div style="margin-bottom:14px;">
+<div style="font-size:12px; color:var(--text-grey); margin-bottom:4px;">ENGINE A: MATCHES / DIFFERS MULTIPLEXER</div>
+<div class="oracle-row">
+<button class="oracle-btn matches" id="btnMatchesFetch" disabled>MATCHES</button>
+<div class="orb">🔮</div>
+<button class="oracle-btn differs" id="btnDiffersFetch" disabled>DIFFERS</button>
+</div>
+<div class="signal-card" id="signalCardMD"></div>
+<button class="btn-entry entry-default" id="btnFindEntryMD" disabled>FIND CONFIRMED ENTRY</button>
+</div>
+<div style="margin-bottom:14px; margin-top:20px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.03);">
+<div style="font-size:12px; color:var(--text-grey); margin-bottom:4px;">ENGINE B: OVER / UNDER DEEP SCANNER</div>
+<div class="fetch-row"><button class="btn-fetch hl" id="btnOverUnderFetch" disabled>SCAN OVER / UNDER CONDITIONS</button></div>
+<div class="signal-card" id="signalCardOU"></div>
+<button class="btn-entry entry-default" id="btnFindEntryOU" disabled>FIND CONFIRMED ENTRY</button>
+</div>
+<div style="margin-top:20px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.03);">
+<div style="font-size:12px; color:var(--text-grey); margin-bottom:4px;">ENGINE C: EVEN / ODD BALANCE ANALYSER</div>
+<div class="fetch-row"><button class="btn-fetch evenodd" id="btnEvenOddFetch" disabled>SCAN EVEN / ODD CONDITIONS</button></div>
+<div class="signal-card" id="signalCardEO"></div>
+<button class="btn-entry entry-default" id="btnFindEntryEO" disabled>FIND CONFIRMED ENTRY</button>
+</div>
+</div>
+</div>
+
+<script>
+// ============================================================
+// 1. APP ARCHITECTURE & PARAMETERS
+// ============================================================
+const WS_URL = 'wss://ws.derivws.com/websockets/v3?app_id=1089';
+const PASS = '2001';
+const TICK_CAPACITY = 100;
+const REQUIRED_INITIAL_TICKS = 60;
+const LIVE_CONFIRM_WINDOW = 6;
+
+const MARKETS = [
+{ id: 'R_10', name: 'Vol 10' }, { id: 'R_25', name: 'Vol 25' },
+{ id: 'R_50', name: 'Vol 50' }, { id: 'R_75', name: 'Vol 75' },
+{ id: 'R_100', name: 'Vol 100' }, { id: '1HZ10V', name: 'Vol 10 (1s)' },
+{ id: '1HZ25V', name: 'Vol 25 (1s)' }, { id: '1HZ50V', name: 'Vol 50 (1s)' },
+{ id: '1HZ75V', name: 'Vol 75 (1s)' }, { id: '1HZ100V', name: 'Vol 100 (1s)' },
+{ id: 'RDBULL', name: 'Bull M.' }, { id: 'RDBEAR', name: 'Bear M.' },
+{ id: 'JD10', name: 'Jump 10' }, { id: 'JD25', name: 'Jump 25' },
+{ id: 'JD50', name: 'Jump 50' }, { id: 'JD75', name: 'Jump 75' },
+{ id: 'JD100', name: 'Jump 100' }
+];
+
+let socket = null;
+let marketData = {};
+let selectedMarket = null;
+let appState = 'LOCKED';
+let activeFinders = { match: null, overUnder: null, evenOdd: null };
+
+MARKETS.forEach(m => {
+marketData[m.id] = { name: m.name, ticks: [], digits: [], ready: false };
+});
+
+// ============================================================
+// 2. PASSWORD VALIDATION INTERFACE
+// ============================================================
+document.getElementById('btnUnlock').addEventListener('click', function() {
+const val = document.getElementById('lockPassword').value;
+if (val === PASS) {
+document.getElementById('lock-overlay').classList.add('hidden');
+document.getElementById('app').style.display = 'block';
+appState = 'INITIALIZING';
+initWebSocket();
+} else {
+const err = document.getElementById('lockError');
+err.classList.add('show');
+setTimeout(() => err.classList.remove('show'), 2500);
+}
+});
+document.getElementById('lockPassword').addEventListener('keypress', function(e) {
+if (e.key === 'Enter') document.getElementById('btnUnlock').click();
+});
+
+// ============================================================
+// 3. WEBSOCKET ENGINE & DECIMAL FIX
+// ============================================================
+function initWebSocket() {
+socket = new WebSocket(WS_URL);
+socket.onopen = () => {
+console.log('🔌 WebSocket Connected to Deriv');
+document.getElementById('liveTicker').innerHTML = '📡 Connected. Authorizing stream...';
+MARKETS.forEach(m => {
+socket.send(JSON.stringify({ ticks: m.id }));
+});
+};
+socket.onmessage = (msg) => {
+const data = JSON.parse(msg.data);
+if (data.msg_type === 'tick' && data.tick) {
+handleIncomingTick(data.tick);
+}
+};
+socket.onerror = (err) => console.error('WebSocket Error:', err);
+socket.onclose = () => {
+console.log('❌ Connection closed. Reconnecting...');
+if (appState !== 'LOCKED') setTimeout(initWebSocket, 5000);
+};
+}
+
+function handleIncomingTick(tick) {
+const mId = tick.symbol;
+if (!marketData[mId]) return;
+const priceStr = tick.quote.toString();
+let d = 0;
+if (tick.pip_size === 0) {
+d = parseInt(priceStr.slice(-1)) || 0;
+} else {
+const parts = priceStr.split('.');
+if (parts.length === 2) {
+const dec = parts[1];
+if (dec.length >= tick.pip_size) {
+d = parseInt(dec.charAt(tick.pip_size - 1)) || 0;
+} else {
+d = 0;
+}
+} else {
+d = 0;
+}
+}
+const m = marketData[mId];
+m.ticks.push(tick.quote);
+m.digits.push(d);
+if (m.ticks.length > TICK_CAPACITY) {
+m.ticks.shift();
+m.digits.shift();
+}
+if (!m.ready && m.digits.length >= REQUIRED_INITIAL_TICKS) {
+m.ready = true;
+checkOverallReadyState();
+}
+updateMarketGridCard(mId);
+if (selectedMarket === mId) {
+updateLiveTickerStream(tick, d);
+}
+}
+
+function checkOverallReadyState() {
+if (appState !== 'INITIALIZING') return;
+let allReady = true;
+MARKETS.forEach(m => { if (!marketData[m.id].ready) allReady = false; });
+if (allReady) {
+appState = 'READY';
+document.getElementById('gathering-banner').classList.add('show');
+const btn = document.getElementById('btnScan');
+btn.classList.add('ready');
+btn.innerHTML = '🔮 SCANNERS ONLINE';
+enableAllControlButtons();
+}
+}
+
+function enableAllControlButtons() {
+document.getElementById('btnMatchesFetch').disabled = false;
+document.getElementById('btnDiffersFetch').disabled = false;
+document.getElementById('btnOverUnderFetch').disabled = false;
+document.getElementById('btnEvenOddFetch').disabled = false;
+}
+
+// ============================================================
+// 4. METRIC SCANNERS (STATISTICAL LOGIC)
+// ============================================================
+function computeMetrics(digits) {
+const len = digits.length;
+const freq = Array(10).fill(0);
+digits.forEach(x => freq[x]++);
+const prob = freq.map(c => c / len);
+let ent = 0;
+prob.forEach(p => { if (p > 0) ent -= p * Math.log2(p); });
+const maxEnt = Math.log2(10);
+const normEnt = ent / maxEnt;
+let trans = 0;
+for (let i = 0; i < len - 1; i++) {
+if (digits[i] !== digits[i + 1]) trans++;
+}
+const transRate = trans / (len - 1);
+const matrix = Array(10).fill(0).map(() => Array(10).fill(0));
+for (let i = 0; i < len - 1; i++) {
+matrix[digits[i]][digits[i + 1]]++;
+}
+const rep = Array(10).fill(0);
+let currentDigit = digits[0], currentLen = 1;
+for (let i = 1; i < len; i++) {
+if (digits[i] === currentDigit) {
+currentLen++;
+} else {
+if (currentLen > rep[currentDigit]) rep[currentDigit] = currentLen;
+currentDigit = digits[i]; currentLen = 1;
+}
+}
+if (currentLen > rep[currentDigit]) rep[currentDigit] = currentLen;
+return { freq, prob, normEntropy: normEnt, transitionRate: transRate, matrix, persistence: rep };
+}
+
+// ============================================================
+// 5. ADJUSTED CALIBRATION SCORING ENGINES (CHANGE 1 to 4)
+// ============================================================
+function matchScore(f, persist, conc, ent, trans) {
+// CHANGE 1: Shift calibration parameters to reward setup attributes, reduce penalty drag
+const score = f * 1.40 + persist * 1.10 + conc * 0.80 - ent * 0.55 - trans * 0.20;
+return Math.max(0, Math.min(100, 100 / (1 + Math.exp(-0.15 * (score - 15)))));
+}
+
+function differScore(ent, trans, f, persist) {
+// CHANGE 2: Ease structural requirements slightly to catch viable breakout layers earlier
+const score = ent * 0.60 + trans * 0.35 - f * 0.25 - persist * 0.15;
+return Math.max(0, Math.min(100, 100 / (1 + Math.exp(-0.2 * (score - 1)))));
+}
+
+function overUnderScore(mass, margin, persist, conc, ent, reject) {
+// CHANGE 3: Calibrate multi-digit configuration balance, lower rejection layer overhead
+const score = mass * 1.50 + margin * 0.95 + persist * 1.20 + conc * 0.70 - ent * 0.60 - reject * 0.80;
+return Math.max(0, Math.min(100, 100 / (1 + Math.exp(-0.12 * (score - 14)))));
+}
+
+function evenOddScore(mass, margin, persist, conc, ent, flipRate) {
+// CHANGE 4: Reduce alternate oscillating friction parameter blockages
+const score = mass * 1.50 + margin * 0.95 + persist * 1.20 + conc * 0.70 - ent * 0.60 - flipRate * 0.80;
+return Math.max(0, Math.min(100, 100 / (1 + Math.exp(-0.12 * (score - 14)))));
+}
+
+// ============================================================
+// 6. ADAPTIVE CONFIDENCE SIGNAL GENERATORS (CHANGE 5)
+// ============================================================
+function generateMatchesSignal() {
+showPopupLoader('ANALYZING SYMBOL FOR MATCH LAYER...');
+setTimeout(() => {
+const market = selectedMarket || findBestMarket()?.market || 'R_100';
+selectedMarket = market;
+const m = marketData[market];
+const metrics = computeMetrics(m.digits);
+let targetDigit = 0, highestF = -1;
+metrics.freq.forEach((f, idx) => { if (f > highestF) { highestF = f; targetDigit = idx; } });
+const conc = metrics.matrix[targetDigit][targetDigit] || 0;
+const confidence = matchScore(highestF, metrics.persistence[targetDigit], conc, metrics.normEntropy, metrics.transitionRate);
+// CHANGE 5 (Occurrence 1/4): Relax confidence output filters
+const level = confidence > 65 ? 'HIGH' : confidence > 50 ? 'MEDIUM' : 'LOW';
+
+const res = {
+market, type: 'MATCHES', digit: targetDigit, confidence, level,
+metrics: { entropy: metrics.normEntropy.toFixed(2), freq: highestF, persist: metrics.persistence[targetDigit] }
+};
+renderSignalOutput('MD', res);
+updateFrequencyChart(market);
+updateMatrixAndSeesaw(market);
+hidePopup();
+}, 1200);
+}
+
+function generateDiffersSignal() {
+showPopupLoader('SCANNING DENSITY FOR DIFFERS GAP...');
+setTimeout(() => {
+const market = selectedMarket || findBestMarket()?.market || 'R_100';
+selectedMarket = market;
+const m = marketData[market];
+const metrics = computeMetrics(m.digits);
+let targetDigit = 0, lowestF = 999;
+metrics.freq.forEach((f, idx) => { if (f < lowestF) { lowestF = f; targetDigit = idx; } });
+const confidence = differScore(metrics.normEntropy, metrics.transitionRate, lowestF, metrics.persistence[targetDigit]);
+// CHANGE 5 (Occurrence 2/4): Relax confidence output filters
+const level = confidence > 65 ? 'HIGH' : confidence > 50 ? 'MEDIUM' : 'LOW';
+
+const res = {
+market, type: 'DIFFERS', digit: targetDigit, confidence, level,
+metrics: { entropy: metrics.normEntropy.toFixed(2), freq: lowestF, persist: metrics.persistence[targetDigit] }
+};
+renderSignalOutput('MD', res);
+updateFrequencyChart(market);
+updateMatrixAndSeesaw(market);
+hidePopup();
+}, 1200);
+}
+
+function generateOverUnderSignal() {
+showPopupLoader('EXECUTING VOLUMETRIC MASS LAYER INTERPOLATION...');
+setTimeout(() => {
+const market = selectedMarket || findBestMarket()?.market || 'R_100';
+selectedMarket = market;
+const m = marketData[market];
+const metrics = computeMetrics(m.digits);
+let overMass = 0, underMass = 0;
+metrics.freq.forEach((f, idx) => { if (idx > 4) overMass += f; else underMass += f; });
+let type = 'OVER', prediction = 4, mass = overMass, margin = overMass - underMass;
+let reject = metrics.freq[0] + metrics.freq[1];
+let persist = (metrics.persistence[5] + metrics.persistence[6] + metrics.persistence[7] + metrics.persistence[8] + metrics.persistence[9]) / 5;
+if (underMass > overMass) {
+type = 'UNDER'; prediction = 5; mass = underMass; margin = underMass - overMass;
+reject = metrics.freq[8] + metrics.freq[9];
+persist = (metrics.persistence[0] + metrics.persistence[1] + metrics.persistence[2] + metrics.persistence[3] + metrics.persistence[4]) / 5;
+}
+let conc = 0;
+const startIdx = type === 'OVER' ? 5 : 0;
+for (let r = startIdx; r < startIdx + 5; r++) {
+for (let c = startIdx; c < startIdx + 5; c++) conc += metrics.matrix[r][c];
+}
+const confidence = overUnderScore(mass, margin, persist, conc, metrics.normEntropy, reject);
+// CHANGE 5 (Occurrence 3/4): Relax confidence output filters
+const level = confidence > 65 ? 'HIGH' : confidence > 50 ? 'MEDIUM' : 'LOW';
+
+const res = {
+market, type, digit: prediction, confidence, level,
+metrics: { entropy: metrics.normEntropy.toFixed(2), mass, margin }
+};
+renderSignalOutput('OU', res);
+updateFrequencyChart(market);
+updateMatrixAndSeesaw(market);
+hidePopup();
+}, 1200);
+}
+
+function generateEvenOddSignal() {
+showPopupLoader('COMPUTING OSCILLATION COEFFICIENTS...');
+setTimeout(() => {
+const market = selectedMarket || findBestMarket()?.market || 'R_100';
+selectedMarket = market;
+const m = marketData[market];
+const metrics = computeMetrics(m.digits);
+let evenMass = 0, oddMass = 0;
+metrics.freq.forEach((f, idx) => { if (idx % 2 === 0) evenMass += f; else oddMass += f; });
+let type = 'EVEN', mass = evenMass, margin = evenMass - oddMass;
+let persist = (metrics.persistence[0] + metrics.persistence[2] + metrics.persistence[4] + metrics.persistence[6] + metrics.persistence[8]) / 5;
+if (oddMass > evenMass) {
+type = 'ODD'; mass = oddMass; margin = oddMass - evenMass;
+persist = (metrics.persistence[1] + metrics.persistence[3] + metrics.persistence[5] + metrics.persistence[7] + metrics.persistence[9]) / 5;
+}
+let conc = 0;
+for (let r = 0; r < 10; r++) {
+for (let c = 0; c < 10; c++) {
+if (type === 'EVEN' && r % 2 === 0 && c % 2 === 0) conc += metrics.matrix[r][c];
+if (type === 'ODD' && r % 2 !== 0 && c % 2 !== 0) conc += metrics.matrix[r][c];
+}
+}
+let flips = 0;
+for (let i = 0; i < m.digits.length - 1; i++) {
+if ((m.digits[i] % 2) !== (m.digits[i + 1] % 2)) flips++;
+}
+const flipRate = flips / (m.digits.length - 1);
+const confidence = evenOddScore(mass, margin, persist, conc, metrics.normEntropy, flipRate);
+// CHANGE 5 (Occurrence 4/4): Relax confidence output filters
+const level = confidence > 65 ? 'HIGH' : confidence > 50 ? 'MEDIUM' : 'LOW';
+
+const res = {
+market, type, digit: type === 'EVEN' ? '❌' : '🔮', confidence, level,
+metrics: { entropy: metrics.normEntropy.toFixed(2), mass, margin }
+};
+renderSignalOutput('EO', res);
+updateFrequencyChart(market);
+updateMatrixAndSeesaw(market);
+hidePopup();
+}, 1200);
+}
+
+// ============================================================
+// 7. REALTIME CONFIRMATION TRACKER (CHANGE 6)
+// ============================================================
+// CHANGE 6: Eased default entry threshold from 0.58 to 0.52 to provide additional structural execution window
+function confirmEntry(digits, selectedDigit, signalScore, liveWindow = LIVE_CONFIRM_WINDOW, threshold = 0.52, engineType = 'match') {
+if (digits.length < liveWindow) return { pass: false, weight: 0 };
+const slice = digits.slice(-liveWindow);
+let matchesCount = 0;
+slice.forEach(x => { if (x === selectedDigit) matchesCount++; });
+const sampleFreq = matchesCount / liveWindow;
+let flips = 0;
+for (let i = 0; i < slice.length - 1; i++) {
+if ((slice[i] % 2) !== (slice[i + 1] % 2)) flips++;
+}
+const sampleFlipRate = flips / (liveWindow - 1);
+let evenCount = 0;
+slice.forEach(x => { if (x % 2 === 0) evenCount++; });
+const sampleEvenFreq = evenCount / liveWindow;
+let overCount = 0;
+slice.forEach(x => { if (x > 4) overCount++; });
+const sampleOverFreq = overCount / liveWindow;
+
+let internalWeight = 0;
+if (engineType === 'match') {
+internalWeight = (sampleFreq * 0.6) + ((1 - sampleFlipRate) * 0.4);
+} else if (engineType === 'differ') {
+internalWeight = ((1 - sampleFreq) * 0.7) + (sampleFlipRate * 0.3);
+} else if (engineType === 'over') {
+internalWeight = (sampleOverFreq * 0.65) + ((1 - sampleFlipRate) * 0.35);
+} else if (engineType === 'under') {
+internalWeight = ((1 - sampleOverFreq) * 0.65) + ((1 - sampleFlipRate) * 0.35);
+} else if (engineType === 'even') {
+internalWeight = (sampleEvenFreq * 0.6) + ((1 - sampleFlipRate) * 0.4);
+} else if (engineType === 'odd') {
+internalWeight = ((1 - sampleEvenFreq) * 0.6) + ((1 - sampleFlipRate) * 0.4);
+}
+const finalWeight = (internalWeight * 0.4) + ((signalScore / 100) * 0.6);
+return { pass: finalWeight >= threshold, weight: finalWeight };
+}
+
+function startLiveEntryVerification(engineType, digit, initialScore, buttonId) {
+if (activeFinders[engineType]) clearInterval(activeFinders[engineType]);
+const btn = document.getElementById(buttonId);
+btn.className = 'btn-entry entry-finding';
+btn.innerHTML = '<span class="gear">⚙️</span> TRACKING SECURE LIVE GATEWAY...';
+let counter = 0;
+
+activeFinders[engineType] = setInterval(() => {
+const m = marketData[selectedMarket];
+if (!m) return;
+counter++;
+const validation = confirmEntry(m.digits, digit, initialScore, LIVE_CONFIRM_WINDOW, 0.52, engineType);
+if (validation.pass) {
+btn.className = 'btn-entry entry-confirmed';
+btn.innerHTML = `✅ PATTERN VERIFIED (${(validation.weight * 100).toFixed(0)}%) — EXECUTE NOW`;
+clearInterval(activeFinders[engineType]);
+activeFinders[engineType] = null;
+} else {
+if (counter >= 15) {
+btn.className = 'btn-entry entry-hold';
+btn.innerHTML = `❌ CONTEXT TIMEOUT (${(validation.weight * 100).toFixed(0)}%) — RESCAN`;
+clearInterval(activeFinders[engineType]);
+activeFinders[engineType] = null;
+} else {
+btn.innerHTML = `<span class="gear">⚙️</span> SCANNING GATES (w=${(validation.weight * 100).toFixed(0)}% t=${counter}/15)`;
+}
+}
+}, 1000);
+}
+
+// ============================================================
+// 8. MULTI-MARKET OPTIMIZATION ROUTER (SCANNERS)
+// ============================================================
+function findBestMarket() {
+let bestMarket = null, topScore = -1, bestType = '';
+MARKETS.forEach(m => {
+const data = marketData[m.id];
+if (!data.ready) return;
+const metrics = computeMetrics(data.digits);
+let maxF = -1, maxDigit = 0;
+metrics.freq.forEach((f, idx) => { if (f > maxF) { maxF = f; maxDigit = idx; } });
+const conc = metrics.matrix[maxDigit][maxDigit] || 0;
+const mS = matchScore(maxF, metrics.persistence[maxDigit], conc, metrics.normEntropy, metrics.transitionRate);
+if (mS > topScore) { topScore = mS; bestMarket = m.id; bestType = 'MATCHES'; }
+});
+return bestMarket ? { market: bestMarket, score: topScore, type: bestType } : null;
+}
+
+// ============================================================
+// 9. DATA LAYOUT & RENDER HANDLERS (UNCHANGED)
+// ============================================================
+function updateMarketGridCard(mId) {
+const m = marketData[mId];
+let grid = document.getElementById('marketGrid');
+let card = document.getElementById(`card-${mId}`);
+if (!card) {
+card = document.createElement('div');
+card.id = `card-${mId}`;
+card.className = 'market-card';
+card.onclick = () => {
+selectedMarket = mId;
+highlightSelectedMarketCard(mId);
+updateFrequencyChart(mId);
+updateMatrixAndSeesaw(mId);
+};
+grid.appendChild(card);
+}
+if (selectedMarket === mId) card.style.borderColor = 'var(--neon-cyan)';
+else card.style.borderColor = m.ready ? 'rgba(0,255,170,0.15)' : 'rgba(255,255,255,0.02)';
+const pct = ((m.digits.length / REQUIRED_INITIAL_TICKS) * 100).toFixed(0);
+let dotColor = 'grey';
+let textStatus = `${m.digits.length} ticks`;
+if (m.ready) {
+dotColor = 'green';
+textStatus = 'STREAMING';
+card.classList.add('ready');
+} else if (m.digits.length > 0) {
+dotColor = 'yellow';
+textStatus = `${pct}%`;
+}
+card.innerHTML = `
+<div class="sym">${m.name}</div>
+<div class="stat"><span class="dot ${dotColor}"></span>${textStatus}</div>
+`;
+}
+
+function highlightSelectedMarketCard(mId) {
+MARKETS.forEach(m => {
+const card = document.getElementById(`card-${m.id}`);
+if (card) {
+if (m.id === mId) {
+card.style.borderColor = 'var(--neon-cyan)';
+card.style.boxShadow = '0 0 15px rgba(0,255,240,0.1)';
+} else {
+card.style.borderColor = marketData[m.id].ready ? 'rgba(0,255,170,0.15)' : 'rgba(255,255,255,0.02)';
+card.style.boxShadow = 'none';
+}
+}
+});
+}
+
+function updateLiveTickerStream(tick, lastDigit) {
+const label = MARKETS.find(x => x.id === tick.symbol)?.name || tick.symbol;
+document.getElementById('liveTicker').innerHTML = `<strong>${label}</strong> feed: $${tick.quote.toFixed(tick.pip_size)} ➜ Last Digit [ <span style="color:var(--neon-green); font-weight:900;">${lastDigit}</span> ]`;
+}
+
+function renderSignalOutput(target, res) {
+const targetId = `signalCard${target}`;
+const btnId = `btnFindEntry${target}`;
+const card = document.getElementById(targetId);
+const entryBtn = document.getElementById(btnId);
+const colorClass = res.type.toLowerCase();
+let actionLabel = res.type;
+if (res.type === 'MATCHES') actionLabel = `MATCH DIGIT ${res.digit}`;
+if (res.type === 'DIFFERS') actionLabel = `DIFFER DIGIT ${res.digit}`;
+if (res.type === 'OVER') actionLabel = `OVER ${res.digit}`;
+if (res.type === 'UNDER') actionLabel = `UNDER ${res.digit}`;
+
+card.innerHTML = `
+<div class="row"><span>${MARKETS.find(x => x.id === res.market).name}</span><span>Entropy H = ${res.metrics.entropy}</span></div>
+<div class="big-digit ${colorClass}">${res.digit}</div>
+<div class="action-text ${colorClass}">${actionLabel}</div>
+<div class="confidence-row">
+<span class="confidence-label">${res.confidence.toFixed(0)}%</span>
+<div class="confidence-bar"><div class="confidence-fill" style="width:${res.confidence}%;"></div></div>
+</div>
+<div class="confidence-level" style="color:${res.level === 'HIGH' ? 'var(--neon-green)' : res.level === 'MEDIUM' ? 'var(--neon-gold)' : 'var(--neon-red)'}; font-weight:700;">
+CONFIDENCE LEVEL: ${res.level}
+</div>
+`;
+entryBtn.className = 'btn-entry entry-default';
+entryBtn.innerHTML = '⚡ INITIALIZE LIVE EDGE CONFIRMATION';
+entryBtn.disabled = false;
+entryBtn.onclick = () => {
+let eType = 'match';
+if (res.type === 'DIFFERS') eType = 'differ';
+if (res.type === 'OVER') eType = 'over';
+if (res.type === 'UNDER') eType = 'under';
+if (res.type === 'EVEN') eType = 'even';
+if (res.type === 'ODD') eType = 'odd';
+startLiveEntryVerification(eType, res.digit, res.confidence, btnId);
+};
+}
+
+// ============================================================
+// 10. REALTIME DYNAMIC VISUALIZATIONS (UNCHANGED)
+// ============================================================
+function updateFrequencyChart(mId) {
+const m = marketData[mId];
+if (!m || !m.ready) return;
+document.getElementById('chartMarketLabel').innerText = `(${m.name})`;
+document.getElementById('chartPlaceholder').style.display = 'none';
+const barsContainer = document.getElementById('chartBars');
+barsContainer.style.display = 'flex';
+barsContainer.innerHTML = '';
+const metrics = computeMetrics(m.digits);
+const maxCount = Math.max(...metrics.freq, 1);
+const theoreticalBaseline = m.digits.length / 10;
+const baselinePct = (theoreticalBaseline / maxCount) * 100;
+const lineHtml = `
+<div class="chart-baseline" style="top: ${100 - baselinePct}%;">
+<div class="chart-baseline-label">EV (10%)</div>
+</div>
+`;
+barsContainer.innerHTML += lineHtml;
+metrics.freq.forEach((f, idx) => {
+const pctHeight = (f / maxCount) * 100;
+let barColor = 'rgba(255,255,255,0.15)';
+if (f > theoreticalBaseline) barColor = 'var(--neon-purple)';
+if (f === maxCount) barColor = 'var(--neon-cyan)';
+const group = document.createElement('div');
+group.className = 'bar-group';
+group.innerHTML = `
+<div class="bar" style="height:${pctHeight}%; background:${barColor}; box-shadow: 0 0 10px ${barColor}22;"></div>
+<div class="bar-label">${idx}<br><span style="font-size:8px; opacity:0.6;">${f}</span></div>
+`;
+barsContainer.appendChild(group);
+});
+}
+
+function updateMatrixAndSeesaw(mId) {
+const m = marketData[mId];
+if (!m || !m.ready) return;
+document.getElementById('matrixPlaceholder').style.display = 'none';
+document.getElementById('matrixActualContent').style.display = 'block';
+const container = document.getElementById('matrixGridContainer');
+container.innerHTML = '';
+const metrics = computeMetrics(m.digits);
+let highestCell = -1, lowestCell = 9999;
+let maxR = 0, maxC = 0, minR = 0, minC = 0;
+for (let r = 0; r < 10; r++) {
+for (let c = 0; c < 10; c++) {
+const val = metrics.matrix[r][c];
+if (val > highestCell) { highestCell = val; maxR = r; maxC = c; }
+if (val < lowestCell) { lowestCell = val; minR = r; minC = c; }
+}
+}
+for (let r = 0; r < 10; r++) {
+for (let c = 0; c < 10; c++) {
+const cell = document.createElement('div');
+cell.className = 'matrix-cell';
+cell.innerText = `${r}${c}`;
+if (r === maxR && c === maxC && highestCell > 0) cell.classList.add('highlight-block');
+else if (r === minR && c === minC) cell.classList.add('highlight-trigger');
+container.appendChild(cell);
+}
+}
+let maxDigit = 0, minDigit = 0;
+let maxF = -1, minF = 9999;
+metrics.freq.forEach((f, idx) => {
+if (f > maxF) { maxF = f; maxDigit = idx; }
+if (f < minF) { minF = f; minDigit = idx; }
+});
+const totalDigits = m.digits.length;
+document.getElementById('seesawTopDigit').innerText = maxDigit;
+document.getElementById('seesawTopPct').innerText = ((maxF / totalDigits) * 100).toFixed(0) + '%';
+document.getElementById('seesawBottomDigit').innerText = minDigit;
+document.getElementById('seesawBottomPct').innerText = ((minF / totalDigits) * 100).toFixed(0) + '%';
+}
+
+function showChartPlaceholder() {
+document.getElementById('chartPlaceholder').style.display = 'flex';
+document.getElementById('chartBars').style.display = 'none';
+}
+function showMatrixPlaceholder() {
+document.getElementById('matrixPlaceholder').style.display = 'flex';
+document.getElementById('matrixActualContent').style.display = 'none';
+}
+function updateSignalCardPlaceholder() {
+const text = '<div class="placeholder-text">🔮 Select a dynamic scanning core above to extract immediate signal variables.</div>';
+document.getElementById('signalCardMD').innerHTML = text;
+document.getElementById('signalCardOU').innerHTML = text;
+document.getElementById('signalCardEO').innerHTML = text;
+}
+
+function showPopupLoader(subtitleText) {
+document.getElementById('popupShooting').classList.add('active');
+document.getElementById('signalPopup').style.display = 'none';
+document.getElementById('signalResultContainer').style.display = 'none';
+document.getElementById('signalLoaderContainer').style.display = 'block';
+document.getElementById('signalProgressText').innerText = subtitleText;
+document.getElementById('signal-popup').classList.add('active');
+}
+function hidePopup() {
+document.getElementById('signal-popup').classList.remove('active');
+document.getElementById('popupShooting').classList.remove('none');
+}
+
+// ============================================================
+// 11. BIND EVENT LISTENERS (UNCHANGED)
+// ============================================================
+document.getElementById('btnMatchesFetch').addEventListener('click', generateMatchesSignal);
+document.getElementById('btnDiffersFetch').addEventListener('click', generateDiffersSignal);
+document.getElementById('btnOverUnderFetch').addEventListener('click', generateOverUnderSignal);
+document.getElementById('btnEvenOddFetch').addEventListener('click', generateEvenOddSignal);
+document.getElementById('popupBack').addEventListener('click', hidePopup);
+
+document.getElementById('signal-popup').addEventListener('click', function(e) {
+if (e.target === this) hidePopup();
+});
+
+document.getElementById('btnScan').addEventListener('click', function() {
+if (appState === 'READY' || appState === 'SIGNAL_READY') {
+const best = findBestMarket();
+if (best) {
+selectedMarket = best.market;
+updateFrequencyChart(best.market);
+updateMatrixAndSeesaw(best.market);
+document.getElementById('liveTicker').innerHTML = '🔄 Refreshed with latest ticks. Best: ' + best.market;
+}
+} else {
+alert('⏳ Still collecting ticks. Please wait.');
+}
+});
+
+// ============================================================
+// 12. INITIAL SETUP
+// ============================================================
+console.log('🔮 Embrace Solace v3.2 — Zero‑Digit + Symbol Decimal Fix Applied');
+console.log(`📊 ${MARKETS.length} markets configured.`);
+showChartPlaceholder();
+showMatrixPlaceholder();
+updateSignalCardPlaceholder();
+</script>
 </body>
-    </html>
+</html>
