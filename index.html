@@ -503,11 +503,11 @@
     </div>
 
     <!-- ============================================
-    JAVASCRIPT — INFRASTRUCTURE + NEW DIGIT ENGINE
+    JAVASCRIPT — INFRASTRUCTURE + DIGIT ENGINE + CONNECTION PATCH
     ============================================ -->
     <script>
         // ============================================================
-        // 1. INFRASTRUCTURE (unchanged from old script)
+        // 1. CONSTANTS & CONFIG
         // ============================================================
 
         const APP_PASSWORD = 'SUCCESSV12';
@@ -543,8 +543,84 @@
         let selectedMarket = null;
 
         // ============================================================
-        // 2. LOCK SCREEN
+        // 2. CONNECTION STABILITY PATCH
         // ============================================================
+
+        let reconnectAllowed = true;
+        let reconnectTimer = null;
+        let heartbeatTimer = null;
+        let lastVisibilityState = document.visibilityState;
+        let hasInitializedOnce = false;
+
+        function startHeartbeat() {
+            stopHeartbeat();
+            heartbeatTimer = setInterval(() => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    try {
+                        ws.send(JSON.stringify({ ping: 1 }));
+                    } catch (e) {}
+                }
+            }, 30000);
+        }
+
+        function stopHeartbeat() {
+            if (heartbeatTimer) {
+                clearInterval(heartbeatTimer);
+                heartbeatTimer = null;
+            }
+        }
+
+        function scheduleReconnect() {
+            if (!reconnectAllowed) return;
+            if (reconnectTimer) return;
+
+            reconnectTimer = setTimeout(() => {
+                reconnectTimer = null;
+                if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+                    initWebSocket(true);
+                }
+            }, 5000);
+        }
+
+        function preserveStateOnHide() {
+            lastVisibilityState = document.visibilityState;
+            if (document.hidden) {
+                reconnectAllowed = false;
+            } else {
+                reconnectAllowed = true;
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    refreshLiveUI();
+                } else if (!ws || ws.readyState === WebSocket.CLOSED) {
+                    initWebSocket(true);
+                }
+            }
+        }
+
+        function refreshLiveUI() {
+            document.getElementById('liveTicker').textContent = '✅ Connected. Collecting ticks and candles...';
+            if (isGatheringComplete) {
+                document.getElementById('liveTicker').innerHTML = '✅ <strong>Gathering Complete</strong> — Live connection active.';
+            }
+        }
+
+        document.addEventListener('visibilitychange', preserveStateOnHide);
+        window.addEventListener('focus', () => {
+            reconnectAllowed = true;
+            if (!ws || ws.readyState === WebSocket.CLOSED) {
+                initWebSocket(true);
+            } else if (ws.readyState === WebSocket.OPEN) {
+                refreshLiveUI();
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            stopHeartbeat();
+        });
+
+        // ============================================================
+        // 3. LOCK SCREEN
+        // ============================================================
+
         document.getElementById('btnUnlock').addEventListener('click', unlockApp);
         document.getElementById('lockPassword').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') unlockApp();
@@ -567,20 +643,32 @@
         }
 
         // ============================================================
-        // 3. DERIV WEBSOCKET + CANDLE API
+        // 4. DERIV WEBSOCKET + CANDLE API (with reconnect flag)
         // ============================================================
-        function initWebSocket() {
+
+        function initWebSocket(isReconnect) {
+            if (!isReconnect) {
+                // First time init: reset buffers
+                MARKETS.forEach(sym => {
+                    tickBuffers[sym] = [];
+                    candleBuffers[sym] = [];
+                });
+            }
+
             document.getElementById('liveTicker').textContent = '⏳ Connecting to Deriv WebSocket...';
             appState = 'COLLECTING';
-            MARKETS.forEach(sym => {
-                tickBuffers[sym] = [];
-                candleBuffers[sym] = [];
-            });
+
+            // Close existing ws if any
+            if (ws) {
+                try { ws.close(); } catch (e) {}
+                ws = null;
+            }
 
             ws = new WebSocket(DERIV_WS);
 
             ws.onopen = function() {
                 document.getElementById('liveTicker').textContent = '✅ Connected. Collecting ticks and candles...';
+                // Subscribe only if not already subscribed (or we just resubscribe)
                 MARKETS.forEach(sym => {
                     ws.send(JSON.stringify({ ticks: sym, subscribe: 1 }));
                 });
@@ -593,7 +681,11 @@
                         end: 'latest'
                     }));
                 });
-                renderMarketCards();
+                if (!isReconnect) {
+                    renderMarketCards();
+                }
+                startHeartbeat();
+                refreshLiveUI();
             };
 
             ws.onmessage = function(event) {
@@ -626,11 +718,14 @@
 
             ws.onerror = function() {
                 document.getElementById('liveTicker').textContent = '❌ WebSocket error. Reconnecting...';
-                setTimeout(initWebSocket, 5000);
+                stopHeartbeat();
+                scheduleReconnect();
             };
+
             ws.onclose = function() {
                 document.getElementById('liveTicker').textContent = '❌ Disconnected. Reconnecting...';
-                setTimeout(initWebSocket, 5000);
+                stopHeartbeat();
+                scheduleReconnect();
             };
         }
 
@@ -640,7 +735,7 @@
         }
 
         // ============================================================
-        // 4. GATHERING COMPLETE
+        // 5. GATHERING COMPLETE (unchanged)
         // ============================================================
         function checkGatheringComplete() {
             if (isGatheringComplete) return;
@@ -665,7 +760,7 @@
         }
 
         // ============================================================
-        // 5. UI HELPERS
+        // 6. UI HELPERS (unchanged)
         // ============================================================
         function renderMarketCards() {
             const grid = document.getElementById('marketGrid');
@@ -718,7 +813,7 @@
         }
 
         // ============================================================
-        // 6. FIND BEST MARKET (for general display)
+        // 7. FIND BEST MARKET (unchanged)
         // ============================================================
         function findBestMarket() {
             let best = null;
@@ -765,7 +860,7 @@
         }
 
         // ============================================================
-        // 7. FREQUENCY CHART & MATRIX UPDATES (Digit)
+        // 8. FREQUENCY CHART & MATRIX UPDATES (unchanged)
         // ============================================================
         function updateFrequencyChart(market) {
             const data = tickBuffers[market];
@@ -860,9 +955,8 @@
             document.getElementById('matrixMarketLabel').textContent = `(${market})`;
         }
 
-
         // ============================================================
-        // 8. NEW DIGIT ENGINE — CLEAN FINAL VERSION
+        // 9. NEW DIGIT ENGINE — CLEAN FINAL VERSION
         // ============================================================
 
         const SIGNAL_DELAY_MS = 10000;
@@ -1488,7 +1582,7 @@
         }
 
         // ============================================================
-        // 9. EVENT LISTENERS
+        // 10. EVENT LISTENERS (unchanged)
         // ============================================================
         document.getElementById('btnMatches').addEventListener('click', generateMatchesSignal);
         document.getElementById('btnDiffers').addEventListener('click', generateDiffersSignal);
@@ -1499,12 +1593,10 @@
         document.getElementById('btnFindEntryEO').addEventListener('click', findEntryForEvenOdd);
         document.getElementById('popupBack').addEventListener('click', hidePopup);
 
-        // Optional: close popup when clicking outside
         document.getElementById('signal-popup').addEventListener('click', function(e) {
             if (e.target === this) hidePopup();
         });
 
-        // SCAN button – refresh best market view
         document.getElementById('btnScan').addEventListener('click', function() {
             if (appState === 'READY' || appState === 'SIGNAL_READY') {
                 const best = findBestMarket();
@@ -1520,13 +1612,13 @@
         });
 
         // ============================================================
-        // 10. INITIAL SETUP
+        // 11. INITIAL SETUP
         // ============================================================
-        console.log('🔮 Embrace Solace v3.2 — New Digit Engine Integrated');
+        console.log('🔮 Embrace Solace v3.2 — Connection Stability Patch Applied');
         console.log(`📊 ${MARKETS.length} markets configured.`);
         showChartPlaceholder();
         showMatrixPlaceholder();
         updateSignalCardPlaceholder();
     </script>
 </body>
-    </html>
+                                         </html>
