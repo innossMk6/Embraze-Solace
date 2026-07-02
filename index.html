@@ -1034,23 +1034,23 @@
         }
 
         // ============================================================
-        // 10. DIGIT ENGINE — CLEAN FINAL VERSION
+        // 10. RELAXED SCORING BLOCK — FULL PATCH
         // ============================================================
 
-        const SIGNAL_DELAY_MS = 10000;
-        const LIVE_CONFIRM_WINDOW = 25;
-        const MIN_CONFIDENCE = 60;
-        const MIN_SIGNAL_SCORE = 0.35;
-        const MAX_DRIFT = 0.22;
+        const MIN_CONFIDENCE = 52;
+        const MIN_SIGNAL_SCORE = 0.22;
+        const MAX_DRIFT = 0.30;
+        const LIVE_CONFIRM_WINDOW = 18;
+        const ENTRY_THRESHOLD = 0.48;
 
-        const currentSignal = {
-            match: null,
-            differ: null,
-            ou: null,
-            eo: null,
-            activeEngine: null
-        };
+        function signalQuality(score) {
+            const c = norm(score) * 100;
+            if (c >= 68) return { level: 'HIGH', color: '#00FFAA' };
+            if (c >= 52) return { level: 'MEDIUM', color: '#FFD700' };
+            return { level: 'LOW', color: '#FF6B00' };
+        }
 
+        // (latestWindow, frequency, entropyFreq, concentrationFreq, transitionRate are unchanged)
         function latestWindow(arr, size) {
             return arr.slice(-Math.min(size, arr.length));
         }
@@ -1086,34 +1086,6 @@
             return c / (arr.length - 1);
         }
 
-        function norm(x) {
-            return 1 / (1 + Math.exp(-x));
-        }
-
-        function renderLoadingPopup(message, subtitle) {
-            const popup = document.getElementById('signal-popup');
-            const shoot = document.getElementById('popupShooting');
-            const loaderContainer = document.getElementById('signalLoaderContainer');
-            const resultContainer = document.getElementById('signalResultContainer');
-            const loadingText = document.getElementById('signalLoadingText');
-            const progressText = document.getElementById('signalProgressText');
-
-            popup.classList.add('active');
-            shoot.classList.add('active');
-            loaderContainer.style.display = 'block';
-            resultContainer.style.display = 'none';
-            loadingText.textContent = message || 'GENERATING SIGNAL...';
-            progressText.textContent = subtitle || '⏳ Analyzing live ticks...';
-        }
-
-        function hidePopup() {
-            document.getElementById('signal-popup').classList.remove('active');
-            document.getElementById('popupShooting').classList.remove('active');
-        }
-
-        // =====================
-        // MATCH / DIFFER
-        // =====================
         function matchScore(digits, digit, windowSize = 100) {
             const window = latestWindow(digits, windowSize);
             const freq = frequency(window);
@@ -1137,7 +1109,7 @@
             const conc = concentrationFreq(freq);
             const trans = transitionRate(window);
 
-            const score = f * 1.20 + persist * 1.00 + conc * 0.75 - ent * 0.70 - trans * 0.25;
+            const score = f * 1.18 + persist * 0.95 + conc * 0.70 - ent * 0.48 - trans * 0.18;
             return { score, features: { f, persist, ent, conc, trans, freq } };
         }
 
@@ -1164,13 +1136,10 @@
             const conc = concentrationFreq(freq);
             const trans = transitionRate(window);
 
-            const score = ent * 0.50 + trans * 0.30 - f * 0.30 - persist * 0.20;
+            const score = ent * 0.42 + trans * 0.22 - f * 0.25 - persist * 0.12;
             return { score, features: { f, persist, ent, conc, trans, freq } };
         }
 
-        // =====================
-        // OVER / UNDER
-        // =====================
         function overUnderScore(digits, mode, barrier, windowSize = 100) {
             const window = latestWindow(digits, windowSize);
             const freq = frequency(window);
@@ -1203,13 +1172,10 @@
             const conc = concentrationFreq(freq);
             const reject = transitionRate(window);
 
-            const score = mass * 1.35 + margin * 0.85 + persist * 1.10 + conc * 0.65 - ent * 0.75 - reject * 1.00;
+            const score = mass * 1.28 + margin * 0.78 + persist * 1.00 + conc * 0.58 - ent * 0.55 - reject * 0.78;
             return { score, features: { mass, margin, persist, ent, conc, reject, freq } };
         }
 
-        // =====================
-        // EVEN / ODD
-        // =====================
         function evenOddScore(digits, side, windowSize = 100) {
             const window = latestWindow(digits, windowSize);
             const freq = frequency(window);
@@ -1246,21 +1212,52 @@
             }
             const flipRate = window.length > 1 ? flips / (window.length - 1) : 0;
 
-            const score = mass * 1.35 + margin * 0.85 + persist * 1.10 + conc * 0.65 - ent * 0.75 - flipRate * 1.00;
+            const score = mass * 1.28 + margin * 0.78 + persist * 1.00 + conc * 0.58 - ent * 0.55 - flipRate * 0.78;
             return { score, features: { mass, margin, persist, ent, conc, flipRate, freq } };
         }
 
-        // =====================
-        // POPUP HELPERS
-        // =====================
-        function showSignalResult() {
-            document.getElementById('signalLoaderContainer').style.display = 'none';
-            document.getElementById('signalResultContainer').style.display = 'block';
+        function confirmEntry(digits, selectedDigit, signalScore, liveWindow = LIVE_CONFIRM_WINDOW, threshold = ENTRY_THRESHOLD, engineType = 'match') {
+            const live = latestWindow(digits, liveWindow);
+            let liveScore = 0;
+
+            if (engineType === 'match') liveScore = matchScore(live, selectedDigit, Math.min(100, live.length)).score;
+            else if (engineType === 'differ') liveScore = differScore(live, selectedDigit, Math.min(100, live.length)).score;
+            else if (engineType === 'ou' || engineType === 'eo') liveScore = signalScore * 0.92;
+            else liveScore = signalScore * 0.90;
+
+            const drift = Math.abs(signalScore - liveScore);
+            const entryScore = 0.46 * norm(signalScore) + 0.34 * norm(liveScore) - 0.14 * drift;
+            const status = (entryScore >= threshold && drift <= MAX_DRIFT) ? 'CONFIRM' : 'HOLD';
+
+            return { status, entryScore, liveScore, drift };
+        }
+
+        // ============================================================
+        // 11. POPUP HELPERS (unchanged)
+        // ============================================================
+        function renderLoadingPopup(message, subtitle) {
+            const popup = document.getElementById('signal-popup');
+            const shoot = document.getElementById('popupShooting');
+            const loaderContainer = document.getElementById('signalLoaderContainer');
+            const resultContainer = document.getElementById('signalResultContainer');
+            const loadingText = document.getElementById('signalLoadingText');
+            const progressText = document.getElementById('signalProgressText');
+
+            popup.classList.add('active');
+            shoot.classList.add('active');
+            loaderContainer.style.display = 'block';
+            resultContainer.style.display = 'none';
+            loadingText.textContent = message || 'GENERATING SIGNAL...';
+            progressText.textContent = subtitle || '⏳ Analyzing live ticks...';
+        }
+
+        function hidePopup() {
+            document.getElementById('signal-popup').classList.remove('active');
+            document.getElementById('popupShooting').classList.remove('active');
         }
 
         function setSignalCard(html) {
-            const card = document.getElementById('oracleSignalCard');
-            card.innerHTML = html;
+            document.getElementById('oracleSignalCard').innerHTML = html;
         }
 
         function setOUCard(html) {
@@ -1271,9 +1268,10 @@
             document.getElementById('eoSignalCard').innerHTML = html;
         }
 
-        // =====================
-        // SIGNAL GENERATORS
-        // =====================
+        // ============================================================
+        // 12. SIGNAL GENERATORS (using relaxed scoring)
+        // ============================================================
+
         function generateMatchesSignal() {
             const best = findBestMarket();
             if (!best) { alert('⏳ No market has enough data yet.'); return; }
@@ -1298,9 +1296,8 @@
                 currentSignal.match = { market: best.market, entropy: best.entropy, bestMatch };
                 currentSignal.activeEngine = 'match';
 
+                const q = signalQuality(bestMatch.score);
                 const confidence = norm(bestMatch.score) * 100;
-                const level = confidence > 70 ? 'HIGH' : confidence > 55 ? 'MEDIUM' : 'LOW';
-                const levelColor = level === 'HIGH' ? '#00FFAA' : level === 'MEDIUM' ? '#FFD700' : '#FF6B00';
 
                 setSignalCard(`
                     <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
@@ -1316,7 +1313,7 @@
                         <span>Z: ${((bestMatch.features.f - 0.10) / 0.03).toFixed(2)}</span>
                         <span>PERS: ${bestMatch.features.persist > 0.6 ? 'HIGH' : bestMatch.features.persist > 0.4 ? 'MEDIUM' : 'LOW'}</span>
                     </div>
-                    <div class="confidence-level" style="color:${levelColor};">${level} CONFIDENCE</div>
+                    <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
                 `);
 
                 document.getElementById('btnFindEntryMD').disabled = false;
@@ -1353,9 +1350,8 @@
                 currentSignal.differ = { market: best.market, entropy: best.entropy, bestDiffer };
                 currentSignal.activeEngine = 'differ';
 
+                const q = signalQuality(bestDiffer.score);
                 const confidence = norm(bestDiffer.score) * 100;
-                const level = confidence > 70 ? 'HIGH' : confidence > 55 ? 'MEDIUM' : 'LOW';
-                const levelColor = level === 'HIGH' ? '#00FFAA' : level === 'MEDIUM' ? '#FFD700' : '#FF6B00';
 
                 setSignalCard(`
                     <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
@@ -1371,7 +1367,7 @@
                         <span>Z: ${((bestDiffer.features.f - 0.10) / 0.03).toFixed(2)}</span>
                         <span>Trigger: DIFFER</span>
                     </div>
-                    <div class="confidence-level" style="color:${levelColor};">${level} CONFIDENCE</div>
+                    <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
                 `);
 
                 document.getElementById('btnFindEntryMD').disabled = false;
@@ -1416,9 +1412,8 @@
                 currentSignal.ou = { market: best.market, entropy: best.entropy, bestSetup };
                 currentSignal.activeEngine = 'ou';
 
+                const q = signalQuality(bestSetup.score);
                 const confidence = norm(bestSetup.score) * 100;
-                const level = confidence > 70 ? 'HIGH' : confidence > 55 ? 'MEDIUM' : 'LOW';
-                const levelColor = level === 'HIGH' ? '#00FFAA' : level === 'MEDIUM' ? '#FFD700' : '#FF6B00';
 
                 setOUCard(`
                     <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
@@ -1426,14 +1421,14 @@
                     <div class="entry-text"><strong>${bestSetup.mode} ${bestSetup.barrier}</strong></div>
                     <div class="action-text" style="color:var(--neon-gold);">${bestSetup.mode} ${bestSetup.barrier}</div>
                     <div class="confidence-row">
-                        <span class="confidence-label" style="color:${levelColor};">${confidence.toFixed(1)}%</span>
-                        <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%; background: linear-gradient(90deg, #FF6B00, ${levelColor});"></div></div>
+                        <span class="confidence-label" style="color:${q.color};">${confidence.toFixed(1)}%</span>
+                        <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%; background: linear-gradient(90deg, #FF6B00, ${q.color});"></div></div>
                     </div>
                     <div class="bottom-row">
                         <span>Observed: ${(bestSetup.features.mass * 100).toFixed(1)}%</span>
                         <span>Edge: ${((bestSetup.features.mass - 0.5) * 100).toFixed(1)}%</span>
                     </div>
-                    <div class="confidence-level" style="color:${levelColor};">${level} CONFIDENCE</div>
+                    <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
                 `);
 
                 document.getElementById('ouMarket').textContent = best.market;
@@ -1482,9 +1477,8 @@
                 };
                 currentSignal.activeEngine = 'eo';
 
+                const q = signalQuality(bestScore);
                 const confidence = norm(bestScore) * 100;
-                const level = confidence > 70 ? 'HIGH' : confidence > 55 ? 'MEDIUM' : 'LOW';
-                const levelColor = level === 'HIGH' ? '#00FFAA' : level === 'MEDIUM' ? '#FFD700' : '#FF6B00';
 
                 setEOCard(`
                     <div class="row"><span>${best.market}</span><span>H = ${best.entropy.toFixed(2)}</span></div>
@@ -1492,14 +1486,14 @@
                     <div class="entry-text"><strong>Side: ${bestSide}</strong></div>
                     <div class="action-text" style="color:${bestSide === 'EVEN' ? '#00BFFF' : '#FF6B00'};">${bestSide}</div>
                     <div class="confidence-row">
-                        <span class="confidence-label" style="color:${levelColor};">${confidence.toFixed(1)}%</span>
-                        <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%; background: linear-gradient(90deg, #FF6B00, ${levelColor});"></div></div>
+                        <span class="confidence-label" style="color:${q.color};">${confidence.toFixed(1)}%</span>
+                        <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%; background: linear-gradient(90deg, #FF6B00, ${q.color});"></div></div>
                     </div>
                     <div class="bottom-row">
                         <span>PMR: ${bestScore.toFixed(3)}</span>
                         <span>Z: ${((bestScore - 0.5) / 0.05).toFixed(2)}</span>
                     </div>
-                    <div class="confidence-level" style="color:${levelColor};">${level} CONFIDENCE</div>
+                    <div class="confidence-level" style="color:${q.color};">${q.level} CONFIDENCE</div>
                 `);
 
                 document.getElementById('eoMarket').textContent = best.market;
@@ -1517,23 +1511,9 @@
             }, SIGNAL_DELAY_MS);
         }
 
-        // =====================
-        // FIND ENTRY
-        // =====================
-        function confirmEntry(digits, selectedDigit, signalScore, liveWindow = LIVE_CONFIRM_WINDOW, threshold = 0.58, engineType = 'match') {
-            const live = latestWindow(digits, liveWindow);
-            let liveScore = 0;
-
-            if (engineType === 'match') liveScore = matchScore(live, selectedDigit, Math.min(100, live.length)).score;
-            else if (engineType === 'differ') liveScore = differScore(live, selectedDigit, Math.min(100, live.length)).score;
-            else liveScore = signalScore * 0.9;
-
-            const drift = Math.abs(signalScore - liveScore);
-            const entryScore = 0.42 * norm(signalScore) + 0.38 * norm(liveScore) - 0.22 * drift;
-            const status = entryScore >= threshold ? 'CONFIRM' : 'HOLD';
-
-            return { status, entryScore, liveScore, drift };
-        }
+        // ============================================================
+        // 13. FIND ENTRY (using updated confirmEntry)
+        // ============================================================
 
         function findEntryForMatchesDiffers() {
             if (!currentSignal.activeEngine || (currentSignal.activeEngine !== 'match' && currentSignal.activeEngine !== 'differ')) {
@@ -1561,7 +1541,7 @@
                 const digits = data.map(t => t.digit);
                 const selectedDigit = active === 'match' ? signalData.bestMatch.digit : signalData.bestDiffer.digit;
                 const signalScore = active === 'match' ? signalData.bestMatch.score : signalData.bestDiffer.score;
-                const confirm = confirmEntry(digits, selectedDigit, signalScore, LIVE_CONFIRM_WINDOW, 0.58, active);
+                const confirm = confirmEntry(digits, selectedDigit, signalScore, LIVE_CONFIRM_WINDOW, ENTRY_THRESHOLD, active);
 
                 if (confirm.status === 'CONFIRM') {
                     btn.className = 'btn-entry entry-confirmed';
@@ -1608,7 +1588,7 @@
                 }
 
                 const digits = data.map(t => t.digit);
-                const confirm = confirmEntry(digits, 0, bestSetup.score, LIVE_CONFIRM_WINDOW, 0.58, 'ou');
+                const confirm = confirmEntry(digits, 0, bestSetup.score, LIVE_CONFIRM_WINDOW, ENTRY_THRESHOLD, 'ou');
 
                 if (confirm.status === 'CONFIRM') {
                     btn.className = 'btn-entry entry-confirmed';
@@ -1645,7 +1625,7 @@
                 }
 
                 const digits = data.map(t => t.digit);
-                const confirm = confirmEntry(digits, 0, bestScore, LIVE_CONFIRM_WINDOW, 0.58, 'eo');
+                const confirm = confirmEntry(digits, 0, bestScore, LIVE_CONFIRM_WINDOW, ENTRY_THRESHOLD, 'eo');
 
                 if (confirm.status === 'CONFIRM') {
                     btn.className = 'btn-entry entry-confirmed';
@@ -1660,7 +1640,7 @@
         }
 
         // ============================================================
-        // 11. EVENT LISTENERS (unchanged)
+        // 14. EVENT LISTENERS (unchanged)
         // ============================================================
         document.getElementById('btnMatches').addEventListener('click', generateMatchesSignal);
         document.getElementById('btnDiffers').addEventListener('click', generateDiffersSignal);
@@ -1690,13 +1670,13 @@
         });
 
         // ============================================================
-        // 12. INITIAL SETUP
+        // 15. INITIAL SETUP
         // ============================================================
-        console.log('🔮 Embrace Solace v3.2 — Zero‑Digit + Symbol Decimal Fix Applied');
+        console.log('🔮 Embrace Solace v3.2 — Relaxed Scoring Block Applied');
         console.log(`📊 ${MARKETS.length} markets configured.`);
         showChartPlaceholder();
         showMatrixPlaceholder();
         updateSignalCardPlaceholder();
     </script>
 </body>
-                    </html>
+    </html>
