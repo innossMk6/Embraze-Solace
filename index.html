@@ -658,7 +658,7 @@ z-index: 1001;
 
 <script>
 // ================================================================
-// DAIE‑V4 ENGINE – FULL IMPLEMENTATION
+// DAIE‑V4 ENGINE – FULL IMPLEMENTATION (with all fixes)
 // ================================================================
 
 // ---------------------- CONSTANTS ------------------------------
@@ -668,7 +668,7 @@ const REQUIRED_TICKS = 100;
 const ANALYSIS_WINDOW = 100;
 const SIGNAL_DELAY_MS = 10000;
 
-// FIX 1: Full 10 markets
+// Full 10 markets
 const MARKETS = [
 '1HZ10V', '1HZ25V', '1HZ50V', '1HZ75V', '1HZ100V',
 'JD10', 'JD25', 'JD50', 'JD75', 'JD100'
@@ -713,6 +713,48 @@ let currentSignals = { match: null, differ: null, ou: null, eo: null };
 let signalTimers = {};
 let signalBusy = {};
 
+// ========== FIXES: NEW UTILITY FUNCTIONS ==========
+// FIX 9: entropy function (normalized)
+function entropy(arr) {
+    const freq = {};
+    arr.forEach(x => freq[x] = (freq[x] || 0) + 1);
+    let ent = 0;
+    const len = arr.length;
+    for (let k in freq) {
+        const p = freq[k] / len;
+        ent -= p * Math.log2(p);
+    }
+    return ent / Math.log2(10); // normalize to 0-1
+}
+
+// FIX 2: streak strength
+function getStreakStrength(window) {
+    let streak = 1, maxStreak = 1;
+    for (let i = window.length - 1; i > 0; i--) {
+        if (window[i] === window[i - 1]) {
+            streak++;
+            maxStreak = Math.max(maxStreak, streak);
+        } else {
+            streak = 1;
+        }
+    }
+    return maxStreak;
+}
+
+// FIX 3: alternation strength
+function alternationStrength(window) {
+    let changes = 0;
+    for (let i = 1; i < window.length; i++) {
+        if (window[i] !== window[i - 1]) changes++;
+    }
+    return changes / window.length;
+}
+
+// FIX 1: confidence normalization (no sigmoid)
+function normalizeConfidence(score) {
+    return Math.max(5, Math.min(99, (score * 35) + 30));
+}
+
 // ---------------------- CORE UTILITIES -------------------------
 function extractLastDigit(price, decimals) {
 if (price === null || price === undefined || isNaN(price)) return null;
@@ -723,7 +765,6 @@ return match ? parseInt(match[1], 10) : null;
 
 function getDecimalsForSymbol(symbol) {
 const s = String(symbol).toUpperCase().replace(/\s+/g, ' ');
-// FIX 2: Jump indices and 1s volatilities are all 2 decimal places
 const twoDp = [
 '1HZ10V','1HZ25V','1HZ50V','1HZ75V','1HZ100V',
 'JD10','JD25','JD50','JD75','JD100',
@@ -732,7 +773,7 @@ const twoDp = [
 'JUMP 10','JUMP 25','JUMP 50','JUMP 75','JUMP 100'
  ];
 if (twoDp.includes(s)) return 2;
-return 3; // fallback
+return 3;
 }
 
 function getTickDigit(symbol, price) {
@@ -751,15 +792,6 @@ const n = arr.length || 1;
 const result = {};
 for (let i = 0; i < 10; i++) result[i] = (counts[i] || 0) / n;
 return result;
-}
-
-function entropyFreq(freq) {
-let h = 0;
-for (let i = 0; i < 10; i++) {
-const p = freq[i] || 0;
-if (p > 0) h -= p * Math.log2(p);
-}
-return h;
 }
 
 function concentrationFreq(freq) {
@@ -802,7 +834,6 @@ const profiles = {
 if (profiles[symbol]) {
 return { ...profiles[symbol], baseline: { entropy: null, deviation: null, clusterLength: null } };
 }
-// Default for jump indices
 return {
 name: symbol,
 matchBoost: 1.05,
@@ -819,7 +850,7 @@ baseline: { entropy: null, deviation: null, clusterLength: null }
 function updateAdaptiveBaseline(symbol, digits) {
 if (!digits || digits.length < 20) return;
 const freq = frequency(digits);
-const ent = entropyFreq(freq);
+const ent = entropy(digits); // use new entropy
 let devSum = 0;
 for (let i = 0; i < 10; i++) devSum += Math.abs((freq[i] || 0) - 0.1);
 const dev = devSum / 10;
@@ -845,10 +876,17 @@ p.samples++;
 }
 }
 
-// ---------------------- SCORING FUNCTIONS ----------------------
+// ---------------------- SCORING FUNCTIONS (with all fixes) ----------------------
+
+// FIX 2 + FIX 8 + FIX 9: matchScore with streak boost, unique check, entropy check
 function matchScore(digits, digit, windowSize = 100) {
 const window = latestWindow(digits, windowSize);
-if (!window || window.length < 10) return { score: -Infinity, features: { f: 0, persist: 0, ent: 0, conc: 0, trans: 0, freq: {} } };
+if (!window || window.length < 10) return { score: -Infinity, features: { weak: true } };
+// FIX 8: unique check
+if (new Set(window).size < 3) return { score: -Infinity, features: { weak: true } };
+// FIX 9: entropy check
+if (entropy(window) > 0.92) return { score: -Infinity, features: { noisy: true } };
+
 const freq = frequency(window);
 const f = freq[digit] || 0;
 const segCount = 5;
@@ -863,100 +901,117 @@ const cnt = seg.filter(d => d === digit).length;
 if (cnt / seg.length >= 0.14) persistHits++;
 }
 const persist = persistHits / segCount;
-const ent = entropyFreq(freq);
+const ent = entropy(window);
 const conc = concentrationFreq(freq);
 const trans = transitionRate(window);
-const score = (f * 1.35) + (persist * 1.05) + (conc * 0.50) - (ent * 0.45 + trans * 0.25);
+const baseScore = (f * 1.35) + (persist * 1.05) + (conc * 0.50) - (ent * 0.45 + trans * 0.25);
+// FIX 2: streak boost
+const streak = getStreakStrength(window);
+const streakBoost = Math.min(streak / 5, 1) * 1.5;
+const score = baseScore + streakBoost;
 return { score, features: { f, persist, ent, conc, trans, freq } };
 }
 
+// FIX 3 + FIX 4 + FIX 8 + FIX 9: differScore with alternation check, new scoring
 function differScore(digits, digit, windowSize = 100) {
 const window = latestWindow(digits, windowSize);
-if (!window || window.length < 10) return { score: -Infinity, features: { f: 0, persist: 0, ent: 0, conc: 0, trans: 0, freq: {} } };
+if (!window || window.length < 10) return { score: -Infinity, features: { weak: true } };
+if (new Set(window).size < 3) return { score: -Infinity, features: { weak: true } };
+if (entropy(window) > 0.92) return { score: -Infinity, features: { noisy: true } };
+
+const alt = alternationStrength(window);
+// FIX 3: reject if not enough alternation
+if (alt < 0.75) return { score: -Infinity, features: { weak: true } };
+
 const freq = frequency(window);
 const f = freq[digit] || 0;
-const segCount = 5;
-const step = Math.max(1, Math.floor(window.length / segCount));
-let persistHits = 0;
-for (let i = 0; i < segCount; i++) {
-const end = window.length - i * step;
-const start = Math.max(0, end - step);
-const seg = window.slice(start, end);
-if (seg.length === 0) continue;
-const cnt = seg.filter(d => d === digit).length;
-if (cnt / seg.length <= 0.10) persistHits++;
-}
-const persist = persistHits / segCount;
-const ent = entropyFreq(freq);
 const conc = concentrationFreq(freq);
-const trans = transitionRate(window);
-const score = ((1 - f) * 1.20) + ((1 - conc) * 0.45) + (persist * 0.95) + ((1 - trans) * 0.20) + (ent * 0.15);
-return { score, features: { f, persist, ent, conc, trans, freq } };
+const persist = (() => {
+    let hits = 0;
+    const segCount = 5, step = Math.max(1, Math.floor(window.length / segCount));
+    for (let i = 0; i < segCount; i++) {
+        const end = window.length - i * step;
+        const start = Math.max(0, end - step);
+        const seg = window.slice(start, end);
+        if (seg.length === 0) continue;
+        const cnt = seg.filter(d => d === digit).length;
+        if (cnt / seg.length <= 0.10) hits++;
+    }
+    return hits / segCount;
+})();
+
+// FIX 4: new scoring
+const rarityBoost = (1 - f) * 0.6;
+const alternationBoost = alt * 1.2;
+const spreadBoost = (1 - conc) * 0.45;  // keep original weight
+const consistencyBoost = persist * 0.95; // keep original weight
+const score = alternationBoost + spreadBoost + consistencyBoost;
+return { score, features: { f, persist, alt, conc, freq } };
 }
 
-// FIX 3: Generic overUnderScore (we will only use barriers 4 and 5)
+// FIX 5 + FIX 8 + FIX 9: overUnderScore with distribution bias, edge check, new scoring
 function overUnderScore(digits, mode, barrier, windowSize = 100) {
 const window = latestWindow(digits, windowSize);
-if (!window || window.length < 10) return { score: -Infinity, features: { mass: 0, margin: 0, persist: 0, ent: 0, conc: 0, trans: 0, freq: {} } };
-const freq = frequency(window);
-let mass = 0;
-if (mode === 'OVER') { for (let d = barrier + 1; d < 10; d++) mass += freq[d] || 0; }
-else { for (let d = 0; d < barrier; d++) mass += freq[d] || 0; }
-const margin = Math.max(0, mass - 0.5);
-const segCount = 5;
-const step = Math.max(1, Math.floor(window.length / segCount));
+if (!window || window.length < 10) return { score: -Infinity, features: { weak: true } };
+if (new Set(window).size < 3) return { score: -Infinity, features: { weak: true } };
+if (entropy(window) > 0.92) return { score: -Infinity, features: { noisy: true } };
+
+const total = window.length;
+const overCount = window.filter(d => d > barrier).length;
+const underCount = window.filter(d => d < barrier).length;
+const bias = mode === 'OVER' ? overCount / total : underCount / total;
+const edge = Math.abs(bias - 0.5);
+if (edge < 0.08) return { score: -Infinity, features: { weak: true } };
+
+// persist based on mode
+const segCount = 5, step = Math.max(1, Math.floor(window.length / segCount));
 let persistHits = 0;
 for (let i = 0; i < segCount; i++) {
-const end = window.length - i * step;
-const start = Math.max(0, end - step);
-const seg = window.slice(start, end);
-if (seg.length === 0) continue;
-let cnt = 0;
-if (mode === 'OVER') cnt = seg.filter(d => d > barrier).length;
-else cnt = seg.filter(d => d < barrier).length;
-if (cnt / seg.length >= 0.56) persistHits++;
+    const end = window.length - i * step;
+    const start = Math.max(0, end - step);
+    const seg = window.slice(start, end);
+    if (seg.length === 0) continue;
+    let cnt = 0;
+    if (mode === 'OVER') cnt = seg.filter(d => d > barrier).length;
+    else cnt = seg.filter(d => d < barrier).length;
+    if (cnt / seg.length >= 0.56) persistHits++;
 }
 const persist = persistHits / segCount;
-const ent = entropyFreq(freq);
-const conc = concentrationFreq(freq);
-const trans = transitionRate(window);
-const score = (mass * 1.35) + (margin * 0.95) + (persist * 1.00) + (conc * 0.32) - (ent * 0.35 + trans * 0.50);
-return { score, features: { mass, margin, persist, ent, conc, trans, freq } };
+const ent = entropy(window);
+const score = (bias * 1.5) + (persist * 1.2) + ((1 - ent) * 0.4);
+return { score, features: { mass: bias, margin: edge, persist, ent, freq: frequency(window) } };
 }
 
+// FIX 6 + FIX 8 + FIX 9: evenOddScore with real imbalance, new scoring
 function evenOddScore(digits, side, windowSize = 100) {
 const window = latestWindow(digits, windowSize);
-if (!window || window.length < 10) return { score: -Infinity, features: { mass: 0, margin: 0, persist: 0, ent: 0, conc: 0, flipRate: 0, freq: {} } };
+if (!window || window.length < 10) return { score: -Infinity, features: { weak: true } };
+if (new Set(window).size < 3) return { score: -Infinity, features: { weak: true } };
+if (entropy(window) > 0.92) return { score: -Infinity, features: { noisy: true } };
+
+const evenCount = window.filter(d => d % 2 === 0).length;
+const oddCount = window.length - evenCount;
+const imbalance = Math.abs(evenCount - oddCount) / window.length;
+if (imbalance < 0.15) return { score: -Infinity, features: { weak: true } };
+
 const target = side === 'EVEN' ? [0,2,4,6,8] : [1,3,5,7,9];
-const freq = frequency(window);
-let mass = 0;
-target.forEach(d => { mass += freq[d] || 0; });
-const margin = Math.max(0, mass - 0.5);
-const segCount = 5;
-const step = Math.max(1, Math.floor(window.length / segCount));
+const segCount = 5, step = Math.max(1, Math.floor(window.length / segCount));
 let persistHits = 0;
 for (let i = 0; i < segCount; i++) {
-const end = window.length - i * step;
-const start = Math.max(0, end - step);
-const seg = window.slice(start, end);
-if (seg.length === 0) continue;
-const cnt = seg.filter(d => target.includes(d)).length;
-if (cnt / seg.length >= 0.56) persistHits++;
+    const end = window.length - i * step;
+    const start = Math.max(0, end - step);
+    const seg = window.slice(start, end);
+    if (seg.length === 0) continue;
+    const cnt = seg.filter(d => target.includes(d)).length;
+    if (cnt / seg.length >= 0.56) persistHits++;
 }
 const persist = persistHits / segCount;
-const ent = entropyFreq(freq);
-const conc = concentrationFreq(freq);
-let flips = 0;
-for (let i = 1; i < window.length; i++) {
-const prev = target.includes(window[i-1]);
-const cur = target.includes(window[i]);
-if (prev !== cur) flips++;
-}
-const flipRate = window.length > 1 ? flips / (window.length - 1) : 0;
-const score = (mass * 1.35) + (margin * 0.95) + (persist * 1.00) + (conc * 0.28) - (ent * 0.32 + flipRate * 0.48);
-return { score, features: { mass, margin, persist, ent, conc, flipRate, freq } };
+const ent = entropy(window);
+const score = (imbalance * 2.0) + (persist * 1.0) + ((1 - ent) * 0.3);
+return { score, features: { mass: (side === 'EVEN' ? evenCount : oddCount) / window.length, margin: imbalance, persist, ent, freq: frequency(window) } };
 }
 
+// ---------------------- FIND RARE FOLLOWER (unchanged) ---------------------
 function findRareFollower(digits, windowSize = 100) {
 const window = latestWindow(digits, windowSize);
 if (!window || window.length < 20) return { D: null, R: null, score: 0, freqD: 0, freqR: 0 };
@@ -981,7 +1036,7 @@ const freqR = totalD > 0 ? transitions[R] / totalD : 0;
 return { D, R, score: 1 - freqR, freqD: maxFreq, freqR };
 }
 
-// ---------------------- ENTRY CONFIRMATION ---------------------
+// ---------------------- ENTRY CONFIRMATION (unchanged) ---------------------
 function confirmEntry(digits, selectedDigit, signalScore, liveWindowSize = 25, threshold = 0.55, strategy = 'match', additionalData = null) {
 const live = latestWindow(digits, liveWindowSize);
 if (!live || live.length < 5) return { status: 'HOLD', entryScore: 0, liveScore: 0, drift: 0 };
@@ -1008,7 +1063,7 @@ const status = entryScore >= threshold ? 'CONFIRM' : 'HOLD';
 return { status, entryScore, liveScore, drift };
 }
 
-// ---------------------- MARKET SCANNER (FIXED) -----------------
+// ---------------------- MARKET SCANNER (with confidence normalization) ---------------------
 function scanMarkets(tickBuffers, markets, strategy, windowSize = 100, minTicks = 100, filters = {}) {
 const candidates = [];
 for (const market of markets) {
@@ -1029,8 +1084,8 @@ scores.push({ digit: d, score: res.score, features: res.features });
 const best = pickBestCandidate(scores);
 if (best) {
 const profile = getMarketProfile(market);
-const rawConf = sigmoid(best.score * (profile.matchBoost || 1.05)) * 100;
-const confidence = Math.max(5, Math.min(99, rawConf * (profile.confidenceScale || 1.0)));
+// FIX 1: use normalizeConfidence
+const confidence = normalizeConfidence(best.score * (profile.matchBoost || 1.05));
 result = { market, digit: best.digit, score: best.score, confidence, features: best.features, type: 'match' };
 }
 break;
@@ -1045,14 +1100,12 @@ const best = pickBestCandidate(scores);
 const rare = findRareFollower(window, windowSize);
 if (best) {
 const profile = getMarketProfile(market);
-const rawConf = sigmoid(best.score * (profile.differBoost || 1.04)) * 100;
-const confidence = Math.max(5, Math.min(99, rawConf * (profile.confidenceScale || 1.0)));
+const confidence = normalizeConfidence(best.score * (profile.differBoost || 1.04));
 result = { market, digit: best.digit, score: best.score, confidence, features: best.features, rareFollower: rare, type: 'differ' };
 }
 break;
 }
 case 'ou': {
-// FIX 3: Only OVER 4 and UNDER 5
 const options = [
 { mode: 'OVER', barrier: 4 },
 { mode: 'UNDER', barrier: 5 }
@@ -1064,8 +1117,7 @@ return { mode: opt.mode, barrier: opt.barrier, score: res.score, features: res.f
 const best = pickBestCandidate(scores);
 if (best) {
 const profile = getMarketProfile(market);
-const rawConf = sigmoid(best.score * (profile.ouBoost || 1.04)) * 100;
-const confidence = Math.max(5, Math.min(99, rawConf * (profile.confidenceScale || 1.0)));
+const confidence = normalizeConfidence(best.score * (profile.ouBoost || 1.04));
 result = { market, mode: best.mode, barrier: best.barrier, score: best.score, confidence, features: best.features, type: 'ou' };
 }
 break;
@@ -1080,8 +1132,7 @@ const scores = [
 const best = pickBestCandidate(scores);
 if (best) {
 const profile = getMarketProfile(market);
-const rawConf = sigmoid(best.score * (profile.eoBoost || 1.03)) * 100;
-const confidence = Math.max(5, Math.min(99, rawConf * (profile.confidenceScale || 1.0)));
+const confidence = normalizeConfidence(best.score * (profile.eoBoost || 1.03));
 result = { market, side: best.side, score: best.score, confidence, features: best.features, type: 'eo' };
 }
 break;
@@ -1104,36 +1155,36 @@ if (passes) candidates.push(result);
 return pickBestCandidate(candidates);
 }
 
-// ---------------------- SIGNAL GENERATORS (Relaxed thresholds) ------------
+// ---------------------- SIGNAL GENERATORS (with FIX 7: higher thresholds) ---------------------
 function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
-    const filters = { minConfidence: 22 };   // was 40
+    const filters = { minConfidence: 55, minScore: 0.35 }; // was 22
     const result = scanMarkets(tickBuffers, markets, 'match', windowSize, 100, filters);
     if (!result) return { success: false, message: 'No MATCH signal found' };
     return { success: true, market: result.market, digit: result.digit, score: result.score, confidence: result.confidence, features: result.features, strategy: 'MATCH', recommendation: 'MATCH ' + result.digit, display: { bigDigit: result.digit, actionText: 'MATCH ON ' + result.digit, confidence: result.confidence, market: result.market } };
 }
 
 function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
-    const filters = { minConfidence: 22 };   // was 40
+    const filters = { minConfidence: 55, minScore: 0.35 };
     const result = scanMarkets(tickBuffers, markets, 'differ', windowSize, 100, filters);
     if (!result) return { success: false, message: 'No DIFFERS signal found' };
     return { success: true, market: result.market, digit: result.digit, score: result.score, confidence: result.confidence, features: result.features, rareFollower: result.rareFollower, strategy: 'DIFFERS', recommendation: 'DIFFERS ' + result.digit, display: { bigDigit: result.digit, actionText: 'DIFFER ON ' + result.digit, confidence: result.confidence, market: result.market } };
 }
 
 function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
-    const filters = { minConfidence: 22, minScore: 0.15 };  // was 40 / 0.4
+    const filters = { minConfidence: 55, minScore: 0.35 };
     const result = scanMarkets(tickBuffers, markets, 'ou', windowSize, 100, filters);
     if (!result) return { success: false, message: 'No OVER/UNDER signal found' };
     return { success: true, market: result.market, mode: result.mode, barrier: result.barrier, score: result.score, confidence: result.confidence, features: result.features, strategy: 'OVER/UNDER', recommendation: result.mode + ' ' + result.barrier, display: { bigDigit: result.barrier, actionText: result.mode + ' ' + result.barrier, confidence: result.confidence, market: result.market, mass: result.features.mass || 0 } };
 }
 
 function generateEvenOddSignal(tickBuffers, markets, windowSize = 100) {
-    const filters = { minConfidence: 22, minScore: 0.15, minGap: 0.02 };  // was 40 / 0.4 / 0.1
+    const filters = { minConfidence: 55, minScore: 0.35, minGap: 0.02 };
     const result = scanMarkets(tickBuffers, markets, 'eo', windowSize, 100, filters);
     if (!result) return { success: false, message: 'No EVEN/ODD signal found' };
     return { success: true, market: result.market, side: result.side, score: result.score, confidence: result.confidence, features: result.features, gap: result.gap || 0, strategy: 'EVEN/ODD', recommendation: result.side, display: { bigDigit: result.side, actionText: result.side, confidence: result.confidence, market: result.market, pmr: result.score, gap: result.gap || 0 } };
 }
 
-// ---------------------- SESSION MANAGEMENT --------------------
+// ---------------------- SESSION MANAGEMENT (unchanged) ---------------------
 function canTrade() {
 if (sessionState.tradesToday >= sessionState.maxTradesPerDay) return false;
 if (sessionState.burstsPerSession >= sessionState.maxBurstsPerSession) return false;
@@ -1159,7 +1210,7 @@ function getStake(baseStake = 1, lossMultiplier = 1.2) {
 return baseStake * Math.pow(lossMultiplier, sessionState.consecutiveLosses);
 }
 
-// ---------------------- UI UPDATE FUNCTIONS -------------------
+// ---------------------- UI UPDATE FUNCTIONS (unchanged) ---------------------
 function updateSignalUI(signal, containerId) {
 const container = document.getElementById(containerId);
 if (!container) return;
@@ -1279,7 +1330,7 @@ document.getElementById('bottomDigit').textContent = bottomDigit;
 document.getElementById('bottomPct').textContent = bottomPct.toFixed(1) + '%';
 }
 
-// ---------------------- POPUP HELPERS -------------------------
+// ---------------------- POPUP HELPERS (unchanged) ---------------------
 function beginSignalLoading(key, title, subtitle) {
 if (signalBusy[key]) return false;
 signalBusy[key] = true;
@@ -1310,7 +1361,7 @@ endSignalLoading(key);
 alert(message || '❌ Signal generation failed.');
 }
 
-// ---------------------- SIGNAL GENERATORS (Wrappers) ----------
+// ---------------------- SIGNAL GENERATORS (Wrappers) ---------------------
 function generateMatchesSignal() {
 if (!beginSignalLoading('md', 'GENERATING MATCH SIGNAL...', '⏳ Analyzing latest ticks for Matches...')) return;
 setTimeout(() => {
@@ -1339,7 +1390,6 @@ endSignalLoading('md');
 }, SIGNAL_DELAY_MS);
 }
 
-// Renamed wrapper to avoid collision with real scorer (Bug 1 fix)
 function handleDiffersClick() {
 if (!beginSignalLoading('md', 'GENERATING DIFFER SIGNAL...', '⏳ Analyzing latest ticks for Differs...')) return;
 setTimeout(() => {
@@ -1400,7 +1450,6 @@ endSignalLoading('ou');
 }, SIGNAL_DELAY_MS);
 }
 
-// Renamed wrapper to avoid collision with real scorer (Bug 1 fix)
 function handleEvenOddClick() {
 if (!beginSignalLoading('eo', 'GENERATING EVEN/ODD SIGNAL...', '⏳ Analyzing latest ticks for Even/Odd...')) return;
 setTimeout(() => {
@@ -1433,7 +1482,7 @@ endSignalLoading('eo');
 }, SIGNAL_DELAY_MS);
 }
 
-// ---------------------- ENTRY FINDERS -------------------------
+// ---------------------- ENTRY FINDERS (unchanged) ---------------------
 function findEntryForMatchesDiffers() {
 const active = currentSignals.match || currentSignals.differ;
 if (!active || !active.success) { alert('⚠️ Please generate a MATCH or DIFFER signal first.'); return; }
@@ -1524,7 +1573,7 @@ btn.disabled = false;
 }, 1000);
 }
 
-// ---------------------- WEBSOCKET & APP -----------------------
+// ---------------------- WEBSOCKET & APP (unchanged) ---------------------
 function startHeartbeat() {
 stopHeartbeat();
 heartbeatTimer = setInterval(() => {
@@ -1691,10 +1740,8 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('btnUnlock').addEventListener('click', unlockApp);
 document.getElementById('lockPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') unlockApp(); });
 document.getElementById('btnMatches').addEventListener('click', generateMatchesSignal);
-// Bug 1 fix: use renamed handler for Differs
 document.getElementById('btnDiffers').addEventListener('click', handleDiffersClick);
 document.getElementById('btnOverUnderFetch').addEventListener('click', generateOverUnderSignal);
-// Bug 1 fix: use renamed handler for Even/Odd
 document.getElementById('btnEvenOddFetch').addEventListener('click', handleEvenOddClick);
 document.getElementById('btnFindEntryMD').addEventListener('click', findEntryForMatchesDiffers);
 document.getElementById('btnFindEntryOU').addEventListener('click', findEntryForOverUnder);
@@ -1708,4 +1755,4 @@ document.getElementById('popupShooting').classList.remove('active');
 });
 </script>
 </body>
-    </html>
+ </html>
