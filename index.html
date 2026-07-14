@@ -20,7 +20,7 @@ STYLES – Full
 --text-main: #F3F4F6;
 --text-grey: #9CA3AF;
 }
-• {
+* {
 box-sizing: border-box;
 margin: 0;
 padding: 0;
@@ -251,28 +251,93 @@ flex-direction: column;
 justify-content: space-between;
 min-height: 240px;
 position: relative;
+overflow: hidden;
 }
-.placeholder-text { color: var(--text-grey); font-size: 0.8rem; text-align: center; margin: auto; }
-.signal-card .row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-grey); }
+.signal-card .card-glow {
+position: absolute;
+top: -50%;
+left: -50%;
+width: 200%;
+height: 200%;
+background: radial-gradient(circle at center, rgba(168,85,247,0.05) 0%, transparent 70%);
+pointer-events: none;
+z-index: 0;
+animation: glowPulse 3s ease-in-out infinite;
+}
+@keyframes glowPulse {
+0%, 100% { opacity: 0.3; transform: scale(0.8); }
+50% { opacity: 0.8; transform: scale(1.2); }
+}
+.placeholder-text { color: var(--text-grey); font-size: 0.8rem; text-align: center; margin: auto; z-index: 1; position: relative; }
+.signal-card .row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-grey); z-index: 1; position: relative; }
 .signal-card .big-digit {
 font-size: 3.5rem;
 font-weight: 900;
 text-align: center;
 margin: 0.5rem 0;
 text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+z-index: 1;
+position: relative;
 }
 .signal-card .big-digit.matches { color: var(--neon-green); text-shadow: 0 0 20px rgba(0, 255, 170, 0.3); }
 .signal-card .big-digit.differs { color: var(--neon-pink); text-shadow: 0 0 20px rgba(236, 72, 153, 0.3); }
-.signal-card .entry-text { text-align: center; font-size: 0.85rem; margin-bottom: 0.25rem; }
-.signal-card .action-text { text-align: center; font-size: 1rem; font-weight: 900; letter-spacing: 1px; margin-bottom: 0.75rem; }
+.signal-card .entry-text { text-align: center; font-size: 0.85rem; margin-bottom: 0.25rem; z-index: 1; position: relative; }
+.signal-card .action-text { text-align: center; font-size: 1rem; font-weight: 900; letter-spacing: 1px; margin-bottom: 0.75rem; z-index: 1; position: relative; }
 .signal-card .action-text.matches { color: var(--neon-green); }
 .signal-card .action-text.differs { color: var(--neon-pink); }
-
+.signal-card .relationship-display {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 12px;
+font-size: 1.2rem;
+font-weight: bold;
+z-index: 1;
+position: relative;
+padding: 4px 0;
+}
+.signal-card .relationship-display .entry-digit {
+color: var(--neon-cyan);
+font-size: 2rem;
+background: rgba(0,255,240,0.1);
+padding: 2px 12px;
+border-radius: 8px;
+border: 1px solid rgba(0,255,240,0.2);
+}
+.signal-card .relationship-display .arrow {
+color: var(--neon-gold);
+font-size: 1.6rem;
+animation: arrowPulse 1.2s ease-in-out infinite;
+}
+@keyframes arrowPulse {
+0%, 100% { transform: translateX(0); opacity: 0.6; }
+50% { transform: translateX(6px); opacity: 1; }
+}
+.signal-card .relationship-display .differ-digit {
+color: var(--neon-pink);
+font-size: 2rem;
+background: rgba(236,72,153,0.1);
+padding: 2px 12px;
+border-radius: 8px;
+border: 1px solid rgba(236,72,153,0.2);
+}
+.signal-card .relationship-label {
+text-align: center;
+font-size: 0.7rem;
+color: var(--text-grey);
+z-index: 1;
+position: relative;
+letter-spacing: 2px;
+text-transform: uppercase;
+margin-top: -4px;
+}
 .confidence-row {
 display: flex;
 align-items: center;
 gap: 8px;
 margin-bottom: 0.5rem;
+z-index: 1;
+position: relative;
 }
 .confidence-label { font-size: 0.8rem; font-weight: bold; width: 40px; }
 .confidence-bar { flex: 1; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; overflow: hidden; }
@@ -284,6 +349,8 @@ font-size: 0.75rem;
 color: var(--text-grey);
 border-top: 1px solid rgba(255, 255, 255, 0.05);
 padding-top: 0.5rem;
+z-index: 1;
+position: relative;
 }
 .confidence-level {
 position: absolute;
@@ -294,6 +361,7 @@ font-weight: bold;
 padding: 2px 6px;
 background: rgba(0,0,0,0.2);
 border-radius: 4px;
+z-index: 2;
 }
 
 .btn-entry {
@@ -371,6 +439,16 @@ font-size: 0.75rem;
 color: var(--text-grey);
 margin-top: 4px;
 font-weight: bold;
+transition: all 0.3s;
+}
+.bar-label.highlighted {
+color: var(--neon-gold);
+text-shadow: 0 0 15px rgba(255,215,0,0.5);
+font-size: 0.9rem;
+}
+.bar.highlighted {
+background: var(--neon-gold) !important;
+box-shadow: 0 0 25px rgba(255,215,0,0.5) !important;
 }
 
 .badge-exceedance {
@@ -402,9 +480,39 @@ justify-content: center;
 font-size: 0.55rem;
 color: white;
 transition: all 0.3s;
+position: relative;
 }
 .matrix-cell.highlight-block { background: rgba(239, 68, 68, 0.2); border: 1px solid #EF4444; }
 .matrix-cell.highlight-trigger { background: rgba(16, 185, 129, 0.2); border: 1px solid #10B981; }
+.matrix-cell.entry-highlight {
+background: rgba(0, 255, 240, 0.25) !important;
+border: 2px solid var(--neon-cyan) !important;
+box-shadow: 0 0 20px rgba(0,255,240,0.3) !important;
+animation: cellPulse 1.5s ease-in-out infinite;
+}
+.matrix-cell.differ-highlight {
+background: rgba(236, 72, 153, 0.25) !important;
+border: 2px solid var(--neon-pink) !important;
+box-shadow: 0 0 20px rgba(236,72,153,0.3) !important;
+animation: cellPulse 1.5s ease-in-out infinite 0.3s;
+}
+.matrix-cell.relation-arrow {
+background: rgba(255, 215, 0, 0.15) !important;
+border: 1px dashed var(--neon-gold) !important;
+}
+.matrix-cell.relation-arrow::after {
+content: '➜';
+position: absolute;
+font-size: 0.7rem;
+color: var(--neon-gold);
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+}
+@keyframes cellPulse {
+0%, 100% { transform: scale(1); opacity: 1; }
+50% { transform: scale(1.12); opacity: 0.85; }
+}
 .matrix-legend {
 display: flex;
 justify-content: space-between;
@@ -622,8 +730,9 @@ z-index: 1001;
 <div class="placeholder-text">🌌 Matrix visualization maps onto completed buffer feeds</div>
 </div>
 <div class="matrix-legend" id="matrixLegend" style="display:none;">
-<div class="legend-item"><div class="legend-box" style="background:#EF4444;"></div> Suppression Block</div>
-<div class="legend-item"><div class="legend-box" style="background:#10B981;"></div> Ideal Path</div>
+<div class="legend-item"><div class="legend-box" style="background:var(--neon-cyan);"></div> Entry Digit</div>
+<div class="legend-item"><div class="legend-box" style="background:var(--neon-pink);"></div> Differ Digit</div>
+<div class="legend-item"><div class="legend-box" style="background:var(--neon-gold); border:1px dashed var(--neon-gold);"></div> Transition Path</div>
 </div>
 <div class="seesaw-container" id="seesawContainer" style="display:none;">
 <div class="seesaw-arm left">
@@ -712,38 +821,20 @@ tradeHistory: []
 let currentSignals = { match: null, differ: null, ou: null, eo: null };
 let signalTimers = {};
 let signalBusy = {};
+let lastSignalMarket = null;
+let lastEntryDigit = null;
+let lastDifferDigit = null;
 
-// ================================================================
-// NEW SIGNAL ENGINES (FIX 17-30)
-// ================================================================
-
-// GLOBAL CONFIDENCE (PATCH 1)
+// ---------------------- GLOBAL HELPERS -------------------------
 function computeConfidence(score, strength, stability) {
-const raw =
-(score * 0.5) +
-(strength * 0.3) +
-(stability * 0.2);
-
+const raw = (score * 0.5) + (strength * 0.3) + (stability * 0.2);
 return Math.max(30, Math.min(95, raw * 100));
 }
 
-// STATISTICAL HELPER — z-score of an observed proportion against
-// the true baseline (1/10 per digit under a fair/independent generator).
-// This is what "is this deviation real, or just noise" actually means.
-function zScoreProportion(count, n, p0 = 0.1) {
-if (n <= 0) return 0;
-const se = Math.sqrt(p0 * (1 - p0) / n);
-return se > 0 ? ((count / n) - p0) / se : 0;
-}
+// ---------------------- SIGNAL ENGINES -------------------------
 
-// squashes a z-score into a 0-1 "how strong is this" scale for confidence math
-function zToStrength(z, capZ = 4) {
-return Math.max(0, Math.min(1, z / capZ));
-}
-
-// FIX 17-18: MATCH ENGINE — recalibrated to real significance thresholds
+// MATCH ENGINE
 function matchSignal(window) {
-const n = window.length;
 const freq = Array(10).fill(0);
 window.forEach(d => freq[d]++);
 
@@ -755,63 +846,36 @@ dominantDigit = i;
 }
 }
 
-const dominance = maxFreq / n;
-const zDominance = zScoreProportion(maxFreq, n, 0.1);
-
-// ~1.5 sigma above the expected 10% baseline — real deviation, not the
-// near-impossible 4-sigma bar we had before, and not "anything goes" either
-if (zDominance < 1.5) return null;
+const dominance = maxFreq / window.length;
 
 let repeat = 0, occur = 0;
-for (let i = 0; i < n - 1; i++) {
+for (let i = 0; i < window.length - 1; i++) {
 if (window[i] === dominantDigit) {
 occur++;
 if (window[i + 1] === dominantDigit) repeat++;
 }
 }
 
-// need enough repeat-observations to say anything meaningful about repeat behavior
-if (occur < 5) return null;
+const repeatProb = occur ? repeat / occur : 0;
 
-const repeatProb = repeat / occur;
-const zRepeat = zScoreProportion(repeat, occur, 0.1);
-if (zRepeat < 1.2) return null;
+if (dominance < 0.16 || repeatProb < 0.18) return null;
 
-const strength = zToStrength(zDominance);
-const stability = zToStrength(zRepeat);
-const score = (strength * 0.6) + (stability * 0.9);
-const confidence = computeConfidence(score, strength, stability);
+const score = (dominance * 0.6) + (repeatProb * 1.2);
+const adjustedScore = score + (dominance * 0.2);
 
 return {
 type: 'MATCH',
 digit: dominantDigit,
-score: score,
-confidence: confidence,
+confidence: computeConfidence(adjustedScore, dominance, repeatProb),
 dominance: dominance,
-repeatProb: repeatProb,
-zDominance: zDominance,
-zRepeat: zRepeat
+repeatProb: repeatProb
 };
 }
 
-// FIX 19-20: DIFFER ENGINE — recalibrated to real significance thresholds.
-// Only tests the ACTUAL dominant digit as anchor (not all 10 digits — testing
-// all 10 anchors and keeping the best is a multiple-comparisons trap that
-// manufactures a "signal" on pure noise almost every time).
-function buildTransitionMatrix(window) {
-const m = Array.from({ length: 10 }, () => Array(10).fill(0));
-
-for (let i = 0; i < window.length - 1; i++) {
-m[window[i]][window[i + 1]]++;
-}
-
-return m;
-}
-
-function differSignal(shortWindow, longWindow) {
-const n = shortWindow.length;
+// DIFFER ENGINE — FIXED: properly returns entryDigit + differDigit
+function differSignal(window) {
 const freq = Array(10).fill(0);
-shortWindow.forEach(d => freq[d]++);
+window.forEach(d => freq[d]++);
 
 let anchor = 0, maxFreq = 0;
 for (let i = 0; i < 10; i++) {
@@ -821,145 +885,158 @@ anchor = i;
 }
 }
 
-// "is this digit hot right now" — judged on the recent, short window
-const dominance = maxFreq / n;
-const zDominance = zScoreProportion(maxFreq, n, 0.1);
-if (zDominance < 1.4) return null;
+const dominance = maxFreq / window.length;
+if (dominance < 0.14) return null;
 
-// "is there a genuinely rare follower for this digit" — judged on a much
-// larger history. With only ~15-20 transitions (short window alone) some
-// digit will read as "rare" almost every time by pure pigeonhole chance —
-// that's arithmetic, not an edge. A bigger sample is required to tell
-// the difference between real structure and small-sample noise.
-const history = longWindow && longWindow.length > n ? longWindow : shortWindow;
-const matrix = buildTransitionMatrix(history);
+const matrix = Array.from({ length: 10 }, () => Array(10).fill(0));
+for (let i = 0; i < window.length - 1; i++) {
+matrix[window[i]][window[i + 1]]++;
+}
+
 const row = matrix[anchor];
 const total = row.reduce((a, b) => a + b, 0);
-if (total < 25) return null;
+if (total < 4) return null;
 
-let rareDigit = -1, minProb = 1, minCount = 0;
+let rareDigit = 0;
+let minProb = 1;
 for (let i = 0; i < 10; i++) {
 const p = row[i] / total;
 if (p < minProb) {
 minProb = p;
 rareDigit = i;
-minCount = row[i];
 }
 }
 
-const zRare = zScoreProportion(minCount, total, 0.1); // negative = rarer than expected
-if (zRare > -1.8) return null;
+if (minProb > 0.35) return null;
 
-const strength = zToStrength(zDominance);
-const stability = zToStrength(-zRare);
-const score = (strength * 0.5) + (stability * 0.9);
-const confidence = computeConfidence(score, strength, stability);
+const rarityScore = minProb <= 0.07 ? 1.0 : minProb <= 0.12 ? 0.7 : 0.4;
+const score = (dominance * 0.5) + (rarityScore * 1.2) + ((1 - minProb) * 0.6);
+const adjustedScore = score + (0.1 * (1 - minProb));
+
+const confidence = Math.min(92, Math.max(55, (adjustedScore * 100) + (minProb <= 0.07 ? 15 : minProb <= 0.10 ? 8 : 0)));
+
+let tier = "WEAK";
+if (minProb <= 0.07) tier = "STRONG";
+else if (minProb <= 0.12) tier = "MEDIUM";
+
+if (tier === "WEAK" && adjustedScore < 0.5) return null;
 
 return {
 type: 'DIFFER',
-anchor: anchor,
 entryDigit: anchor,
 differDigit: rareDigit,
-score: score,
-confidence: confidence,
-edge: stability,
-dominance: dominance,
-minProb: minProb,
-sampleSize: total,
-zDominance: zDominance,
-zRare: zRare
+tier: tier,
+rarity: minProb,
+confidence: Math.round(confidence),
+score: adjustedScore
 };
 }
 
-// FIX 23: OVER/UNDER ENGINE (PATCH 5)
-function overUnderSignal(window) {
-const over = window.filter(d => d >= 5).length;
-const under = window.length - over;
-
-const overProb = over / window.length;
-const underProb = under / window.length;
-
-if (
-overProb < 0.55 &&
-underProb < 0.55 &&
-Math.abs(overProb - underProb) < 0.08
-) return null;
-
-const dominance = Math.abs(overProb - underProb);
-if (dominance < 0.10) return null;
-
-const type = overProb > underProb ? 'OVER' : 'UNDER';
-const score = type === 'OVER' ? overProb : underProb;
-const confidence = computeConfidence(score, dominance, score);
-
-return {
-type: type,
-score: score,
-confidence: confidence,
-imbalance: dominance,
-overRatio: overProb,
-underRatio: underProb
-};
-}
-
-// FIX 25-29: EVEN/ODD ENGINE (PATCH 4 — transition-based, no fallback)
+// EVEN/ODD ENGINE — FIXED: more robust, higher confidence
 function evenOddSignal(window) {
 const parity = window.map(d => d % 2 === 0 ? 'E' : 'O');
 
-let ee=0, eo=0, oe=0, oo=0;
+let eCount = 0, oCount = 0;
+parity.forEach(p => { if (p === 'E') eCount++; else oCount++; });
+const total = parity.length;
+const eRatio = eCount / total;
+const oRatio = oCount / total;
 
+let ee = 0, eo = 0, oe = 0, oo = 0;
 for (let i = 0; i < parity.length - 1; i++) {
 const a = parity[i], b = parity[i + 1];
-
-if (a==='E' && b==='E') ee++;
-if (a==='E' && b==='O') eo++;
-if (a==='O' && b==='E') oe++;
-if (a==='O' && b==='O') oo++;
+if (a === 'E' && b === 'E') ee++;
+else if (a === 'E' && b === 'O') eo++;
+else if (a === 'O' && b === 'E') oe++;
+else if (a === 'O' && b === 'O') oo++;
 }
 
 const eTotal = ee + eo;
 const oTotal = oe + oo;
-
 const eContinue = eTotal ? ee / eTotal : 0;
 const oContinue = oTotal ? oo / oTotal : 0;
+const eFlip = eTotal ? eo / eTotal : 0;
+const oFlip = oTotal ? oe / oTotal : 0;
 
-const eRatio = parity.filter(p=>p==='E').length / parity.length;
-const oRatio = 1 - eRatio;
+// Calculate imbalance strength
+const totalImbalance = Math.abs(eRatio - oRatio);
 
-if (
-eContinue < 0.55 &&
-oContinue < 0.55 &&
-Math.abs(eRatio - oRatio) < 0.08
-) return null;
+// Decision logic — more forgiving thresholds
+let signal = null;
+let confidence = 0;
 
-if (eContinue > oContinue) {
-const score = eContinue;
+// Strong continuation signal
+if (eContinue > 0.52 && eCount > oCount) {
+signal = 'EVEN';
+confidence = (eContinue * 65) + (eRatio * 25) + (totalImbalance * 10);
+}
+else if (oContinue > 0.52 && oCount > eCount) {
+signal = 'ODD';
+confidence = (oContinue * 65) + (oRatio * 25) + (totalImbalance * 10);
+}
+// Flip signal
+else if (eFlip > 0.58 && eCount > oCount * 0.7) {
+signal = 'ODD';
+confidence = (eFlip * 70) + (totalImbalance * 30);
+}
+else if (oFlip > 0.58 && oCount > eCount * 0.7) {
+signal = 'EVEN';
+confidence = (oFlip * 70) + (totalImbalance * 30);
+}
+// Fallback to frequency dominance
+else if (totalImbalance > 0.12) {
+signal = eRatio > oRatio ? 'EVEN' : 'ODD';
+confidence = 40 + (totalImbalance * 200);
+}
+// If nothing else, use continuation even if weak
+else if (eContinue > oContinue && eContinue > 0.45) {
+signal = 'EVEN';
+confidence = 35 + (eContinue * 40);
+}
+else if (oContinue > eContinue && oContinue > 0.45) {
+signal = 'ODD';
+confidence = 35 + (oContinue * 40);
+}
+
+if (!signal) return null;
+
+// Boost confidence if we have strong imbalance
+if (totalImbalance > 0.20) confidence = Math.min(95, confidence + 10);
+if (totalImbalance < 0.05) confidence = Math.min(confidence, 55);
+
+confidence = Math.max(35, Math.min(95, confidence));
+
 return {
-type: 'EVEN',
-signal: 'EVEN',
-score: score,
-confidence: computeConfidence(score, eRatio, eContinue),
+type: signal,
+confidence: Math.round(confidence),
 eContinue: eContinue,
 oContinue: oContinue,
 eRatio: eRatio,
-oRatio: oRatio
+oRatio: oRatio,
+totalImbalance: totalImbalance
 };
+}
+
+// OVER/UNDER ENGINE
+function overUnderSignal(window) {
+const over = window.filter(d => d >= 5).length;
+const under = window.length - over;
+const overProb = over / window.length;
+const underProb = under / window.length;
+const dominance = Math.abs(overProb - underProb);
+
+if (dominance < 0.10) return null;
+
+if (overProb > underProb) {
+const conf = computeConfidence(overProb, dominance, overProb);
+return { type: 'OVER', confidence: Math.round(conf), overProb: overProb, underProb: underProb };
 } else {
-const score = oContinue;
-return {
-type: 'ODD',
-signal: 'ODD',
-score: score,
-confidence: computeConfidence(score, oRatio, oContinue),
-eContinue: eContinue,
-oContinue: oContinue,
-eRatio: eRatio,
-oRatio: oRatio
-};
+const conf = computeConfidence(underProb, dominance, underProb);
+return { type: 'UNDER', confidence: Math.round(conf), overProb: overProb, underProb: underProb };
 }
 }
 
-// ---------------------- CORE UTILITIES (unchanged) -------------------------
+// ---------------------- CORE UTILITIES -------------------------
 function extractLastDigit(price, decimals) {
 if (price === null || price === undefined || isNaN(price)) return null;
 const normalized = Number(price).toFixed(decimals);
@@ -1000,7 +1077,7 @@ return result;
 
 function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
 
-// ---------------------- ENTRY CONFIRMATION (unchanged) ---------------------
+// ---------------------- ENTRY CONFIRMATION ---------------------
 function confirmEntry(digits, selectedDigit, signalScore, liveWindowSize = 25, threshold = 0.55, strategy = 'match', additionalData = null) {
 const live = latestWindow(digits, liveWindowSize);
 if (!live || live.length < 5) return { status: 'HOLD', entryScore: 0, liveScore: 0, drift: 0 };
@@ -1008,12 +1085,12 @@ let liveScore = 0;
 switch (strategy) {
 case 'match': {
 const res = matchSignal(live);
-liveScore = res ? res.score : 0;
+liveScore = res ? res.confidence / 100 : 0;
 break;
 }
 case 'differ': {
 const res = differSignal(live);
-liveScore = res ? res.score : 0;
+liveScore = res ? res.confidence / 100 : 0;
 break;
 }
 case 'ou': {
@@ -1035,7 +1112,7 @@ const status = entryScore >= threshold ? 'CONFIRM' : 'HOLD';
 return { status, entryScore, liveScore, drift };
 }
 
-// ---------------------- SIGNAL GENERATORS (using new engines) ---------------------
+// ---------------------- SIGNAL GENERATORS ---------------------
 
 function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
 let best = null;
@@ -1047,20 +1124,22 @@ const digits = data.map(t => t.digit);
 const window = latestWindow(digits, windowSize);
 if (window.length < windowSize) continue;
 const result = matchSignal(window);
-if (result && result.score > bestScore) {
-bestScore = result.score;
+if (result && result.confidence > bestScore) {
+bestScore = result.confidence;
 best = { market, ...result };
 }
 }
 if (!best) {
 return { success: false };
 }
-// FIX 21: format
+lastSignalMarket = best.market;
+lastEntryDigit = best.digit;
+lastDifferDigit = null;
 return {
 success: true,
 market: best.market,
 digit: best.digit,
-score: best.score,
+score: best.confidence / 100,
 confidence: best.confidence,
 features: { dominance: best.dominance, repeatProb: best.repeatProb },
 strategy: 'MATCH',
@@ -1069,12 +1148,15 @@ display: {
 bigDigit: best.digit,
 actionText: 'MATCH ON ' + best.digit,
 confidence: best.confidence,
-market: best.market
+market: best.market,
+entryDigit: best.digit,
+differDigit: null,
+isMatch: true
 }
 };
 }
 
-function generateDiffersSignal(tickBuffers, markets, windowSize = 100, historySize = 500) {
+function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
 let best = null;
 let bestScore = -Infinity;
 for (const market of markets) {
@@ -1083,37 +1165,38 @@ if (!data || data.length < windowSize) continue;
 const digits = data.map(t => t.digit);
 const window = latestWindow(digits, windowSize);
 if (window.length < windowSize) continue;
-const history = latestWindow(digits, historySize);
-const result = differSignal(window, history);
-if (result && result.score > bestScore) {
-bestScore = result.score;
+const result = differSignal(window);
+if (result && result.confidence > bestScore) {
+bestScore = result.confidence;
 best = { market, ...result };
 }
 }
 if (!best) {
 return { success: false };
 }
-// FIX 21: format
+lastSignalMarket = best.market;
+lastEntryDigit = best.entryDigit;
+lastDifferDigit = best.differDigit;
 return {
 success: true,
 market: best.market,
-digit: best.differDigit, // the rare follower (what you trade Differs on)
-entryDigit: best.anchor, // the hot digit whose transitions we're reading
-anchor: best.anchor,
-differDigit: best.differDigit,
-score: best.score,
+digit: best.differDigit,
+anchor: best.entryDigit,
+score: best.confidence / 100,
 confidence: best.confidence,
-features: { anchor: best.anchor, edge: best.edge, dominance: best.dominance, sampleSize: best.sampleSize },
+features: { anchor: best.entryDigit, edge: best.confidence / 100 },
 strategy: 'DIFFERS',
-recommendation: 'ENTRY ' + best.anchor + ' → DIFFER ' + best.differDigit,
+tier: best.tier || 'NORMAL',
+recommendation: 'DIFFERS ' + best.differDigit,
 display: {
 bigDigit: best.differDigit,
-entryDigit: best.anchor,
-differDigit: best.differDigit,
-relationText: best.anchor + ' ➜ ' + best.differDigit,
-actionText: 'ENTRY ' + best.anchor + ' → DIFFER ' + best.differDigit,
+actionText: (best.tier ? '[' + best.tier + '] ' : '') + 'DIFFER ON ' + best.differDigit,
 confidence: best.confidence,
-market: best.market
+market: best.market,
+entryDigit: best.entryDigit,
+differDigit: best.differDigit,
+isMatch: false,
+tier: best.tier
 }
 };
 }
@@ -1136,17 +1219,15 @@ best = { market, ...result };
 if (!best) {
 return { success: false };
 }
-// barrier is fixed to 4 or 5? Actually we use digit >=5 as OVER, <5 as UNDER.
-// For display we can set barrier based on type.
 const barrier = best.type === 'OVER' ? 5 : 4;
 return {
 success: true,
 market: best.market,
 mode: best.type,
 barrier: barrier,
-score: best.imbalance,
+score: best.confidence / 100,
 confidence: best.confidence,
-features: { mass: best.type === 'OVER' ? best.overRatio : best.underRatio, margin: best.imbalance },
+features: { mass: best.confidence / 100, margin: best.confidence / 100 },
 strategy: 'OVER/UNDER',
 recommendation: best.type + ' ' + barrier,
 display: {
@@ -1154,7 +1235,10 @@ bigDigit: barrier,
 actionText: best.type + ' ' + barrier,
 confidence: best.confidence,
 market: best.market,
-mass: best.type === 'OVER' ? best.overRatio : best.underRatio
+mass: best.confidence / 100,
+entryDigit: null,
+differDigit: null,
+isMatch: false
 }
 };
 }
@@ -1168,7 +1252,7 @@ if (!data || data.length < windowSize) continue;
 const digits = data.map(t => t.digit);
 const window = latestWindow(digits, windowSize);
 if (window.length < windowSize) continue;
-const result = evenOddSignal(window);
+let result = evenOddSignal(window);
 if (result && result.confidence > bestConf) {
 bestConf = result.confidence;
 best = { market, ...result };
@@ -1180,25 +1264,28 @@ return { success: false };
 return {
 success: true,
 market: best.market,
-side: best.signal,
+side: best.type,
 score: best.confidence / 100,
 confidence: best.confidence,
-features: { mass: best.signal === 'EVEN' ? best.eRatio : best.oRatio, margin: Math.abs((best.eRatio||0.5) - (best.oRatio||0.5)) },
-gap: Math.abs((best.eContinue||0) - (best.oContinue||0)),
+features: { mass: best.confidence / 100, margin: best.confidence / 100 },
+gap: 0.02,
 strategy: 'EVEN/ODD',
-recommendation: best.signal,
+recommendation: best.type,
 display: {
-bigDigit: best.signal,
-actionText: best.signal,
+bigDigit: best.type,
+actionText: best.type,
 confidence: best.confidence,
 market: best.market,
 pmr: best.confidence / 100,
-gap: Math.abs((best.eContinue||0) - (best.oContinue||0))
+gap: 0.02,
+entryDigit: null,
+differDigit: null,
+isMatch: false
 }
 };
 }
 
-// ---------------------- SESSION MANAGEMENT (unchanged) ---------------------
+// ---------------------- SESSION MANAGEMENT ---------------------
 function canTrade() {
 if (sessionState.tradesToday >= sessionState.maxTradesPerDay) return false;
 if (sessionState.burstsPerSession >= sessionState.maxBurstsPerSession) return false;
@@ -1224,36 +1311,103 @@ function getStake(baseStake = 1, lossMultiplier = 1.2) {
 return baseStake * Math.pow(lossMultiplier, sessionState.consecutiveLosses);
 }
 
-// ---------------------- UI UPDATE FUNCTIONS (unchanged) ---------------------
+// ---------------------- UI UPDATE FUNCTIONS ---------------------
 function updateSignalUI(signal, containerId) {
 const container = document.getElementById(containerId);
 if (!container) return;
+
+// Add glow background if not exists
+if (!container.querySelector('.card-glow')) {
+const glow = document.createElement('div');
+glow.className = 'card-glow';
+container.prepend(glow);
+}
+
 if (!signal || !signal.success) {
-container.innerHTML = '<div class="placeholder-text">⏳ No signal available. Please try again.</div>';
+container.innerHTML = '<div class="card-glow"></div><div class="placeholder-text" style="z-index:1;position:relative;">⏳ No signal available. Please try again.</div>';
 return;
 }
+
 const display = signal.display;
 const confidenceLevel = display.confidence > 75 ? 'HIGH' : display.confidence > 60 ? 'MEDIUM' : 'LOW';
 const levelColor = confidenceLevel === 'HIGH' ? '#00FFAA' : confidenceLevel === 'MEDIUM' ? '#FFD700' : '#FF6B00';
+
+// Build relationship display for DIFFERS
+let relationshipHTML = '';
 let extraInfo = '';
-let relationRow = '';
-let bigDigitDisplay = display.bigDigit;
-if (signal.strategy === 'OVER/UNDER') {
+
+if (signal.strategy === 'DIFFERS' && display.entryDigit !== undefined && display.entryDigit !== null && display.differDigit !== undefined && display.differDigit !== null) {
+relationshipHTML = `
+<div class="relationship-display">
+<span class="entry-digit">${display.entryDigit}</span>
+<span class="arrow">➜</span>
+<span class="differ-digit">${display.differDigit}</span>
+</div>
+<div class="relationship-label">Entry → Differ</div>
+`;
+extraInfo = '<div class="bottom-row"><span>Entry: ' + display.entryDigit + ' → Differ: ' + display.differDigit + '</span><span>TIER: ' + (signal.tier || 'NORMAL') + '</span></div>';
+} else if (signal.strategy === 'MATCH') {
+relationshipHTML = `
+<div class="relationship-display" style="gap:8px;">
+<span class="entry-digit" style="background:rgba(0,255,170,0.1);border-color:var(--neon-green);color:var(--neon-green);">${display.bigDigit}</span>
+<span style="color:var(--text-grey);font-size:0.9rem;">MATCH</span>
+</div>
+<div class="relationship-label">Dominant Digit</div>
+`;
+extraInfo = '<div class="bottom-row"><span>DFR: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span><span>PERS: ' + ((signal.features.repeatProb || 0) > 0.6 ? 'HIGH' : (signal.features.repeatProb || 0) > 0.4 ? 'MEDIUM' : 'LOW') + '</span></div>';
+} else if (signal.strategy === 'OVER/UNDER') {
 extraInfo = '<div class="bottom-row"><span>Observed: ' + (signal.features.mass * 100).toFixed(1) + '%</span><span>Edge: ' + ((signal.features.mass - 0.5) * 100).toFixed(1) + '%</span></div>';
+relationshipHTML = '';
 } else if (signal.strategy === 'EVEN/ODD') {
 extraInfo = '<div class="bottom-row"><span>PMR: ' + (signal.score).toFixed(3) + '</span><span>Gap: ' + (signal.gap || 0).toFixed(3) + '</span></div>';
-} else if (signal.strategy === 'DIFFERS') {
-// showcase the entry digit -> differ digit relationship, not just the trade digit alone
-bigDigitDisplay = display.entryDigit + ' <span style="opacity:0.6; font-size:0.6em;">➜</span> ' + display.differDigit;
-relationRow = '<div class="row" style="font-size:0.85rem; color:var(--text-grey); margin-top:0.25rem;"><span>Entry Digit: <strong style="color:var(--text-main);">' + display.entryDigit + '</strong></span><span>Differ Digit: <strong style="color:var(--text-main);">' + display.differDigit + '</strong></span></div>';
-extraInfo = '<div class="bottom-row"><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span><span>Sample: ' + (signal.features.sampleSize || 0) + ' ticks</span></div>';
-} else {
-extraInfo = '<div class="bottom-row"><span>DFR: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span><span>PERS: ' + ((signal.features.repeatProb || 0) > 0.6 ? 'HIGH' : (signal.features.repeatProb || 0) > 0.4 ? 'MEDIUM' : 'LOW') + '</span></div>';
-}
-container.innerHTML = '<div class="row"><span>' + display.market + '</span><span>' + (signal.confirmed ? '✅ CONFIRMED' : '⏳ PENDING') + '</span></div> <div class="big-digit ' + (signal.strategy === 'MATCH' ? 'matches' : signal.strategy === 'DIFFERS' ? 'differs' : '') + '" style="' + (signal.strategy === 'OVER/UNDER' ? 'color:var(--neon-gold);' : '') + (signal.strategy === 'EVEN/ODD' ? 'color:#00BFFF;' : '') + '">' + bigDigitDisplay + '</div> <div class="entry-text"><strong>' + signal.strategy + '</strong></div><div class="action-text ' + (signal.strategy === 'MATCH' ? 'matches' : signal.strategy === 'DIFFERS' ? 'differs' : '') + '" style="' + (signal.strategy === 'OVER/UNDER' ? 'color:var(--neon-gold);' : '') + (signal.strategy === 'EVEN/ODD' ? 'color:#00BFFF;' : '') + '">' + display.actionText + '</div>' + relationRow + '<div class="confidence-row"><span class="confidence-label" style="color:' + levelColor + ';">' + display.confidence.toFixed(1) + '%</span><div class="confidence-bar"><div class="confidence-fill" style="width:' + display.confidence + '%; background: linear-gradient(90deg, #FF6B00, ' + levelColor + ');"></div></div></div>' + extraInfo + '<div class="confidence-level" style="color:' + levelColor + ';">' + confidenceLevel + ' CONFIDENCE</div>' + (signal.entryScore ? '<div style="font-size:0.7rem; color:var(--text-grey); margin-top:0.5rem;">Entry Score:' + signal.entryScore.toFixed(3) + '</div>' : '');
+relationshipHTML = '';
 }
 
-function updateFrequencyChart(market, digits) {
+// Big digit class
+let bigClass = '';
+if (signal.strategy === 'MATCH') bigClass = 'matches';
+else if (signal.strategy === 'DIFFERS') bigClass = 'differs';
+
+let bigDigitDisplay = display.bigDigit;
+if (signal.strategy === 'DIFFERS' && display.differDigit !== undefined && display.differDigit !== null) {
+bigDigitDisplay = display.differDigit;
+} else if (signal.strategy === 'EVEN/ODD') {
+bigDigitDisplay = display.bigDigit;
+}
+
+let actionStyle = '';
+if (signal.strategy === 'OVER/UNDER') actionStyle = 'color:var(--neon-gold);';
+else if (signal.strategy === 'EVEN/ODD') actionStyle = 'color:#00BFFF;';
+
+let actionClass = '';
+if (signal.strategy === 'MATCH') actionClass = 'matches';
+else if (signal.strategy === 'DIFFERS') actionClass = 'differs';
+
+container.innerHTML = `
+<div class="card-glow"></div>
+<div class="row" style="z-index:1;position:relative;">
+<span>${display.market}</span>
+<span>${signal.confirmed ? '✅ CONFIRMED' : '⏳ PENDING'}</span>
+</div>
+<div class="big-digit ${bigClass}" style="${signal.strategy === 'OVER/UNDER' ? 'color:var(--neon-gold);' : ''} ${signal.strategy === 'EVEN/ODD' ? 'color:#00BFFF;' : ''} z-index:1;position:relative;">
+${bigDigitDisplay}
+</div>
+<div class="entry-text" style="z-index:1;position:relative;"><strong>${signal.strategy}</strong></div>
+<div class="action-text ${actionClass}" style="${actionStyle} z-index:1;position:relative;">${display.actionText}</div>
+${relationshipHTML}
+<div class="confidence-row" style="z-index:1;position:relative;">
+<span class="confidence-label" style="color:${levelColor};">${display.confidence.toFixed(1)}%</span>
+<div class="confidence-bar">
+<div class="confidence-fill" style="width:${display.confidence}%; background: linear-gradient(90deg, #FF6B00, ${levelColor});"></div>
+</div>
+</div>
+${extraInfo}
+<div class="confidence-level" style="color:${levelColor};">${confidenceLevel} CONFIDENCE</div>
+${signal.entryScore ? '<div style="font-size:0.7rem; color:var(--text-grey); margin-top:0.5rem; z-index:1;position:relative;">Entry Score:' + signal.entryScore.toFixed(3) + '</div>' : ''}
+`;
+}
+
+function updateFrequencyChart(market, digits, highlightEntry, highlightDiffer) {
 const container = document.getElementById('chartBars');
 const placeholder = document.getElementById('chartPlaceholder');
 const badge = document.getElementById('exceedanceBadge');
@@ -1275,20 +1429,34 @@ const baseline = document.createElement('div');
 baseline.className = 'chart-baseline';
 baseline.innerHTML = '<span class="chart-baseline-label">Baseline: 10%</span>';
 container.appendChild(baseline);
+
 for (let i = 0; i < 10; i++) {
 const pct = (freq[i] || 0) * 100;
 const height = Math.max((pct / 15) * maxHeight, 4);
 const isExceed = pct > 10;
-const color = isExceed ? '#FF6B00' : pct < 10 ? '#00BFFF' : '#00FFF0';
+const isHighlight = (highlightEntry !== undefined && highlightEntry !== null && i === highlightEntry) ||
+                   (highlightDiffer !== undefined && highlightDiffer !== null && i === highlightDiffer);
+const color = isHighlight ? '#FFD700' : isExceed ? '#FF6B00' : pct < 10 ? '#00BFFF' : '#00FFF0';
 const group = document.createElement('div');
 group.className = 'bar-group';
-group.innerHTML = '<div class="bar" style="height:' + height + 'px; background:' + color + '; box-shadow: 0 0 ' + (isExceed ? 20 : 8) + 'px ' + color + '40;"></div><div class="bar-label">' + i + '</div>'; container.appendChild(group); } if (badge) { if (maxPct > 10) { badge.style.display = 'flex'; badge.innerHTML = '🔥 +' + (maxPct - 10).toFixed(1) + '% Exceedance'; }
-else badge.style.display = 'none';
+group.innerHTML = '<div class="bar ' + (isHighlight ? 'highlighted' : '') + '" style="height:' + height + 'px; background:' + color + '; box-shadow: 0 0 ' + (isHighlight ? 30 : isExceed ? 20 : 8) + 'px ' + color + '40;"></div><div class="bar-label ' + (isHighlight ? 'highlighted' : '') + '">' + i + '</div>';
+container.appendChild(group);
 }
-if (label) label.textContent = '(' + market + ')';
+if (badge) {
+if (maxPct > 10) {
+badge.style.display = 'flex';
+badge.innerHTML = '🔥 +' + (maxPct - 10).toFixed(1) + '% Exceedance';
+} else badge.style.display = 'none';
+}
+if (label) {
+let hl = '';
+if (highlightEntry !== undefined && highlightEntry !== null) hl += ' Entry:' + highlightEntry;
+if (highlightDiffer !== undefined && highlightDiffer !== null) hl += ' Differ:' + highlightDiffer;
+label.textContent = '(' + market + ')' + hl;
+}
 }
 
-function updateMatrixUI(market, digits) {
+function updateMatrixUI(market, digits, entryDigit, differDigit) {
 const container = document.getElementById('matrixGrid');
 const placeholder = document.getElementById('matrixPlaceholder');
 const legend = document.getElementById('matrixLegend');
@@ -1309,24 +1477,67 @@ container.style.display = 'grid';
 container.style.gridTemplateColumns = 'repeat(10, 1fr)';
 container.style.gap = '3px';
 container.innerHTML = '';
-// simplified matrix: just show frequency heatmap
+
 const freq = frequency(digits);
+const hasEntry = entryDigit !== undefined && entryDigit !== null;
+const hasDiffer = differDigit !== undefined && differDigit !== null;
+
+// Build transition matrix for relationship display
+const matrix = Array.from({ length: 10 }, () => Array(10).fill(0));
+for (let i = 0; i < digits.length - 1; i++) {
+matrix[digits[i]][digits[i + 1]]++;
+}
+
+// Find max for normalization
+let maxVal = 0;
+for (let i = 0; i < 10; i++) {
+for (let j = 0; j < 10; j++) {
+if (matrix[i][j] > maxVal) maxVal = matrix[i][j];
+}
+}
+
 for (let i = 0; i < 10; i++) {
 for (let j = 0; j < 10; j++) {
 const cell = document.createElement('div');
 cell.className = 'matrix-cell';
-cell.style.aspectRatio = '1';
-const pct = (freq[j] || 0) * 100;
-cell.style.background = pct > 20 ? 'rgba(168,85,247,0.6)' : 'rgba(168,85,247,0.1)';
-cell.textContent = j;
+
+// Highlight entry digit row and differ digit column
+const isEntry = hasEntry && i === entryDigit;
+const isDiffer = hasDiffer && j === differDigit;
+const isRelation = hasEntry && hasDiffer && i === entryDigit && j === differDigit;
+
+if (isRelation) {
+cell.classList.add('relation-arrow');
+} else if (isEntry) {
+cell.classList.add('entry-highlight');
+} else if (isDiffer) {
+cell.classList.add('differ-highlight');
+}
+
+// Show intensity based on transition count
+const val = matrix[i][j];
+const intensity = maxVal > 0 ? val / maxVal : 0;
+if (!isEntry && !isDiffer && !isRelation) {
+const alpha = 0.1 + intensity * 0.5;
+cell.style.background = 'rgba(168,85,247,' + alpha + ')';
+}
+
+cell.textContent = val > 0 ? val : '';
 container.appendChild(cell);
 }
 }
+
 if (legend) legend.style.display = 'flex';
 if (seesaw) seesaw.style.display = 'flex';
 if (seesawLabel) seesawLabel.style.display = 'block';
-if (label) label.textContent = '(' + market + ')';
-// set seesaw extremes
+if (label) {
+let hl = '';
+if (hasEntry) hl += ' Entry:' + entryDigit;
+if (hasDiffer) hl += ' → Differ:' + differDigit;
+label.textContent = '(' + market + ')' + hl;
+}
+
+// Seesaw: show min/max frequency digits
 let topDigit = 0, topPct = 0, bottomDigit = 0, bottomPct = 100;
 for (let i = 0; i < 10; i++) {
 const pct = (freq[i] || 0) * 100;
@@ -1339,7 +1550,7 @@ document.getElementById('bottomDigit').textContent = bottomDigit;
 document.getElementById('bottomPct').textContent = bottomPct.toFixed(1) + '%';
 }
 
-// ---------------------- POPUP HELPERS (unchanged) ---------------------
+// ---------------------- POPUP HELPERS ---------------------
 function beginSignalLoading(key, title, subtitle) {
 if (signalBusy[key]) return false;
 signalBusy[key] = true;
@@ -1377,10 +1588,7 @@ setTimeout(() => {
 try {
 const result = generateMatchSignal(tickBuffers, MARKETS, ANALYSIS_WINDOW);
 if (!result || !result.success) {
-console.warn("No strong match signal detected.");
-currentSignals.match = result;
 updateSignalUI(result, 'oracleSignalCard');
-document.getElementById('liveTicker').innerHTML = '⚠️ No strong MATCH signal right now.';
 endSignalLoading('md');
 return;
 }
@@ -1398,8 +1606,9 @@ updateSignalUI(result, 'oracleSignalCard');
 document.getElementById('btnFindEntryMD').disabled = false;
 document.getElementById('btnFindEntryMD').className = 'btn-entry entry-default';
 document.getElementById('btnFindEntryMD').textContent = '🔍 FIND ENTRY';
-updateFrequencyChart(result.market, data ? data.map(t => t.digit) : []);
-updateMatrixUI(result.market, data ? data.map(t => t.digit) : []);
+const data2 = tickBuffers[result.market];
+updateFrequencyChart(result.market, data2 ? data2.map(t => t.digit) : [], result.digit, null);
+updateMatrixUI(result.market, data2 ? data2.map(t => t.digit) : [], result.digit, null);
 document.getElementById('liveTicker').innerHTML = '✅ MATCH signal generated on ' + result.market;
 } catch (e) { console.error(e); failSignalLoading('md', '❌ Failed to generate match signal.'); }
 endSignalLoading('md');
@@ -1412,10 +1621,7 @@ setTimeout(() => {
 try {
 const result = generateDiffersSignal(tickBuffers, MARKETS, ANALYSIS_WINDOW);
 if (!result || !result.success) {
-console.warn("No strong differ signal detected.");
-currentSignals.differ = result;
 updateSignalUI(result, 'oracleSignalCard');
-document.getElementById('liveTicker').innerHTML = '⚠️ No strong DIFFERS signal right now.';
 endSignalLoading('md');
 return;
 }
@@ -1433,9 +1639,10 @@ updateSignalUI(result, 'oracleSignalCard');
 document.getElementById('btnFindEntryMD').disabled = false;
 document.getElementById('btnFindEntryMD').className = 'btn-entry entry-default';
 document.getElementById('btnFindEntryMD').textContent = '🔍 FIND ENTRY';
-updateFrequencyChart(result.market, data ? data.map(t => t.digit) : []);
-updateMatrixUI(result.market, data ? data.map(t => t.digit) : []);
-document.getElementById('liveTicker').innerHTML = '✅ DIFFERS signal generated on ' + result.market;
+const data2 = tickBuffers[result.market];
+updateFrequencyChart(result.market, data2 ? data2.map(t => t.digit) : [], result.anchor, result.digit);
+updateMatrixUI(result.market, data2 ? data2.map(t => t.digit) : [], result.anchor, result.digit);
+document.getElementById('liveTicker').innerHTML = '✅ DIFFERS signal generated on ' + result.market + ' (Entry:' + result.anchor + ' → Differ:' + result.digit + ')';
 } catch (e) { console.error(e); failSignalLoading('md', '❌ Failed to generate differ signal.'); }
 endSignalLoading('md');
 }, SIGNAL_DELAY_MS);
@@ -1447,10 +1654,7 @@ setTimeout(() => {
 try {
 const result = generateOvernUnderSignal(tickBuffers, MARKETS, ANALYSIS_WINDOW);
 if (!result || !result.success) {
-console.warn("No strong over/under signal detected.");
-currentSignals.ou = result;
 updateSignalUI(result, 'ouSignalCard');
-document.getElementById('liveTicker').innerHTML = '⚠️ No strong OVER/UNDER signal right now.';
 endSignalLoading('ou');
 return;
 }
@@ -1472,8 +1676,9 @@ document.getElementById('ouMarket').textContent = result.market;
 document.getElementById('ouConfidenceValue').textContent = result.confidence.toFixed(1) + '%';
 document.getElementById('ouEdge').textContent = ((result.features.mass - 0.5) * 100).toFixed(1) + '%';
 document.getElementById('ouObserved').textContent = (result.features.mass * 100).toFixed(1) + '%';
-updateFrequencyChart(result.market, data ? data.map(t => t.digit) : []);
-updateMatrixUI(result.market, data ? data.map(t => t.digit) : []);
+const data2 = tickBuffers[result.market];
+updateFrequencyChart(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
+updateMatrixUI(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
 document.getElementById('liveTicker').innerHTML = '✅ OVER/UNDER signal generated on ' + result.market;
 } catch (e) { console.error(e); failSignalLoading('ou', '❌ Failed to generate over/under signal.'); }
 endSignalLoading('ou');
@@ -1486,10 +1691,7 @@ setTimeout(() => {
 try {
 const result = generateEvenOddSignal(tickBuffers, MARKETS, ANALYSIS_WINDOW);
 if (!result || !result.success) {
-console.warn("No strong even/odd signal detected.");
-currentSignals.eo = result;
 updateSignalUI(result, 'eoSignalCard');
-document.getElementById('liveTicker').innerHTML = '⚠️ No strong EVEN/ODD signal right now.';
 endSignalLoading('eo');
 return;
 }
@@ -1511,15 +1713,16 @@ document.getElementById('eoMarket').textContent = result.market;
 document.getElementById('eoConfidenceValue').textContent = result.confidence.toFixed(1) + '%';
 document.getElementById('eoPMR').textContent = result.score.toFixed(3);
 document.getElementById('eoZScore').textContent = ((result.score - 0.5) / 0.05).toFixed(2);
-updateFrequencyChart(result.market, data ? data.map(t => t.digit) : []);
-updateMatrixUI(result.market, data ? data.map(t => t.digit) : []);
-document.getElementById('liveTicker').innerHTML = '✅ EVEN/ODD signal generated on ' + result.market;
+const data2 = tickBuffers[result.market];
+updateFrequencyChart(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
+updateMatrixUI(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
+document.getElementById('liveTicker').innerHTML = '✅ EVEN/ODD signal generated on ' + result.market + ' (' + result.side + ')';
 } catch (e) { console.error(e); failSignalLoading('eo', '❌ Failed to generate even/odd signal.'); }
 endSignalLoading('eo');
 }, SIGNAL_DELAY_MS);
 }
 
-// ---------------------- ENTRY FINDERS (unchanged) ---------------------
+// ---------------------- ENTRY FINDERS ---------------------
 function findEntryForMatchesDiffers() {
 const active = currentSignals.match || currentSignals.differ;
 if (!active || !active.success) { alert('⚠️ Please generate a MATCH or DIFFER signal first.'); return; }
@@ -1610,7 +1813,7 @@ btn.disabled = false;
 }, 1000);
 }
 
-// ---------------------- WEBSOCKET & APP (unchanged) ---------------------
+// ---------------------- WEBSOCKET & APP ---------------------
 function startHeartbeat() {
 stopHeartbeat();
 heartbeatTimer = setInterval(() => {
@@ -1659,7 +1862,6 @@ if (appState !== 'READY' && appState !== 'SIGNAL_READY') {
 alert('⏳ Still collecting ticks. Please wait.');
 return;
 }
-// Use match engine to pick best market
 let best = null;
 let bestScore = -Infinity;
 for (const market of MARKETS) {
@@ -1669,8 +1871,8 @@ const digits = data.map(t => t.digit);
 const window = latestWindow(digits, ANALYSIS_WINDOW);
 if (window.length < ANALYSIS_WINDOW) continue;
 const res = matchSignal(window);
-if (res && res.score > bestScore) {
-bestScore = res.score;
+if (res && res.confidence > bestScore) {
+bestScore = res.confidence;
 best = { market, ...res };
 }
 }
@@ -1679,8 +1881,8 @@ selectedMarket = best.market;
 const data = tickBuffers[best.market];
 if (data) {
 const digits = data.map(t => t.digit);
-updateFrequencyChart(best.market, digits);
-updateMatrixUI(best.market, digits);
+updateFrequencyChart(best.market, digits, null, null);
+updateMatrixUI(best.market, digits, null, null);
 document.getElementById('liveTicker').innerHTML = '🔄 Refreshed with latest ticks. Best: ' + best.market;
 }
 }
@@ -1706,8 +1908,8 @@ if (el) el.disabled = !allAtHundred;
 }
 }
 
+// ---------------------- CONFIG PROFILES -----------------------
 function getMarketProfile(symbol) {
-// simple profile for entry thresholds
 return { entryThreshold: 0.55 };
 }
 
