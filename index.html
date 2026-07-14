@@ -713,184 +713,211 @@ let currentSignals = { match: null, differ: null, ou: null, eo: null };
 let signalTimers = {};
 let signalBusy = {};
 
-// ---------------------- GLOBAL HELPERS -------------------------
+// ================================================================
+// NEW SIGNAL ENGINES (FIX 17-30)
+// ================================================================
+
+// GLOBAL CONFIDENCE (PATCH 1)
 function computeConfidence(score, strength, stability) {
-    const raw =
-        (score * 0.5) +
-        (strength * 0.3) +
-        (stability * 0.2);
+const raw =
+(score * 0.5) +
+(strength * 0.3) +
+(stability * 0.2);
 
-    return Math.max(30, Math.min(95, raw * 100));
+return Math.max(30, Math.min(95, raw * 100));
 }
 
-// ---------------------- SIGNAL ENGINES -------------------------
-
+// FIX 17-18: MATCH ENGINE (PATCH 2)
 function matchSignal(window) {
-    const freq = Array(10).fill(0);
-    window.forEach(d => freq[d]++);
+const freq = Array(10).fill(0);
+window.forEach(d => freq[d]++);
 
-    let dominantDigit = 0, maxFreq = 0;
-    for (let i = 0; i < 10; i++) {
-        if (freq[i] > maxFreq) {
-            maxFreq = freq[i];
-            dominantDigit = i;
-        }
-    }
-
-    const dominance = maxFreq / window.length;
-
-    let repeat = 0, occur = 0;
-    for (let i = 0; i < window.length - 1; i++) {
-        if (window[i] === dominantDigit) {
-            occur++;
-            if (window[i + 1] === dominantDigit) repeat++;
-        }
-    }
-
-    const repeatProb = occur ? repeat / occur : 0;
-
-    if (dominance < 0.22 || repeatProb < 0.30) return null;
-
-    const score = (dominance * 0.6) + (repeatProb * 1.2);
-
-    return {
-        type: 'MATCH',
-        digit: dominantDigit,
-        confidence: computeConfidence(score, dominance, repeatProb)
-    };
+let dominantDigit = 0, maxFreq = 0;
+for (let i = 0; i < 10; i++) {
+if (freq[i] > maxFreq) {
+maxFreq = freq[i];
+dominantDigit = i;
+}
 }
 
+const dominance = maxFreq / window.length;
+
+let repeat = 0, occur = 0;
+for (let i = 0; i < window.length - 1; i++) {
+if (window[i] === dominantDigit) {
+occur++;
+if (window[i + 1] === dominantDigit) repeat++;
+}
+}
+
+const repeatProb = occur ? repeat / occur : 0;
+
+if (dominance < 0.22 || repeatProb < 0.30) return null;
+
+const score = (dominance * 0.6) + (repeatProb * 1.2);
+const confidence = computeConfidence(score, dominance, repeatProb);
+
+return {
+type: 'MATCH',
+digit: dominantDigit,
+score: score,
+confidence: confidence,
+dominance: dominance,
+repeatProb: repeatProb
+};
+}
+
+// FIX 19-20: DIFFER ENGINE (PATCH 3)
 function buildTransitionMatrix(window) {
-    const m = Array.from({ length: 10 }, () => Array(10).fill(0));
+const m = Array.from({ length: 10 }, () => Array(10).fill(0));
 
-    for (let i = 0; i < window.length - 1; i++) {
-        m[window[i]][window[i + 1]]++;
-    }
+for (let i = 0; i < window.length - 1; i++) {
+m[window[i]][window[i + 1]]++;
+}
 
-    return m;
+return m;
 }
 
 function differSignal(window) {
-    const freq = Array(10).fill(0);
-    window.forEach(d => freq[d]++);
+const freq = Array(10).fill(0);
+window.forEach(d => freq[d]++);
 
-    let anchor = 0, maxFreq = 0;
-    for (let i = 0; i < 10; i++) {
-        if (freq[i] > maxFreq) {
-            maxFreq = freq[i];
-            anchor = i;
-        }
-    }
-
-    const dominance = maxFreq / window.length;
-    if (dominance < 0.20) return null;
-
-    const matrix = buildTransitionMatrix(window);
-    const row = matrix[anchor];
-
-    const total = row.reduce((a, b) => a + b, 0);
-    if (total < 6) return null;
-
-    let rareDigit = -1;
-    let minProb = 1;
-
-    for (let i = 0; i < 10; i++) {
-        if (row[i] > 0) {
-            const p = row[i] / total;
-            if (p < minProb) {
-                minProb = p;
-                rareDigit = i;
-            }
-        }
-    }
-
-    if (rareDigit === -1 || minProb > 0.20) return null;
-
-    const stability = 1 - minProb;
-    const score = (dominance * 0.5) + (stability * 0.9);
-
-    return {
-        type: 'DIFFER',
-        entryDigit: anchor,
-        differDigit: rareDigit,
-        confidence: computeConfidence(score, dominance, stability)
-    };
+let anchor = 0, maxFreq = 0;
+for (let i = 0; i < 10; i++) {
+if (freq[i] > maxFreq) {
+maxFreq = freq[i];
+anchor = i;
+}
 }
 
-function evenOddSignal(window) {
-    const parity = window.map(d => d % 2 === 0 ? 'E' : 'O');
+const dominance = maxFreq / window.length;
+if (dominance < 0.20) return null;
 
-    let ee=0, eo=0, oe=0, oo=0;
+const matrix = buildTransitionMatrix(window);
+const row = matrix[anchor];
 
-    for (let i = 0; i < parity.length - 1; i++) {
-        const a = parity[i], b = parity[i + 1];
+const total = row.reduce((a, b) => a + b, 0);
+if (total < 6) return null;
 
-        if (a==='E' && b==='E') ee++;
-        if (a==='E' && b==='O') eo++;
-        if (a==='O' && b==='E') oe++;
-        if (a==='O' && b==='O') oo++;
-    }
+let rareDigit = -1;
+let minProb = 1;
 
-    const eTotal = ee + eo;
-    const oTotal = oe + oo;
-
-    const eContinue = eTotal ? ee / eTotal : 0;
-    const oContinue = oTotal ? oo / oTotal : 0;
-
-    const eRatio = parity.filter(p=>p==='E').length / parity.length;
-    const oRatio = 1 - eRatio;
-
-    if (
-        eContinue < 0.55 &&
-        oContinue < 0.55 &&
-        Math.abs(eRatio - oRatio) < 0.08
-    ) return null;
-
-    if (eContinue > oContinue) {
-        const score = eContinue;
-        return {
-            type: 'EVEN',
-            confidence: computeConfidence(score, eRatio, eContinue)
-        };
-    } else {
-        const score = oContinue;
-        return {
-            type: 'ODD',
-            confidence: computeConfidence(score, oRatio, oContinue)
-        };
-    }
+for (let i = 0; i < 10; i++) {
+if (row[i] > 0) {
+const p = row[i] / total;
+if (p < minProb) {
+minProb = p;
+rareDigit = i;
+}
+}
 }
 
+if (rareDigit === -1 || minProb > 0.20) return null;
+
+const stability = 1 - minProb;
+const score = (dominance * 0.5) + (stability * 0.9);
+const confidence = computeConfidence(score, dominance, stability);
+
+return {
+type: 'DIFFER',
+anchor: anchor,
+entryDigit: anchor,
+differDigit: rareDigit,
+score: score,
+confidence: confidence,
+edge: stability
+};
+}
+
+// FIX 23: OVER/UNDER ENGINE (PATCH 5)
 function overUnderSignal(window) {
-    const over = window.filter(d => d >= 5).length;
-    const under = window.length - over;
+const over = window.filter(d => d >= 5).length;
+const under = window.length - over;
 
-    const overProb = over / window.length;
-    const underProb = under / window.length;
+const overProb = over / window.length;
+const underProb = under / window.length;
 
-    if (
-        overProb < 0.55 &&
-        underProb < 0.55 &&
-        Math.abs(overProb - underProb) < 0.08
-    ) return null;
+if (
+overProb < 0.55 &&
+underProb < 0.55 &&
+Math.abs(overProb - underProb) < 0.08
+) return null;
 
-    const dominance = Math.abs(overProb - underProb);
-    if (dominance < 0.10) return null;
+const dominance = Math.abs(overProb - underProb);
+if (dominance < 0.10) return null;
 
-    if (overProb > underProb) {
-        return {
-            type: 'OVER',
-            confidence: computeConfidence(overProb, dominance, overProb)
-        };
-    } else {
-        return {
-            type: 'UNDER',
-            confidence: computeConfidence(underProb, dominance, underProb)
-        };
-    }
+const type = overProb > underProb ? 'OVER' : 'UNDER';
+const score = type === 'OVER' ? overProb : underProb;
+const confidence = computeConfidence(score, dominance, score);
+
+return {
+type: type,
+score: score,
+confidence: confidence,
+imbalance: dominance,
+overRatio: overProb,
+underRatio: underProb
+};
 }
 
-// ---------------------- CORE UTILITIES -------------------------
+// FIX 25-29: EVEN/ODD ENGINE (PATCH 4 — transition-based, no fallback)
+function evenOddSignal(window) {
+const parity = window.map(d => d % 2 === 0 ? 'E' : 'O');
+
+let ee=0, eo=0, oe=0, oo=0;
+
+for (let i = 0; i < parity.length - 1; i++) {
+const a = parity[i], b = parity[i + 1];
+
+if (a==='E' && b==='E') ee++;
+if (a==='E' && b==='O') eo++;
+if (a==='O' && b==='E') oe++;
+if (a==='O' && b==='O') oo++;
+}
+
+const eTotal = ee + eo;
+const oTotal = oe + oo;
+
+const eContinue = eTotal ? ee / eTotal : 0;
+const oContinue = oTotal ? oo / oTotal : 0;
+
+const eRatio = parity.filter(p=>p==='E').length / parity.length;
+const oRatio = 1 - eRatio;
+
+if (
+eContinue < 0.55 &&
+oContinue < 0.55 &&
+Math.abs(eRatio - oRatio) < 0.08
+) return null;
+
+if (eContinue > oContinue) {
+const score = eContinue;
+return {
+type: 'EVEN',
+signal: 'EVEN',
+score: score,
+confidence: computeConfidence(score, eRatio, eContinue),
+eContinue: eContinue,
+oContinue: oContinue,
+eRatio: eRatio,
+oRatio: oRatio
+};
+} else {
+const score = oContinue;
+return {
+type: 'ODD',
+signal: 'ODD',
+score: score,
+confidence: computeConfidence(score, oRatio, oContinue),
+eContinue: eContinue,
+oContinue: oContinue,
+eRatio: eRatio,
+oRatio: oRatio
+};
+}
+}
+
+// ---------------------- CORE UTILITIES (unchanged) -------------------------
 function extractLastDigit(price, decimals) {
 if (price === null || price === undefined || isNaN(price)) return null;
 const normalized = Number(price).toFixed(decimals);
@@ -931,7 +958,7 @@ return result;
 
 function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
 
-// ---------------------- ENTRY CONFIRMATION ---------------------
+// ---------------------- ENTRY CONFIRMATION (unchanged) ---------------------
 function confirmEntry(digits, selectedDigit, signalScore, liveWindowSize = 25, threshold = 0.55, strategy = 'match', additionalData = null) {
 const live = latestWindow(digits, liveWindowSize);
 if (!live || live.length < 5) return { status: 'HOLD', entryScore: 0, liveScore: 0, drift: 0 };
@@ -939,12 +966,12 @@ let liveScore = 0;
 switch (strategy) {
 case 'match': {
 const res = matchSignal(live);
-liveScore = res ? res.confidence / 100 : 0;
+liveScore = res ? res.score : 0;
 break;
 }
 case 'differ': {
 const res = differSignal(live);
-liveScore = res ? res.confidence / 100 : 0;
+liveScore = res ? res.score : 0;
 break;
 }
 case 'ou': {
@@ -966,7 +993,7 @@ const status = entryScore >= threshold ? 'CONFIRM' : 'HOLD';
 return { status, entryScore, liveScore, drift };
 }
 
-// ---------------------- SIGNAL GENERATORS ---------------------
+// ---------------------- SIGNAL GENERATORS (using new engines) ---------------------
 
 function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
 let best = null;
@@ -978,21 +1005,22 @@ const digits = data.map(t => t.digit);
 const window = latestWindow(digits, windowSize);
 if (window.length < windowSize) continue;
 const result = matchSignal(window);
-if (result && result.confidence > bestScore) {
-bestScore = result.confidence;
+if (result && result.score > bestScore) {
+bestScore = result.score;
 best = { market, ...result };
 }
 }
 if (!best) {
-    return { success: false };
+return { success: false };
 }
+// FIX 21: format
 return {
 success: true,
 market: best.market,
 digit: best.digit,
-score: best.confidence / 100,
+score: best.score,
 confidence: best.confidence,
-features: { dominance: best.confidence / 100, repeatProb: best.confidence / 100 },
+features: { dominance: best.dominance, repeatProb: best.repeatProb },
 strategy: 'MATCH',
 recommendation: 'MATCH ' + best.digit,
 display: {
@@ -1014,22 +1042,23 @@ const digits = data.map(t => t.digit);
 const window = latestWindow(digits, windowSize);
 if (window.length < windowSize) continue;
 const result = differSignal(window);
-if (result && result.confidence > bestScore) {
-bestScore = result.confidence;
+if (result && result.score > bestScore) {
+bestScore = result.score;
 best = { market, ...result };
 }
 }
 if (!best) {
-    return { success: false };
+return { success: false };
 }
+// FIX 21: format
 return {
 success: true,
 market: best.market,
-digit: best.differDigit,
-anchor: best.entryDigit,
-score: best.confidence / 100,
+digit: best.differDigit, // the rare follower
+anchor: best.anchor,
+score: best.score,
 confidence: best.confidence,
-features: { anchor: best.entryDigit, edge: best.confidence / 100 },
+features: { anchor: best.anchor, edge: best.edge },
 strategy: 'DIFFERS',
 recommendation: 'DIFFERS ' + best.differDigit,
 display: {
@@ -1057,17 +1086,19 @@ best = { market, ...result };
 }
 }
 if (!best) {
-    return { success: false };
+return { success: false };
 }
+// barrier is fixed to 4 or 5? Actually we use digit >=5 as OVER, <5 as UNDER.
+// For display we can set barrier based on type.
 const barrier = best.type === 'OVER' ? 5 : 4;
 return {
 success: true,
 market: best.market,
 mode: best.type,
 barrier: barrier,
-score: best.confidence / 100,
+score: best.imbalance,
 confidence: best.confidence,
-features: { mass: best.confidence / 100, margin: best.confidence / 100 },
+features: { mass: best.type === 'OVER' ? best.overRatio : best.underRatio, margin: best.imbalance },
 strategy: 'OVER/UNDER',
 recommendation: best.type + ' ' + barrier,
 display: {
@@ -1075,7 +1106,7 @@ bigDigit: barrier,
 actionText: best.type + ' ' + barrier,
 confidence: best.confidence,
 market: best.market,
-mass: best.confidence / 100
+mass: best.type === 'OVER' ? best.overRatio : best.underRatio
 }
 };
 }
@@ -1089,37 +1120,37 @@ if (!data || data.length < windowSize) continue;
 const digits = data.map(t => t.digit);
 const window = latestWindow(digits, windowSize);
 if (window.length < windowSize) continue;
-let result = evenOddSignal(window);
+const result = evenOddSignal(window);
 if (result && result.confidence > bestConf) {
 bestConf = result.confidence;
 best = { market, ...result };
 }
 }
 if (!best) {
-    return { success: false };
+return { success: false };
 }
 return {
 success: true,
 market: best.market,
-side: best.type,
+side: best.signal,
 score: best.confidence / 100,
 confidence: best.confidence,
-features: { mass: best.confidence / 100, margin: best.confidence / 100 },
-gap: 0.02,
+features: { mass: best.signal === 'EVEN' ? best.eRatio : best.oRatio, margin: Math.abs((best.eRatio||0.5) - (best.oRatio||0.5)) },
+gap: Math.abs((best.eContinue||0) - (best.oContinue||0)),
 strategy: 'EVEN/ODD',
-recommendation: best.type,
+recommendation: best.signal,
 display: {
-bigDigit: best.type,
-actionText: best.type,
+bigDigit: best.signal,
+actionText: best.signal,
 confidence: best.confidence,
 market: best.market,
 pmr: best.confidence / 100,
-gap: 0.02
+gap: Math.abs((best.eContinue||0) - (best.oContinue||0))
 }
 };
 }
 
-// ---------------------- SESSION MANAGEMENT ---------------------
+// ---------------------- SESSION MANAGEMENT (unchanged) ---------------------
 function canTrade() {
 if (sessionState.tradesToday >= sessionState.maxTradesPerDay) return false;
 if (sessionState.burstsPerSession >= sessionState.maxBurstsPerSession) return false;
@@ -1145,7 +1176,7 @@ function getStake(baseStake = 1, lossMultiplier = 1.2) {
 return baseStake * Math.pow(lossMultiplier, sessionState.consecutiveLosses);
 }
 
-// ---------------------- UI UPDATE FUNCTIONS ---------------------
+// ---------------------- UI UPDATE FUNCTIONS (unchanged) ---------------------
 function updateSignalUI(signal, containerId) {
 const container = document.getElementById(containerId);
 if (!container) return;
@@ -1223,6 +1254,7 @@ container.style.display = 'grid';
 container.style.gridTemplateColumns = 'repeat(10, 1fr)';
 container.style.gap = '3px';
 container.innerHTML = '';
+// simplified matrix: just show frequency heatmap
 const freq = frequency(digits);
 for (let i = 0; i < 10; i++) {
 for (let j = 0; j < 10; j++) {
@@ -1239,6 +1271,7 @@ if (legend) legend.style.display = 'flex';
 if (seesaw) seesaw.style.display = 'flex';
 if (seesawLabel) seesawLabel.style.display = 'block';
 if (label) label.textContent = '(' + market + ')';
+// set seesaw extremes
 let topDigit = 0, topPct = 0, bottomDigit = 0, bottomPct = 100;
 for (let i = 0; i < 10; i++) {
 const pct = (freq[i] || 0) * 100;
@@ -1251,7 +1284,7 @@ document.getElementById('bottomDigit').textContent = bottomDigit;
 document.getElementById('bottomPct').textContent = bottomPct.toFixed(1) + '%';
 }
 
-// ---------------------- POPUP HELPERS ---------------------
+// ---------------------- POPUP HELPERS (unchanged) ---------------------
 function beginSignalLoading(key, title, subtitle) {
 if (signalBusy[key]) return false;
 signalBusy[key] = true;
@@ -1288,10 +1321,13 @@ if (!beginSignalLoading('md', 'GENERATING MATCH SIGNAL...', '⏳ Analyzing lates
 setTimeout(() => {
 try {
 const result = generateMatchSignal(tickBuffers, MARKETS, ANALYSIS_WINDOW);
-if (!result || !result.success) { 
-    updateSignalUI(result, 'oracleSignalCard');
-    endSignalLoading('md');
-    return;
+if (!result || !result.success) {
+console.warn("No strong match signal detected.");
+currentSignals.match = result;
+updateSignalUI(result, 'oracleSignalCard');
+document.getElementById('liveTicker').innerHTML = '⚠️ No strong MATCH signal right now.';
+endSignalLoading('md');
+return;
 }
 const data = tickBuffers[result.market];
 if (data) {
@@ -1320,10 +1356,13 @@ if (!beginSignalLoading('md', 'GENERATING DIFFER SIGNAL...', '⏳ Analyzing late
 setTimeout(() => {
 try {
 const result = generateDiffersSignal(tickBuffers, MARKETS, ANALYSIS_WINDOW);
-if (!result || !result.success) { 
-    updateSignalUI(result, 'oracleSignalCard');
-    endSignalLoading('md');
-    return;
+if (!result || !result.success) {
+console.warn("No strong differ signal detected.");
+currentSignals.differ = result;
+updateSignalUI(result, 'oracleSignalCard');
+document.getElementById('liveTicker').innerHTML = '⚠️ No strong DIFFERS signal right now.';
+endSignalLoading('md');
+return;
 }
 const data = tickBuffers[result.market];
 if (data) {
@@ -1352,10 +1391,13 @@ if (!beginSignalLoading('ou', 'GENERATING OVER/UNDER SIGNAL...', '⏳ Analyzing 
 setTimeout(() => {
 try {
 const result = generateOvernUnderSignal(tickBuffers, MARKETS, ANALYSIS_WINDOW);
-if (!result || !result.success) { 
-    updateSignalUI(result, 'ouSignalCard');
-    endSignalLoading('ou');
-    return;
+if (!result || !result.success) {
+console.warn("No strong over/under signal detected.");
+currentSignals.ou = result;
+updateSignalUI(result, 'ouSignalCard');
+document.getElementById('liveTicker').innerHTML = '⚠️ No strong OVER/UNDER signal right now.';
+endSignalLoading('ou');
+return;
 }
 const data = tickBuffers[result.market];
 if (data) {
@@ -1388,10 +1430,13 @@ if (!beginSignalLoading('eo', 'GENERATING EVEN/ODD SIGNAL...', '⏳ Analyzing la
 setTimeout(() => {
 try {
 const result = generateEvenOddSignal(tickBuffers, MARKETS, ANALYSIS_WINDOW);
-if (!result || !result.success) { 
-    updateSignalUI(result, 'eoSignalCard');
-    endSignalLoading('eo');
-    return;
+if (!result || !result.success) {
+console.warn("No strong even/odd signal detected.");
+currentSignals.eo = result;
+updateSignalUI(result, 'eoSignalCard');
+document.getElementById('liveTicker').innerHTML = '⚠️ No strong EVEN/ODD signal right now.';
+endSignalLoading('eo');
+return;
 }
 const data = tickBuffers[result.market];
 if (data) {
@@ -1419,7 +1464,7 @@ endSignalLoading('eo');
 }, SIGNAL_DELAY_MS);
 }
 
-// ---------------------- ENTRY FINDERS ---------------------
+// ---------------------- ENTRY FINDERS (unchanged) ---------------------
 function findEntryForMatchesDiffers() {
 const active = currentSignals.match || currentSignals.differ;
 if (!active || !active.success) { alert('⚠️ Please generate a MATCH or DIFFER signal first.'); return; }
@@ -1510,7 +1555,7 @@ btn.disabled = false;
 }, 1000);
 }
 
-// ---------------------- WEBSOCKET & APP ---------------------
+// ---------------------- WEBSOCKET & APP (unchanged) ---------------------
 function startHeartbeat() {
 stopHeartbeat();
 heartbeatTimer = setInterval(() => {
@@ -1559,6 +1604,7 @@ if (appState !== 'READY' && appState !== 'SIGNAL_READY') {
 alert('⏳ Still collecting ticks. Please wait.');
 return;
 }
+// Use match engine to pick best market
 let best = null;
 let bestScore = -Infinity;
 for (const market of MARKETS) {
@@ -1568,8 +1614,8 @@ const digits = data.map(t => t.digit);
 const window = latestWindow(digits, ANALYSIS_WINDOW);
 if (window.length < ANALYSIS_WINDOW) continue;
 const res = matchSignal(window);
-if (res && res.confidence > bestScore) {
-bestScore = res.confidence;
+if (res && res.score > bestScore) {
+bestScore = res.score;
 best = { market, ...res };
 }
 }
@@ -1605,8 +1651,8 @@ if (el) el.disabled = !allAtHundred;
 }
 }
 
-// ---------------------- CONFIG PROFILES -----------------------
 function getMarketProfile(symbol) {
+// simple profile for entry thresholds
 return { entryThreshold: 0.55 };
 }
 
@@ -1705,4 +1751,4 @@ document.getElementById('popupShooting').classList.remove('active');
 });
 </script>
 </body>
-</html>
+ </html>
