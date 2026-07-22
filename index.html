@@ -6,7 +6,7 @@
 <title>EMBRAZE SOLACE v3.4 – Full Engine</title>
 <style>
 /* ============================================================
-STYLES – Full
+STYLES – Full (unchanged)
 ============================================================ */
 :root {
 --bg-dark: #0A0516;
@@ -719,19 +719,19 @@ z-index: 1001;
 
 <script>
 // ================================================================
-// DAIE‑V4 ENGINE – FULLY FIXED
+// DAIE‑V4 ENGINE – FINAL FIX: Only 1s + Jump indices, 100 ticks
 // ================================================================
 
 // ---------------------- CONSTANTS ------------------------------
 const APP_PASSWORD = 'SUCCESSV12';
-// ✅ CORRECT WebSocket URL — public endpoint from Deriv docs
 const DERIV_WS = 'wss://api.derivws.com/trading/v1/options/ws/public';
-const REQUIRED_TICKS = 50;
+const REQUIRED_TICKS = 100;
 
-// ✅ CORRECT MARKET LIST
+// ✅ ONLY: 1-Second Volatility + Jump Indices
 const MARKETS = [
+  // 1-Second Volatility (FAST)
   '1HZ10V', '1HZ25V', '1HZ50V', '1HZ75V', '1HZ100V',
-  'R_10', 'R_25', 'R_50', 'R_75', 'R_100',
+  // Jump Indices
   'R_10J', 'R_25J', 'R_50J', 'R_75J'
 ];
 
@@ -741,11 +741,6 @@ const MARKET_LABELS = {
   '1HZ50V': 'V50 (1s)',
   '1HZ75V': 'V75 (1s)',
   '1HZ100V': 'V100 (1s)',
-  'R_10': 'Vol 10',
-  'R_25': 'Vol 25',
-  'R_50': 'Vol 50',
-  'R_75': 'Vol 75',
-  'R_100': 'Vol 100',
   'R_10J': 'Jump 10',
   'R_25J': 'Jump 25',
   'R_50J': 'Jump 50',
@@ -786,7 +781,6 @@ function confidenceToPercent(conf) {
     return Math.round(Math.max(0, Math.min(100, conf * 100)));
 }
 
-// ✅ FIXED: Extract last digit using pip_size from the tick
 function getLastDigit(price, pipSize) {
     if (price === null || price === undefined || isNaN(price)) return null;
     const formatted = Number(price).toFixed(pipSize);
@@ -795,8 +789,6 @@ function getLastDigit(price, pipSize) {
 }
 
 // ---------------------- SIGNAL ENGINES (V14) ---------------------
-
-// 1. OVER/UNDER (LOCKED)
 function overUnderSignal(window) {
     const over = window.filter(d => d >= 5).length;
     const under = window.length - over;
@@ -813,7 +805,6 @@ function overUnderSignal(window) {
     }
 }
 
-// 2. DIFFERS (rarity model)
 function analyzeDiffer(sequence) {
     const freq = Array(10).fill(0);
     for (let d of sequence) freq[d]++;
@@ -841,7 +832,6 @@ function analyzeDiffer(sequence) {
     };
 }
 
-// 3. MATCHES (dominance + clustering)
 function analyzeMatches(sequence) {
     const freq = Array(10).fill(0);
     for (let d of sequence) freq[d]++;
@@ -870,7 +860,6 @@ function analyzeMatches(sequence) {
     };
 }
 
-// 4. EVEN/ODD (streak + imbalance)
 function analyzeEvenOdd(sequence) {
     let even = 0, odd = 0;
     for (let d of sequence) { if (d % 2 === 0) even++; else odd++; }
@@ -927,7 +916,6 @@ function frequency(arr) {
 
 function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
 
-// ---------------------- ENTRY CONFIRMATION ---------------------
 function confirmEntry(digits, selectedDigit, signalScore, liveWindowSize = 25, threshold = 0.55, strategy = 'match', additionalData = null) {
     const live = latestWindow(digits, liveWindowSize);
     if (!live || live.length < 5) return { status: 'HOLD', entryScore: 0, liveScore: 0, drift: 0 };
@@ -1656,7 +1644,7 @@ function findEntryForEvenOdd() {
 }
 
 // ================================================================
-// 🔥 DATA GATHERING ENGINE — FIXED (same as working test)
+// 🔥 DATA GATHERING ENGINE
 // ================================================================
 
 function getMarketStatus(sym) {
@@ -1671,7 +1659,8 @@ function isSystemReady() {
     const readyMarkets = Object.keys(tickBuffers).filter(sym => {
         return tickBuffers[sym]?.length >= REQUIRED_TICKS;
     });
-    return readyMarkets.length >= 5;
+    // At least 3 markets ready (some jump indices may be slow)
+    return readyMarkets.length >= 3;
 }
 
 function renderMarketCards() {
@@ -1743,7 +1732,6 @@ function subscribeAllMarkets() {
     });
 }
 
-// ✅ FIXED: Handle messages exactly like the working test
 function handleTickMessage(event) {
     let data;
     try {
@@ -1753,22 +1741,15 @@ function handleTickMessage(event) {
         return;
     }
 
-    // Log for debugging (optional)
-    // console.log('📩 Received:', data);
-
     if (data.error) {
         console.error('❌ DERIV ERROR:', data.error);
         return;
     }
 
-    // ✅ Handle subscription ID (just store it, don't return early)
     if (data.subscription) {
         currentSubscriptionId = data.subscription.id;
-        console.log('✅ Subscription ID:', currentSubscriptionId);
-        // Continue to check for tick data in same message
     }
 
-    // ✅ Check for tick data
     if (!data.tick) return;
 
     const tick = data.tick;
@@ -1782,11 +1763,9 @@ function handleTickMessage(event) {
         return;
     }
 
-    // Deduplication
     if (lastTickTimes[sym] === epoch) return;
     lastTickTimes[sym] = epoch;
 
-    // ✅ Use pip_size from the tick response
     const digit = getLastDigit(price, pipSize);
     if (digit === null || isNaN(digit)) {
         console.warn('⚠️ Bad digit from price:', price);
@@ -1794,7 +1773,6 @@ function handleTickMessage(event) {
     }
 
     if (!tickBuffers[sym]) tickBuffers[sym] = [];
-
     tickBuffers[sym].push({ price, digit, epoch, pipSize });
     if (tickBuffers[sym].length > 2000) tickBuffers[sym].shift();
 
@@ -1859,7 +1837,6 @@ function initWebSocket(isReconnect = false) {
         scheduleReconnect();
     };
 
-    // ⏱️ No ticks received after 5s — warn
     setTimeout(() => {
         const total = MARKETS.reduce((sum, s) => sum + (tickBuffers[s]?.length || 0), 0);
         if (total === 0) {
