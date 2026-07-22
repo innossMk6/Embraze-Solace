@@ -6,7 +6,7 @@
 <title>EMBRAZE SOLACE v3.4 – Full Engine</title>
 <style>
 /* ============================================================
-STYLES – Full (unchanged)
+STYLES – Full
 ============================================================ */
 :root {
 --bg-dark: #0A0516;
@@ -789,19 +789,25 @@ function getLastDigit(price, pipSize) {
 }
 
 // ---------------------- SIGNAL ENGINES (V14) ---------------------
+
+// ✅ OVER/UNDER — FIXED: Proper edge detection with barrier 4/5
 function overUnderSignal(window) {
-    const over = window.filter(d => d >= 5).length;
-    const under = window.length - over;
-    const overProb = over / window.length;
-    const underProb = under / window.length;
-    const dominance = Math.abs(overProb - underProb);
-    if (dominance < 0.10) return null;
+    const over = window.filter(d => d > 4).length;
+    const under = window.filter(d => d < 5).length;
+    const total = window.length;
+    const overProb = over / total;
+    const underProb = under / total;
+    const edge = Math.abs(overProb - underProb);
+    
+    // Need at least 8% edge to generate a signal
+    if (edge < 0.08) return null;
+    
     if (overProb > underProb) {
-        const conf = 0.5 + (dominance * 0.5);
-        return { type: 'OVER', confidence: Math.min(0.95, conf), overProb, underProb };
+        const conf = 0.5 + (edge * 0.5);
+        return { type: 'OVER', confidence: Math.min(0.95, conf), overProb, underProb, edge };
     } else {
-        const conf = 0.5 + (dominance * 0.5);
-        return { type: 'UNDER', confidence: Math.min(0.95, conf), overProb, underProb };
+        const conf = 0.5 + (edge * 0.5);
+        return { type: 'UNDER', confidence: Math.min(0.95, conf), overProb, underProb, edge };
     }
 }
 
@@ -1100,7 +1106,51 @@ function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
             best = { market, ...result };
         }
     }
-    if (!best) return { success: false };
+    if (!best) {
+        // Fallback: simple majority
+        let fallbackMarket = markets[0], fallbackType = 'UNDER', fallbackProb = 0.5;
+        for (const market of markets) {
+            const data = tickBuffers[market];
+            if (!data || data.length < windowSize) continue;
+            const digits = data.map(t => t.digit);
+            const window = latestWindow(digits, windowSize);
+            if (window.length < windowSize) continue;
+            const over = window.filter(d => d > 4).length;
+            const under = window.length - over;
+            if (over > under && over / window.length > fallbackProb) {
+                fallbackProb = over / window.length;
+                fallbackType = 'OVER';
+                fallbackMarket = market;
+            } else if (under > over && under / window.length > fallbackProb) {
+                fallbackProb = under / window.length;
+                fallbackType = 'UNDER';
+                fallbackMarket = market;
+            }
+        }
+        const barrier = fallbackType === 'OVER' ? 5 : 4;
+        return {
+            success: true,
+            market: fallbackMarket,
+            mode: fallbackType,
+            barrier: barrier,
+            score: 0.3,
+            confidence: 30,
+            features: { mass: fallbackProb, margin: Math.abs(fallbackProb - 0.5) },
+            strategy: 'OVER/UNDER',
+            recommendation: fallbackType + ' ' + barrier,
+            display: {
+                bigDigit: barrier,
+                actionText: fallbackType + ' ' + barrier,
+                confidence: 30,
+                market: fallbackMarket,
+                mass: fallbackProb,
+                entryDigit: null,
+                differDigit: null,
+                isMatch: false
+            },
+            fallback: true
+        };
+    }
     const barrier = best.type === 'OVER' ? 5 : 4;
     return {
         success: true,
@@ -1109,7 +1159,7 @@ function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
         barrier: barrier,
         score: best.confidence,
         confidence: confidenceToPercent(best.confidence),
-        features: { mass: best.type === 'OVER' ? best.overProb : best.underProb },
+        features: { mass: best.type === 'OVER' ? best.overProb : best.underProb, margin: best.edge },
         strategy: 'OVER/UNDER',
         recommendation: best.type + ' ' + barrier,
         display: {
@@ -1245,7 +1295,7 @@ function updateSignalUI(signal, containerId) {
     } else if (signal.strategy === 'MATCH') {
         extraInfo = '<div class="bottom-row"><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span><span>Repeat: ' + ((signal.features.repeatRate || 0) * 100).toFixed(1) + '%</span></div>';
     } else if (signal.strategy === 'OVER/UNDER') {
-        extraInfo = '<div class="bottom-row"><span>Observed: ' + (signal.features.mass * 100).toFixed(1) + '%</span><span>Edge: ' + ((signal.features.mass - 0.5) * 100).toFixed(1) + '%</span></div>';
+        extraInfo = '<div class="bottom-row"><span>Observed: ' + (signal.features.mass * 100).toFixed(1) + '%</span><span>Edge: ' + ((signal.features.margin || 0) * 100).toFixed(1) + '%</span></div>';
     } else if (signal.strategy === 'EVEN/ODD') {
         extraInfo = '<div class="bottom-row"><span>Imbalance: ' + (signal.features.imbalance * 100).toFixed(1) + '%</span><span>Streak: ' + signal.features.streak + '</span></div>';
     }
@@ -1510,7 +1560,7 @@ function generateOverUnderSignal() {
             document.getElementById('btnFindEntryOU').textContent = '🔍 FIND ENTRY';
             document.getElementById('ouMarket').textContent = result.market;
             document.getElementById('ouConfidenceValue').textContent = result.confidence.toFixed(1) + '%';
-            document.getElementById('ouEdge').textContent = ((result.features.mass - 0.5) * 100).toFixed(1) + '%';
+            document.getElementById('ouEdge').textContent = ((result.features.margin || 0) * 100).toFixed(1) + '%';
             document.getElementById('ouObserved').textContent = (result.features.mass * 100).toFixed(1) + '%';
             const data2 = tickBuffers[result.market];
             updateFrequencyChart(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
@@ -1659,8 +1709,8 @@ function isSystemReady() {
     const readyMarkets = Object.keys(tickBuffers).filter(sym => {
         return tickBuffers[sym]?.length >= REQUIRED_TICKS;
     });
-    // At least 3 markets ready (some jump indices may be slow)
-    return readyMarkets.length >= 3;
+    // At least 2 markets ready (the 1s variants are fast)
+    return readyMarkets.length >= 2;
 }
 
 function renderMarketCards() {
