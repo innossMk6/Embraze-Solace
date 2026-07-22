@@ -719,21 +719,19 @@ z-index: 1001;
 
 <script>
 // ================================================================
-// DAIE‑V4 ENGINE – V14 LOGIC + FULL DATA ENGINE FIX
+// DAIE‑V4 ENGINE – V14 LOGIC + BULLETPROOF DATA ENGINE
 // ================================================================
 
 // ---------------------- CONSTANTS ------------------------------
 const APP_PASSWORD = 'SUCCESSV12';
-const DERIV_WS = 'wss://ws.derivws.com/websockets/v3?app_id=1089';
-const REQUIRED_TICKS = 50; // lower for faster readiness
+// ✅ CORRECT WebSocket URL with app_id
+const DERIV_WS = 'wss://ws.derivws.com/websockets/v3?app_id=33TZoAvESWME88oRWWMz7';
+const REQUIRED_TICKS = 50;
 
 // ✅ CORRECT MARKET LIST (real Deriv symbols)
 const MARKETS = [
-  // Volatility 1s
   '1HZ10V', '1HZ25V', '1HZ50V', '1HZ75V', '1HZ100V',
-  // Volatility normal
   'R_10', 'R_25', 'R_50', 'R_75', 'R_100',
-  // Jump Indices (FIXED)
   'R_10J', 'R_25J', 'R_50J', 'R_75J'
 ];
 
@@ -765,7 +763,7 @@ let reconnectTimer = null;
 let heartbeatTimer = null;
 let isGatheringComplete = false;
 let selectedMarket = null;
-let lastTickTimes = {}; // for dedup
+let lastTickTimes = {};
 let sessionState = {
 tradesToday: 0,
 maxTradesPerDay: 30,
@@ -963,7 +961,6 @@ function confirmEntry(digits, selectedDigit, signalScore, liveWindowSize = 25, t
 }
 
 // ---------------------- SIGNAL GENERATORS ---------------------
-
 function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
     let best = null, bestConf = -Infinity;
     for (const market of markets) {
@@ -979,7 +976,6 @@ function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
         }
     }
     if (!best) {
-        // Fallback: highest frequency
         let fallbackMarket = markets[0], fallbackDigit = 0, maxFreq = 0;
         for (const market of markets) {
             const data = tickBuffers[market];
@@ -1054,7 +1050,6 @@ function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
         }
     }
     if (!best) {
-        // Fallback: rarest digit
         let fallbackMarket = markets[0], fallbackDigit = 0, minFreq = Infinity;
         for (const market of markets) {
             const data = tickBuffers[market];
@@ -1171,7 +1166,6 @@ function generateEvenOddSignal(tickBuffers, markets, windowSize = 100) {
         }
     }
     if (!best) {
-        // Fallback: simple majority
         let fallbackMarket = markets[0], fallbackSide = 'EVEN', maxCount = 0;
         for (const market of markets) {
             const data = tickBuffers[market];
@@ -1232,7 +1226,7 @@ function generateEvenOddSignal(tickBuffers, markets, windowSize = 100) {
     };
 }
 
-// ---------------------- SESSION MANAGEMENT ---------------------
+// ---------------------- SESSION MANAGEMENT (unchanged) ---------------------
 function canTrade() {
     if (sessionState.tradesToday >= sessionState.maxTradesPerDay) return false;
     if (sessionState.burstsPerSession >= sessionState.maxBurstsPerSession) return false;
@@ -1676,7 +1670,7 @@ function findEntryForEvenOdd() {
 }
 
 // ================================================================
-// 🔥 DATA GATHERING ENGINE — BULLETPROOF FIX
+// 🔥 BULLETPROOF DATA ENGINE — NO SILENT FAILURES
 // ================================================================
 
 function getMarketStatus(sym) {
@@ -1728,7 +1722,6 @@ function updateMarketCard(sym) {
     }
     if (stat) stat.textContent = count + '/' + REQUIRED_TICKS;
     if (card && count >= REQUIRED_TICKS) card.classList.add('ready');
-    // Check global readiness
     if (isSystemReady() && !isGatheringComplete) {
         isGatheringComplete = true;
         appState = 'READY';
@@ -1738,7 +1731,6 @@ function updateMarketCard(sym) {
         if (banner) banner.classList.add('show');
         if (liveTicker) liveTicker.innerHTML = '✅ <strong>Gathering Complete</strong> — Markets ready.';
         if (btnScan) { btnScan.classList.add('ready'); btnScan.innerHTML = '✅ ALL MARKETS READY'; }
-        // Enable buttons
         ['btnMatches', 'btnDiffers', 'btnOverUnderFetch', 'btnEvenOddFetch'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.disabled = false;
@@ -1757,26 +1749,30 @@ function updateGlobalProgress() {
 function subscribeAllMarkets() {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
     MARKETS.forEach(sym => {
+        console.log('📡 Subscribing to:', sym);
         ws.send(JSON.stringify({
             ticks: sym,
             subscribe: 1
         }));
-        console.log('📡 Subscribed to', sym);
     });
 }
 
+// ✅ FIXED: No silent failures — full logging
 function handleTickMessage(event) {
     let data;
     try {
         data = JSON.parse(event.data);
     } catch (e) {
-        console.error('Invalid JSON', e);
+        console.error('❌ JSON Parse Error:', e, event.data);
         return;
     }
 
-    // Log any error from Deriv
+    // 🔥 ALWAYS LOG FIRST
+    console.log('WS MESSAGE:', data);
+
+    // ❌ If there's an error from Deriv → you will now SEE IT
     if (data.error) {
-        console.error('❌ Deriv Error:', data.error);
+        console.error('❌ DERIV ERROR:', data.error);
         return;
     }
 
@@ -1787,16 +1783,23 @@ function handleTickMessage(event) {
     const price = tick.quote;
     const epoch = tick.epoch;
 
-    if (!sym || !price || !epoch) return;
+    if (!sym || !price) {
+        console.warn('⚠️ Invalid tick:', tick);
+        return;
+    }
 
     // Deduplication
     if (lastTickTimes[sym] === epoch) return;
     lastTickTimes[sym] = epoch;
 
     const digit = getTickDigit(sym, price);
-    if (digit === null || isNaN(digit)) return;
+    if (digit === null || isNaN(digit)) {
+        console.warn('⚠️ Bad digit from price:', price);
+        return;
+    }
 
     if (!tickBuffers[sym]) tickBuffers[sym] = [];
+
     tickBuffers[sym].push({ price, digit, epoch });
     if (tickBuffers[sym].length > 2000) tickBuffers[sym].shift();
 
@@ -1829,22 +1832,22 @@ function scheduleReconnect() {
     }, 2000);
 }
 
+// ✅ FIXED: WebSocket init with full logging
 function initWebSocket(isReconnect = false) {
     if (ws) {
         try { ws.close(); } catch(e) {}
         ws = null;
     }
 
+    console.log('🔌 Connecting to Deriv WS...');
     ws = new WebSocket(DERIV_WS);
 
     ws.onopen = function () {
-        console.log('✅ WebSocket connected');
-        // Clear buffers only on fresh start
+        console.log('✅ WebSocket OPENED');
         if (!isReconnect) {
             MARKETS.forEach(sym => { tickBuffers[sym] = []; });
             lastTickTimes = {};
         }
-        // Render market cards once
         if (!isReconnect) renderMarketCards();
         subscribeAllMarkets();
         startHeartbeat();
@@ -1855,7 +1858,7 @@ function initWebSocket(isReconnect = false) {
     ws.onmessage = handleTickMessage;
 
     ws.onerror = function (e) {
-        console.error('❌ WebSocket Error', e);
+        console.error('❌ WebSocket Error:', e);
         scheduleReconnect();
     };
 
@@ -1864,6 +1867,14 @@ function initWebSocket(isReconnect = false) {
         stopHeartbeat();
         scheduleReconnect();
     };
+
+    // ⏱️ No ticks received after 5s — warn
+    setTimeout(() => {
+        const total = MARKETS.reduce((sum, s) => sum + (tickBuffers[s]?.length || 0), 0);
+        if (total === 0) {
+            console.warn('⏱️ No ticks received after 5s — something is wrong');
+        }
+    }, 5000);
 }
 
 function refreshBestMarketView() {
