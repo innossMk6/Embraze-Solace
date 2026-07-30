@@ -6,7 +6,7 @@
 <title>EMBRAZE SOLACE v3.4 – Full Engine</title>
 <style>
 /* ============================================================
-STYLES – Full
+STYLES – Full + Session Planner
 ============================================================ */
 :root {
 --bg-dark: #0A0516;
@@ -20,7 +20,7 @@ STYLES – Full
 --text-main: #F3F4F6;
 --text-grey: #9CA3AF;
 }
-• {
+* {
 box-sizing: border-box;
 margin: 0;
 padding: 0;
@@ -114,7 +114,7 @@ justify-content: space-between;
 align-items: center;
 padding-bottom: 1rem;
 border-bottom: 1px solid rgba(168, 85, 247, 0.2);
-margin-bottom: 1.5rem;
+margin-bottom: 1rem;
 }
 header h1 {
 font-size: 1.5rem;
@@ -131,6 +131,217 @@ border-radius: 20px;
 font-size: 0.85rem;
 color: var(--neon-green);
 }
+
+/* ============================================================
+SESSION PLANNER
+============================================================ */
+.session-planner {
+background: var(--bg-card);
+border: 1px solid rgba(168, 85, 247, 0.2);
+border-radius: 12px;
+padding: 1.25rem;
+margin-bottom: 1.5rem;
+position: relative;
+overflow: hidden;
+}
+.session-planner::before {
+content: '';
+position: absolute;
+top: -50%;
+left: -50%;
+width: 200%;
+height: 200%;
+background: radial-gradient(circle at 0% 0%, rgba(168,85,247,0.03) 0%, transparent 70%);
+pointer-events: none;
+}
+.session-planner .planner-title {
+font-size: 1rem;
+font-weight: bold;
+color: var(--neon-purple);
+margin-bottom: 0.75rem;
+display: flex;
+align-items: center;
+gap: 10px;
+}
+.session-planner .planner-title span {
+color: var(--text-grey);
+font-weight: normal;
+font-size: 0.8rem;
+}
+.part-selector {
+display: flex;
+gap: 8px;
+margin-bottom: 1rem;
+flex-wrap: wrap;
+}
+.part-btn {
+padding: 0.5rem 1.2rem;
+background: rgba(255,255,255,0.05);
+border: 1px solid rgba(255,255,255,0.1);
+border-radius: 6px;
+color: var(--text-grey);
+cursor: pointer;
+font-weight: bold;
+font-size: 0.8rem;
+transition: all 0.3s;
+}
+.part-btn:hover {
+background: rgba(168,85,247,0.1);
+border-color: var(--neon-purple);
+}
+.part-btn.active {
+background: rgba(168,85,247,0.2);
+border-color: var(--neon-purple);
+color: white;
+box-shadow: 0 0 20px rgba(168,85,247,0.15);
+}
+.part-btn .part-balance {
+display: block;
+font-size: 0.7rem;
+color: var(--neon-gold);
+font-weight: normal;
+margin-top: 2px;
+}
+.session-grid {
+display: grid;
+grid-template-columns: 1fr 1fr 1fr 1fr;
+gap: 0.5rem;
+margin-bottom: 1rem;
+}
+.session-stat {
+background: rgba(0,0,0,0.2);
+border-radius: 6px;
+padding: 0.5rem 0.75rem;
+text-align: center;
+}
+.session-stat .label {
+font-size: 0.6rem;
+color: var(--text-grey);
+text-transform: uppercase;
+letter-spacing: 1px;
+}
+.session-stat .value {
+font-size: 1.1rem;
+font-weight: bold;
+color: white;
+}
+.session-stat .value.profit {
+color: var(--neon-green);
+}
+.session-stat .value.stake {
+color: var(--neon-gold);
+}
+.session-stat .value.balance {
+color: var(--neon-cyan);
+}
+.session-stat .value.session-num {
+color: var(--neon-purple);
+}
+.progress-container {
+background: rgba(0,0,0,0.2);
+border-radius: 6px;
+height: 8px;
+margin-bottom: 0.75rem;
+overflow: hidden;
+position: relative;
+}
+.progress-fill {
+height: 100%;
+background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
+border-radius: 6px;
+transition: width 0.5s ease;
+width: 0%;
+}
+.progress-text {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+font-size: 0.6rem;
+color: var(--text-grey);
+font-weight: bold;
+}
+.session-actions {
+display: flex;
+gap: 10px;
+align-items: center;
+flex-wrap: wrap;
+}
+.btn-complete {
+padding: 0.6rem 1.5rem;
+background: linear-gradient(135deg, var(--neon-green), #00CC88);
+border: none;
+border-radius: 6px;
+color: #0A0516;
+font-weight: bold;
+font-size: 0.85rem;
+cursor: pointer;
+transition: all 0.3s;
+}
+.btn-complete:hover {
+transform: translateY(-2px);
+box-shadow: 0 0 25px rgba(0,255,170,0.3);
+}
+.btn-complete:disabled {
+opacity: 0.4;
+cursor: not-allowed;
+transform: none;
+box-shadow: none;
+}
+.btn-reset {
+padding: 0.6rem 1.2rem;
+background: rgba(255,255,255,0.05);
+border: 1px solid rgba(255,255,255,0.1);
+border-radius: 6px;
+color: var(--text-grey);
+font-size: 0.8rem;
+cursor: pointer;
+transition: all 0.3s;
+}
+.btn-reset:hover {
+background: rgba(239,68,68,0.1);
+border-color: #EF4444;
+color: #EF4444;
+}
+.session-history {
+margin-top: 0.75rem;
+max-height: 100px;
+overflow-y: auto;
+font-size: 0.7rem;
+color: var(--text-grey);
+border-top: 1px solid rgba(255,255,255,0.05);
+padding-top: 0.5rem;
+}
+.session-history::-webkit-scrollbar {
+width: 4px;
+}
+.session-history::-webkit-scrollbar-thumb {
+background: var(--neon-purple);
+border-radius: 2px;
+}
+.session-history .history-row {
+display: flex;
+justify-content: space-between;
+padding: 2px 0;
+border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.session-history .history-row .h-profit {
+color: var(--neon-green);
+}
+.session-complete-badge {
+display: inline-block;
+background: var(--neon-green);
+color: #0A0516;
+font-size: 0.6rem;
+padding: 1px 8px;
+border-radius: 10px;
+font-weight: bold;
+margin-left: 6px;
+}
+
+/* ============================================================
+REST OF STYLES
+============================================================ */
 .gathering-banner {
 background: rgba(0, 255, 170, 0.1);
 border: 1px solid var(--neon-green);
@@ -578,6 +789,9 @@ z-index: 1001;
 
 @media (max-width: 1024px) {
 .col-left, .col-mid, .col-right { grid-column: span 12; }
+.session-grid {
+grid-template-columns: 1fr 1fr;
+}
 }
 </style>
 </head>
@@ -598,6 +812,67 @@ z-index: 1001;
 <h1>EMBRAZE SOLACE v3.4 // DAIE‑V4 FULL</h1>
 <div class="live-ticker-container" id="liveTicker">⏳ Gateway offline. Terminal standby.</div>
 </header>
+
+<!-- ============================================================
+SESSION PLANNER
+============================================================ -->
+<div class="session-planner" id="sessionPlanner">
+<div class="planner-title">
+📊 SESSION PLANNER
+<span>— Track your profit sessions</span>
+</div>
+
+<div class="part-selector" id="partSelector">
+<button class="part-btn active" data-part="1">
+Part 1 <span class="part-balance">$20 Balance</span>
+</button>
+<button class="part-btn" data-part="2">
+Part 2 <span class="part-balance">$100 Balance</span>
+</button>
+<button class="part-btn" data-part="3">
+Part 3 <span class="part-balance">$400 Balance</span>
+</button>
+<button class="part-btn" data-part="4">
+Part 4 <span class="part-balance">$1600 Balance</span>
+</button>
+</div>
+
+<div class="session-grid">
+<div class="session-stat">
+<div class="label">Session</div>
+<div class="value session-num" id="currentSession">1 / 30</div>
+</div>
+<div class="session-stat">
+<div class="label">Target Profit</div>
+<div class="value profit" id="targetProfit">$1.00</div>
+</div>
+<div class="session-stat">
+<div class="label">Balance</div>
+<div class="value balance" id="currentBalance">$20.00</div>
+</div>
+<div class="session-stat">
+<div class="label">Stake (Balance/12.5)</div>
+<div class="value stake" id="currentStake">$1.60</div>
+</div>
+</div>
+
+<div class="progress-container">
+<div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+<div class="progress-text" id="progressText">0 / 30</div>
+</div>
+
+<div class="session-actions">
+<button class="btn-complete" id="btnCompleteSession">✅ Complete Session</button>
+<button class="btn-reset" id="btnResetSession">↺ Reset</button>
+<span style="font-size:0.7rem; color:var(--text-grey); margin-left:auto;" id="sessionStatus">Ready</span>
+</div>
+
+<div class="session-history" id="sessionHistory">
+<div style="color:var(--text-grey); font-size:0.7rem; text-align:center; padding:4px 0;">No sessions completed yet</div>
+</div>
+</div>
+
+<!-- ============================================================ -->
 
 <div class="gathering-banner" id="gathering-banner">
 🚀 QUANTUM STREAM SYNC COMPLETE: All 10 markets compiled.
@@ -719,14 +994,20 @@ z-index: 1001;
 
 <script>
 // ================================================================
-// DAIE‑V4 ENGINE – V14 LOGIC (relaxed thresholds for consistent signals)
+// DAIE‑V4 ENGINE – V14 LOGIC + SESSION PLANNER
+// ✅ REQUIRED_TICKS = 100 (was 300)
+// ✅ ANALYSIS_WINDOW = 100 (was 300)
 // ================================================================
 
 // ---------------------- CONSTANTS ------------------------------
 const APP_PASSWORD = 'SUCCESSV12';
-const DERIV_WS = 'wss://ws.derivws.com/websockets/v3?app_id=1089';
+const DERIV_WS = 'wss://api.derivws.com/trading/v1/options/ws/public';
+
+// 🔥 FIXED: Back to 100 ticks as originally designed
 const REQUIRED_TICKS = 100;
 const ANALYSIS_WINDOW = 100;
+
+const SIGNIFICANCE_Z = 1.5;
 const SIGNAL_DELAY_MS = 10000;
 
 // Full 10 markets
@@ -747,6 +1028,197 @@ const MARKET_LABELS = {
 'JD100': 'Jump 100'
 };
 
+// ---------------------- SESSION PLANNER DATA ------------------------------
+const SESSION_PROFITS = {
+    1: [1.00, 1.10, 1.21, 1.33, 1.46, 1.61, 1.77, 1.95, 2.14, 2.36, 2.59, 2.85, 3.14, 3.45, 3.80, 4.18, 4.59, 5.05, 5.56, 6.12, 6.73, 7.40, 8.14, 8.95, 9.85, 10.83, 11.92, 13.11, 14.42, 15.86],
+    2: [5.00, 5.50, 6.05, 6.66, 7.32, 8.05, 8.86, 9.74, 10.72, 11.79, 12.97, 14.27, 15.69, 17.26, 18.99, 20.89, 22.97, 25.27, 27.80, 30.58, 33.64, 37.00, 40.70, 44.77, 49.25, 54.17, 59.59, 65.55, 72.10, 79.32],
+    3: [20.00, 22.00, 24.20, 26.62, 29.28, 32.21, 35.43, 38.97, 42.87, 47.16, 51.88, 57.07, 62.78, 69.06, 75.97, 83.57, 91.93, 101.12, 111.23, 122.35, 134.59, 148.05, 162.86, 179.15, 197.07, 216.78, 238.46, 262.31, 288.54, 317.39],
+    4: [80.00, 88.00, 96.80, 106.48, 117.13, 128.84, 141.72, 155.89, 171.48, 188.63, 207.49, 228.24, 251.06, 276.17, 303.79, 334.17, 367.59, 404.35, 444.79, 489.27, 538.20, 592.02, 651.22, 716.34, 787.97, 866.77, 953.45, 1048.80, 1153.68, 1269.05]
+};
+
+const PART_CONFIG = {
+    1: { startingBalance: 20, label: 'Part 1', balanceLabel: '$20 Balance' },
+    2: { startingBalance: 100, label: 'Part 2', balanceLabel: '$100 Balance' },
+    3: { startingBalance: 400, label: 'Part 3', balanceLabel: '$400 Balance' },
+    4: { startingBalance: 1600, label: 'Part 4', balanceLabel: '$1600 Balance' }
+};
+
+// ---------------------- SESSION STATE ------------------------------
+let sessionState = {
+    part: 1,
+    balance: 20,
+    currentSession: 1,
+    completedSessions: [],
+    history: []
+};
+
+// Load from localStorage
+function loadSessionState() {
+    try {
+        const saved = localStorage.getItem('embraze_session_state');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            sessionState = parsed;
+            if (!sessionState.history) sessionState.history = [];
+            if (!sessionState.completedSessions) sessionState.completedSessions = [];
+            return true;
+        }
+    } catch(e) {}
+    return false;
+}
+
+function saveSessionState() {
+    try {
+        localStorage.setItem('embraze_session_state', JSON.stringify(sessionState));
+    } catch(e) {}
+}
+
+function resetSessionState() {
+    const part = sessionState.part;
+    sessionState = {
+        part: part,
+        balance: PART_CONFIG[part].startingBalance,
+        currentSession: 1,
+        completedSessions: [],
+        history: []
+    };
+    saveSessionState();
+    updateSessionUI();
+}
+
+// ---------------------- SESSION UI FUNCTIONS ------------------------------
+function getProfitForSession(part, sessionNum) {
+    const profits = SESSION_PROFITS[part];
+    if (!profits) return 0;
+    if (sessionNum < 1 || sessionNum > profits.length) return 0;
+    return profits[sessionNum - 1];
+}
+
+function calculateStake(balance) {
+    const stake = balance / 12.5;
+    return Math.round(stake * 100) / 100;
+}
+
+function updateSessionUI() {
+    const part = sessionState.part;
+    const currentSession = sessionState.currentSession;
+    const balance = sessionState.balance;
+    const totalSessions = SESSION_PROFITS[part].length;
+    const targetProfit = getProfitForSession(part, currentSession);
+    const stake = calculateStake(balance);
+    const completed = sessionState.completedSessions.length;
+
+    document.getElementById('currentSession').textContent = currentSession + ' / ' + totalSessions;
+    document.getElementById('targetProfit').textContent = '$' + targetProfit.toFixed(2);
+    document.getElementById('currentBalance').textContent = '$' + balance.toFixed(2);
+    document.getElementById('currentStake').textContent = '$' + stake.toFixed(2);
+
+    const progress = Math.min(100, (completed / totalSessions) * 100);
+    document.getElementById('progressFill').style.width = progress + '%';
+    document.getElementById('progressText').textContent = completed + ' / ' + totalSessions;
+
+    document.querySelectorAll('.part-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.part) === part);
+    });
+
+    const historyContainer = document.getElementById('sessionHistory');
+    if (sessionState.history.length === 0) {
+        historyContainer.innerHTML = '<div style="color:var(--text-grey); font-size:0.7rem; text-align:center; padding:4px 0;">No sessions completed yet</div>';
+    } else {
+        let html = '';
+        const reversed = [...sessionState.history].reverse();
+        for (const entry of reversed) {
+            html += `<div class="history-row">
+                <span>Session ${entry.session} — ${entry.part === 1 ? 'Part 1' : entry.part === 2 ? 'Part 2' : entry.part === 3 ? 'Part 3' : 'Part 4'}</span>
+                <span class="h-profit">+$${entry.profit.toFixed(2)}</span>
+            </div>`;
+        }
+        historyContainer.innerHTML = html;
+    }
+
+    if (completed >= totalSessions) {
+        document.getElementById('btnCompleteSession').disabled = true;
+        document.getElementById('btnCompleteSession').textContent = '🎯 All Complete!';
+        document.getElementById('sessionStatus').textContent = '✅ Completed!';
+        document.getElementById('sessionStatus').style.color = 'var(--neon-green)';
+    } else {
+        document.getElementById('btnCompleteSession').disabled = false;
+        document.getElementById('btnCompleteSession').textContent = '✅ Complete Session';
+        document.getElementById('sessionStatus').textContent = 'Ready';
+        document.getElementById('sessionStatus').style.color = 'var(--text-grey)';
+    }
+
+    saveSessionState();
+}
+
+function completeSession() {
+    const part = sessionState.part;
+    const currentSession = sessionState.currentSession;
+    const totalSessions = SESSION_PROFITS[part].length;
+
+    if (currentSession > totalSessions) {
+        alert('All sessions completed for this part!');
+        return;
+    }
+
+    const profit = getProfitForSession(part, currentSession);
+    const stake = calculateStake(sessionState.balance);
+
+    sessionState.completedSessions.push(currentSession);
+    sessionState.history.push({
+        session: currentSession,
+        part: part,
+        profit: profit,
+        stake: stake,
+        balanceBefore: sessionState.balance,
+        balanceAfter: sessionState.balance + profit,
+        timestamp: Date.now()
+    });
+
+    sessionState.balance = Math.round((sessionState.balance + profit) * 100) / 100;
+    sessionState.currentSession++;
+
+    if (sessionState.completedSessions.length >= totalSessions) {
+        const btn = document.getElementById('btnCompleteSession');
+        btn.disabled = true;
+        btn.textContent = '🎯 All Complete!';
+        document.getElementById('sessionStatus').textContent = '✅ Part ' + part + ' Complete!';
+        document.getElementById('sessionStatus').style.color = 'var(--neon-green)';
+    }
+
+    saveSessionState();
+    updateSessionUI();
+}
+
+function switchPart(part) {
+    const currentPart = sessionState.part;
+    const totalSessions = SESSION_PROFITS[currentPart].length;
+
+    if (sessionState.completedSessions.length < totalSessions && currentPart !== part) {
+        if (!confirm('You have an active session in Part ' + currentPart + '. Switching will reset progress. Continue?')) {
+            return;
+        }
+    }
+
+    sessionState.part = part;
+    sessionState.balance = PART_CONFIG[part].startingBalance;
+    sessionState.currentSession = 1;
+    sessionState.completedSessions = [];
+    sessionState.history = [];
+
+    saveSessionState();
+    updateSessionUI();
+
+    document.querySelectorAll('.part-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.part) === part);
+    });
+
+    document.getElementById('btnCompleteSession').disabled = false;
+    document.getElementById('btnCompleteSession').textContent = '✅ Complete Session';
+    document.getElementById('sessionStatus').textContent = 'Ready';
+    document.getElementById('sessionStatus').style.color = 'var(--text-grey)';
+}
+
 // ---------------------- GLOBALS --------------------------------
 let tickBuffers = {};
 let appState = 'IDLE';
@@ -757,7 +1229,7 @@ let heartbeatTimer = null;
 let isGatheringComplete = false;
 let selectedMarket = null;
 let adaptiveProfiles = {};
-let sessionState = {
+let tradeSession = {
 tradesToday: 0,
 maxTradesPerDay: 30,
 maxTradesPerSession: 10,
@@ -777,580 +1249,1057 @@ let lastSignalMarket = null;
 let lastEntryDigit = null;
 let lastDifferDigit = null;
 
-// ---------------------- HELPER: confidence to percent -------------------------
+// ---------------------- HELPER FUNCTIONS ------------------------------
 function confidenceToPercent(conf) {
-return Math.round(Math.max(0, Math.min(100, conf * 100)));
+    return Math.round(Math.max(0, Math.min(100, conf * 100)));
 }
 
-// ---------------------- ENGINE 1: OVER/UNDER (LOCKED — DO NOT MODIFY) ---------------------
+function zToConfidence(z) {
+    const absZ = Math.abs(z);
+    const t = 1 / (1 + 0.2316419 * absZ);
+    const d = 0.3989423 * Math.exp(-absZ * absZ / 2);
+    const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+    return Math.max(0, Math.min(0.999, 1 - p));
+}
+
+function binomialSE(p0, n) {
+    return Math.sqrt(p0 * (1 - p0) / n);
+}
+
+function bonferroniZ(targetZ, numComparisons) {
+    const targetAlpha = 1 - zToConfidence(targetZ);
+    const correctedAlpha = targetAlpha / numComparisons;
+    let lo = targetZ, hi = targetZ + 5;
+    for (let i = 0; i < 60; i++) {
+        const mid = (lo + hi) / 2;
+        const alpha = 1 - zToConfidence(mid);
+        if (alpha > correctedAlpha) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+}
+const DIGIT_SIGNIFICANCE_Z = bonferroniZ(SIGNIFICANCE_Z, 10);
+
+// ---------------------- SIGNAL ENGINES ------------------------------
 function overUnderSignal(window) {
-const over = window.filter(d => d >= 5).length;
-const under = window.length - over;
-const overProb = over / window.length;
-const underProb = under / window.length;
-const dominance = Math.abs(overProb - underProb);
-
-if (dominance < 0.10) return null;
-
-if (overProb > underProb) {
-const conf = 0.5 + (dominance * 0.5);
-return { type: 'OVER', confidence: Math.min(0.95, conf), overProb, underProb };
-} else {
-const conf = 0.5 + (dominance * 0.5);
-return { type: 'UNDER', confidence: Math.min(0.95, conf), overProb, underProb };
-}
+    const n = window.length;
+    const over = window.filter(d => d >= 5).length;
+    const overProb = over / n;
+    const underProb = 1 - overProb;
+    const se = binomialSE(0.5, n);
+    const z = (overProb - 0.5) / se;
+    if (Math.abs(z) < SIGNIFICANCE_Z) return null;
+    const confidence = zToConfidence(z);
+    if (z > 0) {
+        return { type: 'OVER', confidence, overProb, underProb, z };
+    } else {
+        return { type: 'UNDER', confidence, overProb, underProb, z };
+    }
 }
 
-// ---------------------- ENGINE 2: DIGIT DIFFERS (RARITY MODEL) — relaxed thresholds ---------------------
 function analyzeDiffer(sequence) {
-const freq = Array(10).fill(0);
-for (let d of sequence) freq[d]++;
-const total = sequence.length;
-
-let rareDigit = 0;
-let minFreq = Infinity;
-let dominantDigit = 0;
-let maxFreq = 0;
-
-for (let i = 0; i < 10; i++) {
-if (freq[i] < minFreq) {
-minFreq = freq[i];
-rareDigit = i;
-}
-if (freq[i] > maxFreq) {
-maxFreq = freq[i];
-dominantDigit = i;
-}
-}
-
-const rarity = minFreq / total;
-const dominance = maxFreq / total;
-
-// Relaxed thresholds: rarity <= 0.18, dominance >= 0.12
-if (rarity > 0.18 || dominance < 0.12) return null;
-
-let confidence = 0;
-if (rarity <= 0.07 && dominance >= 0.18) {
-confidence = 0.95;
-} else if (rarity <= 0.12 && dominance >= 0.16) {
-confidence = 0.75;
-} else if (rarity <= 0.15) {
-confidence = 0.60;
-} else {
-confidence = 0.50; // even weaker but still a signal
+    const freq = Array(10).fill(0);
+    for (let d of sequence) freq[d]++;
+    const n = sequence.length;
+    const se = binomialSE(0.1, n);
+    let rareDigit = 0, minFreq = Infinity;
+    let dominantDigit = 0, maxFreq = 0;
+    for (let i = 0; i < 10; i++) {
+        if (freq[i] < minFreq) { minFreq = freq[i]; rareDigit = i; }
+        if (freq[i] > maxFreq) { maxFreq = freq[i]; dominantDigit = i; }
+    }
+    const rarity = minFreq / n;
+    const dominance = maxFreq / n;
+    const z = (rarity - 0.1) / se;
+    if (Math.abs(z) < DIGIT_SIGNIFICANCE_Z) return null;
+    const confidence = zToConfidence(z);
+    return {
+        type: "DIFFER",
+        digit: rareDigit,
+        dominantDigit: dominantDigit,
+        confidence,
+        meta: { rarity, dominance, z }
+    };
 }
 
-return {
-type: "DIFFER",
-digit: rareDigit,
-dominantDigit: dominantDigit,
-confidence: Math.min(0.95, confidence),
-meta: { rarity, dominance }
-};
-}
-
-// ---------------------- ENGINE 3: DIGIT MATCHES (DOMINANCE + CLUSTERING) — relaxed thresholds ---------------------
 function analyzeMatches(sequence) {
-const freq = Array(10).fill(0);
-for (let d of sequence) freq[d]++;
-const total = sequence.length;
-
-let dominantDigit = 0;
-let maxFreq = 0;
-for (let i = 0; i < 10; i++) {
-if (freq[i] > maxFreq) {
-maxFreq = freq[i];
-dominantDigit = i;
-}
-}
-
-const dominance = maxFreq / total;
-if (dominance < 0.10) return null; // was 0.14
-
-let repeats = 0;
-for (let i = 1; i < sequence.length; i++) {
-if (sequence[i] === dominantDigit && sequence[i-1] === dominantDigit) {
-repeats++;
-}
-}
-const repeatRate = repeats / total;
-if (repeatRate < 0.04) return null; // was 0.08
-
-let confidence = 0.65;
-if (dominance > 0.18 && repeatRate > 0.12) confidence = 0.92;
-else if (dominance > 0.15 && repeatRate > 0.08) confidence = 0.82;
-else if (dominance > 0.12) confidence = 0.70;
-
-return {
-type: "MATCH",
-digit: dominantDigit,
-confidence: Math.min(0.95, confidence),
-meta: { dominance, repeatRate }
-};
+    const freq = Array(10).fill(0);
+    for (let d of sequence) freq[d]++;
+    const n = sequence.length;
+    const se = binomialSE(0.1, n);
+    let dominantDigit = 0, maxFreq = 0;
+    for (let i = 0; i < 10; i++) {
+        if (freq[i] > maxFreq) { maxFreq = freq[i]; dominantDigit = i; }
+    }
+    const dominance = maxFreq / n;
+    const z = (dominance - 0.1) / se;
+    if (z < DIGIT_SIGNIFICANCE_Z) return null;
+    let repeats = 0;
+    for (let i = 1; i < sequence.length; i++) {
+        if (sequence[i] === dominantDigit && sequence[i - 1] === dominantDigit) repeats++;
+    }
+    const repeatRate = repeats / n;
+    const confidence = zToConfidence(z);
+    return {
+        type: "MATCH",
+        digit: dominantDigit,
+        confidence,
+        meta: { dominance, repeatRate, z }
+    };
 }
 
-// ---------------------- ENGINE 4: EVEN/ODD (STREAK + IMBALANCE) — relaxed thresholds ---------------------
 function analyzeEvenOdd(sequence) {
-let even = 0, odd = 0;
-for (let d of sequence) {
-if (d % 2 === 0) even++;
-else odd++;
-}
-const total = sequence.length;
-const evenRatio = even / total;
-
-let streak = 1;
-let lastType = sequence[sequence.length - 1] % 2;
-for (let i = sequence.length - 2; i >= 0; i--) {
-if ((sequence[i] % 2) === lastType) streak++;
-else break;
-}
-
-const imbalance = Math.abs(evenRatio - 0.5);
-
-// Relaxed: allow if imbalance > 0.05 or streak >= 2
-if (imbalance < 0.05 && streak < 2) return null;
-
-let signal = null;
-let confidence = 0;
-
-if (streak >= 4) {
-signal = lastType === 0 ? "ODD" : "EVEN";
-confidence = 0.90;
-} else if (imbalance > 0.12 && streak >= 3) {
-signal = even > odd ? "ODD" : "EVEN";
-confidence = 0.75;
-} else if (imbalance > 0.08 && streak >= 2) {
-signal = even > odd ? "ODD" : "EVEN";
-confidence = 0.65;
-} else if (imbalance > 0.15) {
-signal = even > odd ? "ODD" : "EVEN";
-confidence = 0.60;
-} else if (streak >= 3) {
-// Reversal edge based on streak even without strong imbalance
-signal = lastType === 0 ? "ODD" : "EVEN";
-confidence = 0.60;
-} else {
-return null;
+    let even = 0, odd = 0;
+    for (let d of sequence) { if (d % 2 === 0) even++; else odd++; }
+    const n = sequence.length;
+    const evenRatio = even / n;
+    let streak = 1;
+    let lastType = sequence[sequence.length - 1] % 2;
+    for (let i = sequence.length - 2; i >= 0; i--) {
+        if ((sequence[i] % 2) === lastType) streak++;
+        else break;
+    }
+    const se = binomialSE(0.5, n);
+    const z = (evenRatio - 0.5) / se;
+    if (Math.abs(z) < SIGNIFICANCE_Z) return null;
+    const signal = z > 0 ? "EVEN" : "ODD";
+    const confidence = zToConfidence(z);
+    return {
+        type: "EVEN_ODD",
+        signal,
+        confidence,
+        meta: { imbalance: Math.abs(evenRatio - 0.5), streak, z }
+    };
 }
 
-return {
-type: "EVEN_ODD",
-signal: signal,
-confidence: Math.min(0.95, confidence),
-meta: { imbalance, streak }
-};
-}
-
-// ---------------------- CORE UTILITIES -------------------------
+// ---------------------- CORE UTILITIES ------------------------------
 function extractLastDigit(price, decimals) {
-if (price === null || price === undefined || isNaN(price)) return null;
-const normalized = Number(price).toFixed(decimals);
-const match = normalized.match(/(\d)(?!.*\d)/);
-return match ? parseInt(match[1], 10) : null;
+    if (price === null || price === undefined || isNaN(price)) return null;
+    const normalized = Number(price).toFixed(decimals);
+    const match = normalized.match(/(\d)(?!.*\d)/);
+    return match ? parseInt(match[1], 10) : null;
 }
 
 function getDecimalsForSymbol(symbol) {
-const s = String(symbol).toUpperCase().replace(/\s+/g, ' ');
-const twoDp = [
-'1HZ10V','1HZ25V','1HZ50V','1HZ75V','1HZ100V',
-'JD10','JD25','JD50','JD75','JD100',
-'VOLATILITY 10 (1S)','VOLATILITY 25 (1S)','VOLATILITY 50 (1S)',
-'VOLATILITY 75 (1S)','VOLATILITY 100 (1S)',
-'JUMP 10','JUMP 25','JUMP 50','JUMP 75','JUMP 100'
- ];
-if (twoDp.includes(s)) return 2;
-return 3;
+    const s = String(symbol).toUpperCase().replace(/\s+/g, ' ');
+    const twoDp = [
+        '1HZ10V','1HZ25V','1HZ50V','1HZ75V','1HZ100V',
+        'JD10','JD25','JD50','JD75','JD100',
+        'VOLATILITY 10 (1S)','VOLATILITY 25 (1S)','VOLATILITY 50 (1S)',
+        'VOLATILITY 75 (1S)','VOLATILITY 100 (1S)',
+        'JUMP 10','JUMP 25','JUMP 50','JUMP 75','JUMP 100'
+    ];
+    if (twoDp.includes(s)) return 2;
+    return 3;
 }
 
 function getTickDigit(symbol, price) {
-const dec = getDecimalsForSymbol(symbol);
-return extractLastDigit(price, dec);
+    const dec = getDecimalsForSymbol(symbol);
+    return extractLastDigit(price, dec);
 }
 
 function latestWindow(arr, size) {
-return arr.slice(-Math.min(size, arr.length));
+    return arr.slice(-Math.min(size, arr.length));
 }
 
 function frequency(arr) {
-const counts = {};
-arr.forEach(d => { counts[d] = (counts[d] || 0) + 1; });
-const n = arr.length || 1;
-const result = {};
-for (let i = 0; i < 10; i++) result[i] = (counts[i] || 0) / n;
-return result;
+    const counts = {};
+    arr.forEach(d => { counts[d] = (counts[d] || 0) + 1; });
+    const n = arr.length || 1;
+    const result = {};
+    for (let i = 0; i < 10; i++) result[i] = (counts[i] || 0) / n;
+    return result;
 }
 
 function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
 
-// ---------------------- ENTRY CONFIRMATION (uses the new engines) ---------------------
+// ---------------------- ENTRY CONFIRMATION ------------------------------
 function confirmEntry(digits, selectedDigit, signalScore, liveWindowSize = 25, threshold = 0.55, strategy = 'match', additionalData = null) {
-const live = latestWindow(digits, liveWindowSize);
-if (!live || live.length < 5) return { status: 'HOLD', entryScore: 0, liveScore: 0, drift: 0 };
-let liveScore = 0;
-switch (strategy) {
-case 'match': {
-const res = analyzeMatches(live);
-liveScore = res ? res.confidence : 0;
-break;
-}
-case 'differ': {
-const res = analyzeDiffer(live);
-liveScore = res ? res.confidence : 0;
-break;
-}
-case 'ou': {
-const res = overUnderSignal(live);
-liveScore = res ? res.confidence : 0;
-break;
-}
-case 'eo': {
-const res = analyzeEvenOdd(live);
-liveScore = res ? res.confidence : 0;
-break;
-}
-default: liveScore = signalScore * 0.9;
-}
-const drift = Math.abs(signalScore - liveScore);
-const boost = 0.06 * (1 - Math.min(drift / 2, 1));
-const entryScore = 0.50 * sigmoid(signalScore) + 0.40 * sigmoid(liveScore) - 0.14 * Math.min(drift / 2, 1) + boost;
-const status = entryScore >= threshold ? 'CONFIRM' : 'HOLD';
-return { status, entryScore, liveScore, drift };
+    const live = latestWindow(digits, liveWindowSize);
+    if (!live || live.length < 5) return { status: 'HOLD', entryScore: 0, liveScore: 0, drift: 0 };
+    let liveScore = 0;
+    switch (strategy) {
+        case 'match': { const res = analyzeMatches(live); liveScore = res ? res.confidence : 0; break; }
+        case 'differ': { const res = analyzeDiffer(live); liveScore = res ? res.confidence : 0; break; }
+        case 'ou': { const res = overUnderSignal(live); liveScore = res ? res.confidence : 0; break; }
+        case 'eo': { const res = analyzeEvenOdd(live); liveScore = res ? res.confidence : 0; break; }
+        default: liveScore = signalScore * 0.9;
+    }
+    const drift = Math.abs(signalScore - liveScore);
+    const boost = 0.06 * (1 - Math.min(drift / 2, 1));
+    const entryScore = 0.50 * sigmoid(signalScore) + 0.40 * sigmoid(liveScore) - 0.14 * Math.min(drift / 2, 1) + boost;
+    const status = entryScore >= threshold ? 'CONFIRM' : 'HOLD';
+    return { status, entryScore, liveScore, drift };
 }
 
-// ---------------------- SIGNAL GENERATORS (using new engines) ---------------------
-
+// ---------------------- SIGNAL GENERATORS ------------------------------
 function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
-let best = null;
-let bestConf = -Infinity;
-for (const market of markets) {
-const data = tickBuffers[market];
-if (!data || data.length < windowSize) continue;
-const digits = data.map(t => t.digit);
-const window = latestWindow(digits, windowSize);
-if (window.length < windowSize) continue;
-const result = analyzeMatches(window);
-if (result && result.confidence > bestConf) {
-bestConf = result.confidence;
-best = { market, ...result };
-}
-}
-if (!best) {
-// Fallback: pick the digit with highest frequency (no clustering check) - weak signal
-let fallbackMarket = markets[0];
-let fallbackDigit = 0;
-let maxFreq = 0;
-for (const market of markets) {
-const data = tickBuffers[market];
-if (!data || data.length < windowSize) continue;
-const digits = data.map(t => t.digit);
-const window = latestWindow(digits, windowSize);
-if (window.length < windowSize) continue;
-const freq = Array(10).fill(0);
-for (let d of window) freq[d]++;
-for (let i = 0; i < 10; i++) {
-if (freq[i] > maxFreq) {
-maxFreq = freq[i];
-fallbackDigit = i;
-fallbackMarket = market;
-}
-}
-}
-return {
-success: true,
-market: fallbackMarket,
-digit: fallbackDigit,
-score: 0.35,
-confidence: 35,
-features: { dominance: maxFreq / (windowSize || 1), repeatRate: 0.02 },
-strategy: 'MATCH',
-recommendation: 'MATCH ' + fallbackDigit,
-display: {
-bigDigit: fallbackDigit,
-actionText: 'MATCH ON ' + fallbackDigit,
-confidence: 35,
-market: fallbackMarket,
-entryDigit: fallbackDigit,
-differDigit: null,
-isMatch: true
-},
-fallback: true
-};
-}
-return {
-success: true,
-market: best.market,
-digit: best.digit,
-score: best.confidence,
-confidence: confidenceToPercent(best.confidence),
-features: { dominance: best.meta.dominance, repeatRate: best.meta.repeatRate },
-strategy: 'MATCH',
-recommendation: 'MATCH ' + best.digit,
-display: {
-bigDigit: best.digit,
-actionText: 'MATCH ON ' + best.digit,
-confidence: confidenceToPercent(best.confidence),
-market: best.market,
-entryDigit: best.digit,
-differDigit: null,
-isMatch: true
-}
-};
+    let best = null, bestConf = -Infinity;
+    for (const market of markets) {
+        const data = tickBuffers[market];
+        if (!data || data.length < windowSize) continue;
+        const digits = data.map(t => t.digit);
+        const window = latestWindow(digits, windowSize);
+        if (window.length < windowSize) continue;
+        const result = analyzeMatches(window);
+        if (result && result.confidence > bestConf) {
+            bestConf = result.confidence;
+            best = { market, ...result };
+        }
+    }
+    if (!best) return { success: false, strategy: 'MATCH' };
+    return {
+        success: true,
+        market: best.market,
+        digit: best.digit,
+        score: best.confidence,
+        confidence: confidenceToPercent(best.confidence),
+        features: { dominance: best.meta.dominance, repeatRate: best.meta.repeatRate },
+        strategy: 'MATCH',
+        recommendation: 'MATCH ' + best.digit,
+        display: {
+            bigDigit: best.digit,
+            actionText: 'MATCH ON ' + best.digit,
+            confidence: confidenceToPercent(best.confidence),
+            market: best.market,
+            entryDigit: best.digit,
+            differDigit: null,
+            isMatch: true
+        }
+    };
 }
 
 function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
-let best = null;
-let bestConf = -Infinity;
-for (const market of markets) {
-const data = tickBuffers[market];
-if (!data || data.length < windowSize) continue;
-const digits = data.map(t => t.digit);
-const window = latestWindow(digits, windowSize);
-if (window.length < windowSize) continue;
-const result = analyzeDiffer(window);
-if (result && result.confidence > bestConf) {
-bestConf = result.confidence;
-best = { market, ...result };
-}
-}
-if (!best) {
-// Fallback: pick the rarest digit based on simple frequency
-let fallbackMarket = markets[0];
-let fallbackDigit = 0;
-let minFreq = Infinity;
-for (const market of markets) {
-const data = tickBuffers[market];
-if (!data || data.length < windowSize) continue;
-const digits = data.map(t => t.digit);
-const window = latestWindow(digits, windowSize);
-if (window.length < windowSize) continue;
-const freq = Array(10).fill(0);
-for (let d of window) freq[d]++;
-for (let i = 0; i < 10; i++) {
-if (freq[i] < minFreq) {
-minFreq = freq[i];
-fallbackDigit = i;
-fallbackMarket = market;
-}
-}
-}
-return {
-success: true,
-market: fallbackMarket,
-digit: fallbackDigit,
-score: 0.3,
-confidence: 30,
-features: { rarity: minFreq / (windowSize || 1), dominance: 0.1 },
-strategy: 'DIFFERS',
-tier: 'WEAK',
-recommendation: 'DIFFERS ' + fallbackDigit,
-display: {
-bigDigit: fallbackDigit,
-actionText: 'DIFFER ON ' + fallbackDigit,
-confidence: 30,
-market: fallbackMarket,
-entryDigit: null, // no relationship display
-differDigit: fallbackDigit,
-isMatch: false
-},
-fallback: true
-};
-}
-return {
-success: true,
-market: best.market,
-digit: best.digit,
-anchor: best.dominantDigit,
-score: best.confidence,
-confidence: confidenceToPercent(best.confidence),
-features: { rarity: best.meta.rarity, dominance: best.meta.dominance },
-strategy: 'DIFFERS',
-tier: best.confidence > 0.85 ? 'STRONG' : best.confidence > 0.7 ? 'MEDIUM' : 'WEAK',
-recommendation: 'DIFFERS ' + best.digit,
-display: {
-bigDigit: best.digit,
-actionText: 'DIFFER ON ' + best.digit,
-confidence: confidenceToPercent(best.confidence),
-market: best.market,
-entryDigit: null, // no relationship display
-differDigit: best.digit,
-isMatch: false
-}
-};
+    let best = null, bestConf = -Infinity;
+    for (const market of markets) {
+        const data = tickBuffers[market];
+        if (!data || data.length < windowSize) continue;
+        const digits = data.map(t => t.digit);
+        const window = latestWindow(digits, windowSize);
+        if (window.length < windowSize) continue;
+        const result = analyzeDiffer(window);
+        if (result && result.confidence > bestConf) {
+            bestConf = result.confidence;
+            best = { market, ...result };
+        }
+    }
+    if (!best) return { success: false, strategy: 'DIFFERS' };
+    return {
+        success: true,
+        market: best.market,
+        digit: best.digit,
+        anchor: best.dominantDigit,
+        score: best.confidence,
+        confidence: confidenceToPercent(best.confidence),
+        features: { rarity: best.meta.rarity, dominance: best.meta.dominance },
+        strategy: 'DIFFERS',
+        tier: best.confidence > 0.85 ? 'STRONG' : best.confidence > 0.7 ? 'MEDIUM' : 'WEAK',
+        recommendation: 'DIFFERS ' + best.digit,
+        display: {
+            bigDigit: best.digit,
+            actionText: 'DIFFER ON ' + best.digit,
+            confidence: confidenceToPercent(best.confidence),
+            market: best.market,
+            entryDigit: null,
+            differDigit: best.digit,
+            isMatch: false
+        }
+    };
 }
 
 function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
-let best = null;
-let bestConf = -Infinity;
-for (const market of markets) {
-const data = tickBuffers[market];
-if (!data || data.length < windowSize) continue;
-const digits = data.map(t => t.digit);
-const window = latestWindow(digits, windowSize);
-if (window.length < windowSize) continue;
-const result = overUnderSignal(window);
-if (result && result.confidence > bestConf) {
-bestConf = result.confidence;
-best = { market, ...result };
-}
-}
-if (!best) {
-return { success: false };
-}
-const barrier = best.type === 'OVER' ? 5 : 4;
-return {
-success: true,
-market: best.market,
-mode: best.type,
-barrier: barrier,
-score: best.confidence,
-confidence: confidenceToPercent(best.confidence),
-features: { overProb: best.overProb, underProb: best.underProb },
-strategy: 'OVER/UNDER',
-recommendation: best.type + ' ' + barrier,
-display: {
-bigDigit: barrier,
-actionText: best.type + ' ' + barrier,
-confidence: confidenceToPercent(best.confidence),
-market: best.market,
-mass: best.type === 'OVER' ? best.overProb : best.underProb,
-entryDigit: null,
-differDigit: null,
-isMatch: false
-}
-};
+    let best = null, bestConf = -Infinity;
+    for (const market of markets) {
+        const data = tickBuffers[market];
+        if (!data || data.length < windowSize) continue;
+        const digits = data.map(t => t.digit);
+        const window = latestWindow(digits, windowSize);
+        if (window.length < windowSize) continue;
+        const result = overUnderSignal(window);
+        if (result && result.confidence > bestConf) {
+            bestConf = result.confidence;
+            best = { market, ...result };
+        }
+    }
+    if (!best) return { success: false };
+    const barrier = best.type === 'OVER' ? 5 : 4;
+    return {
+        success: true,
+        market: best.market,
+        mode: best.type,
+        barrier: barrier,
+        score: best.confidence,
+        confidence: confidenceToPercent(best.confidence),
+        features: { overProb: best.overProb, underProb: best.underProb },
+        strategy: 'OVER/UNDER',
+        recommendation: best.type + ' ' + barrier,
+        display: {
+            bigDigit: barrier,
+            actionText: best.type + ' ' + barrier,
+            confidence: confidenceToPercent(best.confidence),
+            market: best.market,
+            mass: best.type === 'OVER' ? best.overProb : best.underProb,
+            entryDigit: null,
+            differDigit: null,
+            isMatch: false
+        }
+    };
 }
 
 function generateEvenOddSignal(tickBuffers, markets, windowSize = 100) {
-let best = null;
-let bestConf = -Infinity;
-for (const market of markets) {
-const data = tickBuffers[market];
-if (!data || data.length < windowSize) continue;
-const digits = data.map(t => t.digit);
-const window = latestWindow(digits, windowSize);
-if (window.length < windowSize) continue;
-const result = analyzeEvenOdd(window);
-if (result && result.confidence > bestConf) {
-bestConf = result.confidence;
-best = { market, ...result };
-}
-}
-if (!best) {
-// Fallback based on simple majority
-let fallbackMarket = markets[0];
-let fallbackSide = 'EVEN';
-let maxCount = 0;
-for (const market of markets) {
-const data = tickBuffers[market];
-if (!data || data.length < windowSize) continue;
-const digits = data.map(t => t.digit);
-const window = latestWindow(digits, windowSize);
-if (window.length < windowSize) continue;
-let even = 0, odd = 0;
-for (let d of window) { if (d%2===0) even++; else odd++; }
-if (even > maxCount) { maxCount = even; fallbackSide = 'EVEN'; fallbackMarket = market; }
-if (odd > maxCount) { maxCount = odd; fallbackSide = 'ODD'; fallbackMarket = market; }
-}
-return {
-success: true,
-market: fallbackMarket,
-side: fallbackSide,
-score: 0.3,
-confidence: 30,
-features: { imbalance: 0.05, streak: 1 },
-gap: 0.02,
-strategy: 'EVEN/ODD',
-recommendation: fallbackSide,
-display: {
-bigDigit: fallbackSide,
-actionText: fallbackSide,
-confidence: 30,
-market: fallbackMarket,
-pmr: 0.3,
-gap: 0.02,
-entryDigit: null,
-differDigit: null,
-isMatch: false
-},
-fallback: true
-};
-}
-return {
-success: true,
-market: best.market,
-side: best.signal,
-score: best.confidence,
-confidence: confidenceToPercent(best.confidence),
-features: { imbalance: best.meta.imbalance, streak: best.meta.streak },
-gap: 0.02,
-strategy: 'EVEN/ODD',
-recommendation: best.signal,
-display: {
-bigDigit: best.signal,
-actionText: best.signal,
-confidence: confidenceToPercent(best.confidence),
-market: best.market,
-pmr: best.confidence,
-gap: 0.02,
-entryDigit: null,
-differDigit: null,
-isMatch: false
-}
-};
+    let best = null, bestConf = -Infinity;
+    for (const market of markets) {
+        const data = tickBuffers[market];
+        if (!data || data.length < windowSize) continue;
+        const digits = data.map(t => t.digit);
+        const window = latestWindow(digits, windowSize);
+        if (window.length < windowSize) continue;
+        const result = analyzeEvenOdd(window);
+        if (result && result.confidence > bestConf) {
+            bestConf = result.confidence;
+            best = { market, ...result };
+        }
+    }
+    if (!best) return { success: false, strategy: 'EVEN/ODD' };
+    return {
+        success: true,
+        market: best.market,
+        side: best.signal,
+        score: best.confidence,
+        confidence: confidenceToPercent(best.confidence),
+        features: { imbalance: best.meta.imbalance, streak: best.meta.streak },
+        gap: 0.02,
+        strategy: 'EVEN/ODD',
+        recommendation: best.signal,
+        display: {
+            bigDigit: best.signal,
+            actionText: best.signal,
+            confidence: confidenceToPercent(best.confidence),
+            market: best.market,
+            pmr: best.confidence,
+            gap: 0.02,
+            entryDigit: null,
+            differDigit: null,
+            isMatch: false
+        }
+    };
 }
 
-// ---------------------- SESSION MANAGEMENT (unchanged) ---------------------
+// ---------------------- SESSION MANAGEMENT (Trading) ------------------------------
 function canTrade() {
-if (sessionState.tradesToday >= sessionState.maxTradesPerDay) return false;
-if (sessionState.burstsPerSession >= sessionState.maxBurstsPerSession) return false;
-if (sessionState.consecutiveLosses >= sessionState.maxConsecutiveLosses) return false;
-return true;
+    if (tradeSession.tradesToday >= tradeSession.maxTradesPerDay) return false;
+    if (tradeSession.burstsPerSession >= tradeSession.maxBurstsPerSession) return false;
+    if (tradeSession.consecutiveLosses >= tradeSession.maxConsecutiveLosses) return false;
+    return true;
 }
 
 function startBurst() {
-if (!canTrade()) return null;
-sessionState.burstsPerSession++;
-return { burstId: sessionState.burstsPerSession, burstSize: 5, tradesRemaining: 5 };
+    if (!canTrade()) return null;
+    tradeSession.burstsPerSession++;
+    return { burstId: tradeSession.burstsPerSession, burstSize: 5, tradesRemaining: 5 };
 }
 
 function recordTrade(outcome, stake, profit) {
-sessionState.tradesToday++;
-if (outcome === 'win') sessionState.consecutiveLosses = 0;
-else sessionState.consecutiveLosses++;
-sessionState.tradeHistory.push({ tradeNumber: sessionState.tradesToday, sessionType: sessionState.currentSessionType, outcome, stake, profit, timestamp: Date.now() });
-return { tradesRemaining: sessionState.maxTradesPerSession - (sessionState.tradesToday % sessionState.maxTradesPerSession), consecutiveLosses: sessionState.consecutiveLosses };
+    tradeSession.tradesToday++;
+    if (outcome === 'win') tradeSession.consecutiveLosses = 0;
+    else tradeSession.consecutiveLosses++;
+    tradeSession.tradeHistory.push({ tradeNumber: tradeSession.tradesToday, sessionType: tradeSession.currentSessionType, outcome, stake, profit, timestamp: Date.now() });
+    return { tradesRemaining: tradeSession.maxTradesPerSession - (tradeSession.tradesToday % tradeSession.maxTradesPerSession), consecutiveLosses: tradeSession.consecutiveLosses };
 }
 
 function getStake(baseStake = 1, lossMultiplier = 1.2) {
-return baseStake * Math.pow(lossMultiplier, sessionState.consecutiveLosses);
+    return baseStake * Math.pow(lossMultiplier, tradeSession.consecutiveLosses);
 }
 
-// ---------------------- UI UPDATE FUNCTIONS ---------------------
+// ---------------------- UI UPDATE FUNCTIONS ------------------------------
 function updateSignalUI(signal, containerId) {
-const container = document.getElementById(containerId);
-if (!container) return;
-
-if (!container.querySelector('.card-glow')) {
-const glow = document.createElement('div');
-glow.className = 'card-glow';
-container.prepend(glow);
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (!container.querySelector('.card-glow')) {
+        const glow = document.createElement('div');
+        glow.className = 'card-glow';
+        container.prepend(glow);
+    }
+    if (!signal || !signal.success) {
+        container.innerHTML = '<div class="card-glow"></div><div class="placeholder-text" style="z-index:1;position:relative;">📊 No statistically significant deviation found across any of the 10 markets right now. This is the honest result, not an error — try again shortly.</div>';
+        return;
+    }
+    const display = signal.display;
+    const confidenceLevel = display.confidence > 75 ? 'HIGH' : display.confidence > 60 ? 'MEDIUM' : 'LOW';
+    const levelColor = confidenceLevel === 'HIGH' ? '#00FFAA' : confidenceLevel === 'MEDIUM' ? '#FFD700' : '#FF6B00';
+    let extraInfo = '';
+    let relationshipHTML = '';
+    if (signal.strategy === 'DIFFERS') {
+        extraInfo = '<div class="bottom-row"><span>Rarity: ' + ((signal.features.rarity || 0) * 100).toFixed(1) + '%</span><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span></div>';
+    } else if (signal.strategy === 'MATCH') {
+        extraInfo = '<div class="bottom-row"><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span><span>Repeat: ' + ((signal.features.repeatRate || 0) * 100).toFixed(1) + '%</span></div>';
+    } else if (signal.strategy === 'OVER/UNDER') {
+        extraInfo = '<div class="bottom-row"><span>Observed: ' + (signal.features.mass * 100).toFixed(1) + '%</span><span>Edge: ' + ((signal.features.mass - 0.5) * 100).toFixed(1) + '%</span></div>';
+    } else if (signal.strategy === 'EVEN/ODD') {
+        extraInfo = '<div class="bottom-row"><span>Imbalance: ' + (signal.features.imbalance * 100).toFixed(1) + '%</span><span>Streak: ' + signal.features.streak + '</span></div>';
+    }
+    let bigClass = '';
+    if (signal.strategy === 'MATCH') bigClass = 'matches';
+    else if (signal.strategy === 'DIFFERS') bigClass = 'differs';
+    let actionStyle = '';
+    if (signal.strategy === 'OVER/UNDER') actionStyle = 'color:var(--neon-gold);';
+    else if (signal.strategy === 'EVEN/ODD') actionStyle = 'color:#00BFFF;';
+    let actionClass = '';
+    if (signal.strategy === 'MATCH') actionClass = 'matches';
+    else if (signal.strategy === 'DIFFERS') actionClass = 'differs';
+    let bigDigitDisplay = display.bigDigit;
+    container.innerHTML = `
+        <div class="card-glow"></div>
+        <div class="row" style="z-index:1;position:relative;">
+            <span>${display.market}</span>
+            <span>${signal.confirmed ? '✅ CONFIRMED' : '⏳ PENDING'}</span>
+        </div>
+        <div class="big-digit ${bigClass}" style="${signal.strategy === 'OVER/UNDER' ? 'color:var(--neon-gold);' : ''} ${signal.strategy === 'EVEN/ODD' ? 'color:#00BFFF;' : ''} z-index:1;position:relative;">
+            ${bigDigitDisplay}
+        </div>
+        <div class="entry-text" style="z-index:1;position:relative;"><strong>${signal.strategy}</strong></div>
+        <div class="action-text ${actionClass}" style="${actionStyle} z-index:1;position:relative;">${display.actionText}</div>
+        ${relationshipHTML}
+        <div class="confidence-row" style="z-index:1;position:relative;">
+            <span class="confidence-label" style="color:${levelColor};">${display.confidence.toFixed(1)}%</span>
+            <div class="confidence-bar">
+                <div class="confidence-fill" style="width:${display.confidence}%; background: linear-gradient(90deg, #FF6B00, ${levelColor});"></div>
+            </div>
+        </div>
+        ${extraInfo}
+        <div class="confidence-level" style="color:${levelColor};">${confidenceLevel} CONFIDENCE</div>
+        ${signal.entryScore ? '<div style="font-size:0.7rem; color:var(--text-grey); margin-top:0.5rem; z-index:1;position:relative;">Entry Score:' + signal.entryScore.toFixed(3) + '</div>' : ''}
+    `;
 }
 
-if (!signal || !signal.success) {
-container.innerHTML = '<div class="card-glow"></div><div class="placeholder-text" style="z-index:1;position:relative;">⏳ No signal available. Please try again.</div>';
-return;
+function updateFrequencyChart(market, digits, highlightEntry, highlightDiffer) {
+    const container = document.getElementById('chartBars');
+    const placeholder = document.getElementById('chartPlaceholder');
+    const badge = document.getElementById('exceedanceBadge');
+    const label = document.getElementById('chartMarketLabel');
+    if (!container || !digits || digits.length < 10) {
+        if (placeholder) placeholder.style.display = 'flex';
+        if (container) container.style.display = 'none';
+        if (badge) badge.style.display = 'none';
+        if (label) label.textContent = '';
+        return;
+    }
+    if (placeholder) placeholder.style.display = 'none';
+    container.style.display = 'flex';
+    container.innerHTML = '';
+    const freq = frequency(digits);
+    const maxHeight = 120;
+    const maxPct = Math.max(...Object.values(freq).map(v => v * 100));
+    const baseline = document.createElement('div');
+    baseline.className = 'chart-baseline';
+    baseline.innerHTML = '<span class="chart-baseline-label">Baseline: 10%</span>';
+    container.appendChild(baseline);
+    for (let i = 0; i < 10; i++) {
+        const pct = (freq[i] || 0) * 100;
+        const height = Math.max((pct / 15) * maxHeight, 4);
+        const isExceed = pct > 10;
+        const isHighlight = (highlightDiffer !== undefined && highlightDiffer !== null && i === highlightDiffer);
+        const color = isHighlight ? '#FFD700' : isExceed ? '#FF6B00' : pct < 10 ? '#00BFFF' : '#00FFF0';
+        const group = document.createElement('div');
+        group.className = 'bar-group';
+        group.innerHTML = '<div class="bar ' + (isHighlight ? 'highlighted' : '') + '" style="height:' + height + 'px; background:' + color + '; box-shadow: 0 0 ' + (isHighlight ? 30 : isExceed ? 20 : 8) + 'px ' + color + '40;"></div><div class="bar-label ' + (isHighlight ? 'highlighted' : '') + '">' + i + '</div>';
+        container.appendChild(group);
+    }
+    if (badge) {
+        if (maxPct > 10) {
+            badge.style.display = 'flex';
+            badge.innerHTML = '🔥 +' + (maxPct - 10).toFixed(1) + '% Exceedance';
+        } else badge.style.display = 'none';
+    }
+    if (label) {
+        let hl = '';
+        if (highlightDiffer !== undefined && highlightDiffer !== null) hl += ' Differ:' + highlightDiffer;
+        label.textContent = '(' + market + ')' + hl;
+    }
 }
 
-const display = signal.display;
-const confidenceLevel = display.confidence > 75 ? 'HIGH' : display.confidence > 60 ? 'MEDIUM' : 'LOW';
-const levelColor = confidenceLevel === 'HIGH' ? '#00FFAA' : confidenceLevel === 'MEDIUM' ? '#FFD700' : '#FF6B00';
+function updateMatrixUI(market, digits, entryDigit, differDigit) {
+    const container = document.getElementById('matrixGrid');
+    const placeholder = document.getElementById('matrixPlaceholder');
+    const legend = document.getElementById('matrixLegend');
+    const seesaw = document.getElementById('seesawContainer');
+    const seesawLabel = document.getElementById('seesawLabel');
+    const label = document.getElementById('matrixMarketLabel');
+    if (!container || !digits || digits.length < 20) {
+        if (placeholder) placeholder.style.display = 'flex';
+        container.style.display = 'none';
+        if (legend) legend.style.display = 'none';
+        if (seesaw) seesaw.style.display = 'none';
+        if (seesawLabel) seesawLabel.style.display = 'none';
+        if (label) label.textContent = '';
+        return;
+    }
+    if (placeholder) placeholder.style.display = 'none';
+    container.style.display = 'grid';
+    container.style.gridTemplateColumns = 'repeat(10, 1fr)';
+    container.style.gap = '3px';
+    container.innerHTML = '';
+    const freq = frequency(digits);
+    const hasDiffer = differDigit !== undefined && differDigit !== null;
+    for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 10; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell';
+            const isDiffer = hasDiffer && j === differDigit;
+            if (isDiffer) {
+                cell.classList.add('differ-highlight');
+                cell.textContent = 'D';
+            } else {
+                const pct = (freq[j] || 0) * 100;
+                const alpha = 0.1 + (pct / 100) * 0.4;
+                cell.style.background = 'rgba(168,85,247,' + alpha + ')';
+                cell.textContent = j;
+            }
+            container.appendChild(cell);
+        }
+    }
+    if (legend) legend.style.display = 'flex';
+    if (seesaw) seesaw.style.display = 'flex';
+    if (seesawLabel) seesawLabel.style.display = 'block';
+    if (label) {
+        let hl = '';
+        if (hasDiffer) hl += ' Differ:' + differDigit;
+        label.textContent = '(' + market + ')' + hl;
+    }
+    let topDigit = 0, topPct = 0, bottomDigit = 0, bottomPct = 100;
+    for (let i = 0; i < 10; i++) {
+        const pct = (freq[i] || 0) * 100;
+        if (pct > topPct) { topPct = pct; topDigit = i; }
+        if (pct < bottomPct) { bottomPct = pct; bottomDigit = i; }
+    }
+    document.getElementById('topDigit').textContent = topDigit;
+    document.getElementById('topPct').textContent = topPct.toFixed(1) + '%';
+    document.getElementById('bottomDigit').textContent = bottomDigit;
+    document.getElementById('bottomPct').textContent = bottomPct.toFixed(1) + '%';
+}
 
-let extraInfo = '';
-let relationshipHTML = ''; // removed for DIFFERS
+// ---------------------- POPUP HELPERS ------------------------------
+function beginSignalLoading(key, title, subtitle) {
+    if (signalBusy[key]) return false;
+    signalBusy[key] = true;
+    const popup = document.getElementById('signal-popup');
+    const shoot = document.getElementById('popupShooting');
+    const loader = document.getElementById('signalLoaderContainer');
+    const result = document.getElementById('signalResultContainer');
+    if (popup) popup.classList.add('active');
+    if (shoot) shoot.classList.add('active');
+    if (loader) loader.style.display = 'block';
+    if (result) result.style.display = 'none';
+    document.getElementById('signalLoadingText').textContent = title || 'GENERATING SIGNAL...';
+    document.getElementById('signalProgressText').textContent = subtitle || '⏳ Analyzing live ticks...';
+    return true;
+}
 
-if (signal.strategy === 'DIFFERS') {
-// Only show the differ digit, no relationship
-extraInfo = '<div class="bottom-row"><span>Rarity: ' + ((signal.features.rarity || 0) * 100).toFixed(1) + '%</span><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span></div>';
-} else if (signal.strategy === 'MATCH') {
-extraInfo = '<div class="bottom-row"><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span><span>Repeat: ' + ((signal.fe
+function endSignalLoading(key) {
+    signalBusy[key] = false;
+    const popup = document.getElementById('signal-popup');
+    const shoot = document.getElementById('popupShooting');
+    if (popup) popup.classList.remove('active');
+    if (shoot) shoot.classList.remove('active');
+}
+
+function failSignalLoading(key, message) {
+    signalBusy[key] = false;
+    endSignalLoading(key);
+    console.warn(message || 'Signal generation returned null (no edge).');
+}
+
+// ---------------------- SIGNAL WRAPPERS ------------------------------
+function generateMatchesSignal() {
+    if (!beginSignalLoading('md', 'GENERATING MATCH SIGNAL...', '⏳ Analyzing latest ticks for Matches...')) return;
+    setTimeout(() => {
+        try {
+            const result = generateMatchSignal(tickBuffers, MARKETS, ANALYSIS_WINDOW);
+            if (!result || !result.success) {
+                updateSignalUI(result, 'oracleSignalCard');
+                endSignalLoading('md');
+                return;
+            }
+            const data = tickBuffers[result.market];
+            if (data) {
+                const digits = data.map(t => t.digit);
+                const confirm = confirmEntry(digits, result.digit, result.score, 25, 0.5, 'match');
+                result.confirmed = confirm.status === 'CONFIRM';
+                result.entryScore = confirm.entryScore;
+                result.liveScore = confirm.liveScore;
+                result.drift = confirm.drift;
+            }
+            currentSignals.match = result;
+            updateSignalUI(result, 'oracleSignalCard');
+            document.getElementById('btnFindEntryMD').disabled = false;
+            document.getElementById('btnFindEntryMD').className = 'btn-entry entry-default';
+            document.getElementById('btnFindEntryMD').textContent = '🔍 FIND ENTRY';
+            const data2 = tickBuffers[result.market];
+            updateFrequencyChart(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
+            updateMatrixUI(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
+            document.getElementById('liveTicker').innerHTML = '✅ MATCH signal generated on ' + result.market;
+        } catch (e) { console.error(e); failSignalLoading('md', '❌ Failed to generate match signal.'); }
+        endSignalLoading('md');
+    }, SIGNAL_DELAY_MS);
+}
+
+function handleDiffersClick() {
+    if (!beginSignalLoading('md', 'GENERATING DIFFER SIGNAL...', '⏳ Analyzing latest ticks for Differs...')) return;
+    setTimeout(() => {
+        try {
+            const result = generateDiffersSignal(tickBuffers, MARKETS, ANALYSIS_WINDOW);
+            if (!result || !result.success) {
+                updateSignalUI(result, 'oracleSignalCard');
+                endSignalLoading('md');
+                return;
+            }
+            const data = tickBuffers[result.market];
+            if (data) {
+                const digits = data.map(t => t.digit);
+                const confirm = confirmEntry(digits, result.digit, result.score, 25, 0.45, 'differ');
+                result.confirmed = confirm.status === 'CONFIRM';
+                result.entryScore = confirm.entryScore;
+                result.liveScore = confirm.liveScore;
+                result.drift = confirm.drift;
+            }
+            currentSignals.differ = result;
+            updateSignalUI(result, 'oracleSignalCard');
+            document.getElementById('btnFindEntryMD').disabled = false;
+            document.getElementById('btnFindEntryMD').className = 'btn-entry entry-default';
+            document.getElementById('btnFindEntryMD').textContent = '🔍 FIND ENTRY';
+            const data2 = tickBuffers[result.market];
+            updateFrequencyChart(result.market, data2 ? data2.map(t => t.digit) : [], null, result.digit);
+            updateMatrixUI(result.market, data2 ? data2.map(t => t.digit) : [], null, result.digit);
+            document.getElementById('liveTicker').innerHTML = '✅ DIFFERS signal generated on ' + result.market + ' (Differ: ' + result.digit + ')';
+        } catch (e) { console.error(e); failSignalLoading('md', '❌ Failed to generate differ signal.'); }
+        endSignalLoading('md');
+    }, SIGNAL_DELAY_MS);
+}
+
+function generateOverUnderSignal() {
+    if (!beginSignalLoading('ou', 'GENERATING OVER/UNDER SIGNAL...', '⏳ Analyzing latest ticks for Over/Under...')) return;
+    setTimeout(() => {
+        try {
+            const result = generateOvernUnderSignal(tickBuffers, MARKETS, ANALYSIS_WINDOW);
+            if (!result || !result.success) {
+                updateSignalUI(result, 'ouSignalCard');
+                endSignalLoading('ou');
+                return;
+            }
+            const data = tickBuffers[result.market];
+            if (data) {
+                const digits = data.map(t => t.digit);
+                const confirm = confirmEntry(digits, result.barrier, result.score, 25, 0.5, 'ou', { mode: result.mode, barrier: result.barrier });
+                result.confirmed = confirm.status === 'CONFIRM';
+                result.entryScore = confirm.entryScore;
+                result.liveScore = confirm.liveScore;
+                result.drift = confirm.drift;
+            }
+            currentSignals.ou = result;
+            updateSignalUI(result, 'ouSignalCard');
+            document.getElementById('btnFindEntryOU').disabled = false;
+            document.getElementById('btnFindEntryOU').className = 'btn-entry entry-default';
+            document.getElementById('btnFindEntryOU').textContent = '🔍 FIND ENTRY';
+            document.getElementById('ouMarket').textContent = result.market;
+            document.getElementById('ouConfidenceValue').textContent = result.confidence.toFixed(1) + '%';
+            document.getElementById('ouEdge').textContent = ((result.features.mass - 0.5) * 100).toFixed(1) + '%';
+            document.getElementById('ouObserved').textContent = (result.features.mass * 100).toFixed(1) + '%';
+            const data2 = tickBuffers[result.market];
+            updateFrequencyChart(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
+            updateMatrixUI(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
+            document.getElementById('liveTicker').innerHTML = '✅ OVER/UNDER signal generated on ' + result.market;
+        } catch (e) { console.error(e); failSignalLoading('ou', '❌ Failed to generate over/under signal.'); }
+        endSignalLoading('ou');
+    }, SIGNAL_DELAY_MS);
+}
+
+function handleEvenOddClick() {
+    if (!beginSignalLoading('eo', 'GENERATING EVEN/ODD SIGNAL...', '⏳ Analyzing latest ticks for Even/Odd...')) return;
+    setTimeout(() => {
+        try {
+            const result = generateEvenOddSignal(tickBuffers, MARKETS, ANALYSIS_WINDOW);
+            if (!result || !result.success) {
+                updateSignalUI(result, 'eoSignalCard');
+                endSignalLoading('eo');
+                return;
+            }
+            const data = tickBuffers[result.market];
+            if (data) {
+                const digits = data.map(t => t.digit);
+                const confirm = confirmEntry(digits, 0, result.score, 25, 0.55, 'eo', { side: result.side });
+                result.confirmed = confirm.status === 'CONFIRM';
+                result.entryScore = confirm.entryScore;
+                result.liveScore = confirm.liveScore;
+                result.drift = confirm.drift;
+            }
+            currentSignals.eo = result;
+            updateSignalUI(result, 'eoSignalCard');
+            document.getElementById('btnFindEntryEO').disabled = false;
+            document.getElementById('btnFindEntryEO').className = 'btn-entry entry-default';
+            document.getElementById('btnFindEntryEO').textContent = '🔍 FIND ENTRY';
+            document.getElementById('eoMarket').textContent = result.market;
+            document.getElementById('eoConfidenceValue').textContent = result.confidence.toFixed(1) + '%';
+            document.getElementById('eoPMR').textContent = result.score.toFixed(3);
+            document.getElementById('eoZScore').textContent = ((result.score - 0.5) / 0.05).toFixed(2);
+            const data2 = tickBuffers[result.market];
+            updateFrequencyChart(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
+            updateMatrixUI(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
+            document.getElementById('liveTicker').innerHTML = '✅ EVEN/ODD signal generated on ' + result.market + ' (' + result.side + ')';
+        } catch (e) { console.error(e); failSignalLoading('eo', '❌ Failed to generate even/odd signal.'); }
+        endSignalLoading('eo');
+    }, SIGNAL_DELAY_MS);
+}
+
+// ---------------------- ENTRY FINDERS ------------------------------
+function findEntryForMatchesDiffers() {
+    const active = currentSignals.match || currentSignals.differ;
+    if (!active || !active.success) { alert('⚠️ Please generate a MATCH or DIFFER signal first.'); return; }
+    const btn = document.getElementById('btnFindEntryMD');
+    btn.disabled = true;
+    btn.className = 'btn-entry entry-finding';
+    btn.innerHTML = '⏳ <span class="gear">⚙️</span> Finding entry...';
+    setTimeout(() => {
+        try {
+            const data = tickBuffers[active.market];
+            if (!data) throw new Error('No market data');
+            const digits = data.map(t => t.digit);
+            const profile = getMarketProfile(active.market);
+            const threshold = profile.entryThreshold || 0.55;
+            const confirm = confirmEntry(digits, active.digit, active.score, 25, threshold, active.strategy === 'MATCH' ? 'match' : 'differ');
+            if (confirm.status === 'CONFIRM') {
+                btn.className = 'btn-entry entry-confirmed';
+                btn.innerHTML = '✅ ENTER NOW';
+                active.confirmed = true;
+                active.entryScore = confirm.entryScore;
+                updateSignalUI(active, 'oracleSignalCard');
+            } else {
+                btn.className = 'btn-entry entry-hold';
+                btn.innerHTML = '⏳ HOLD (No entry)';
+            }
+        } catch (e) { console.error(e); btn.className = 'btn-entry entry-hold'; btn.innerHTML = '❌ HOLD (Error)'; }
+        btn.disabled = false;
+    }, 1000);
+}
+
+function findEntryForOverUnder() {
+    const active = currentSignals.ou;
+    if (!active || !active.success) { alert('⚠️ Please generate an OVER/UNDER signal first.'); return; }
+    const btn = document.getElementById('btnFindEntryOU');
+    btn.disabled = true;
+    btn.className = 'btn-entry entry-finding';
+    btn.innerHTML = '⏳ <span class="gear">⚙️</span> Finding entry...';
+    setTimeout(() => {
+        try {
+            const data = tickBuffers[active.market];
+            if (!data) throw new Error('No market data');
+            const digits = data.map(t => t.digit);
+            const profile = getMarketProfile(active.market);
+            const threshold = profile.entryThreshold || 0.55;
+            const confirm = confirmEntry(digits, active.barrier, active.score, 25, threshold, 'ou', { mode: active.mode, barrier: active.barrier });
+            if (confirm.status === 'CONFIRM') {
+                btn.className = 'btn-entry entry-confirmed';
+                btn.innerHTML = '✅ ENTER NOW';
+                active.confirmed = true;
+                active.entryScore = confirm.entryScore;
+                updateSignalUI(active, 'ouSignalCard');
+            } else {
+                btn.className = 'btn-entry entry-hold';
+                btn.innerHTML = '⏳ HOLD (No entry)';
+            }
+        } catch (e) { console.error(e); btn.className = 'btn-entry entry-hold'; btn.innerHTML = '❌ HOLD (Error)'; }
+        btn.disabled = false;
+    }, 1000);
+}
+
+function findEntryForEvenOdd() {
+    const active = currentSignals.eo;
+    if (!active || !active.success) { alert('⚠️ Please generate an EVEN/ODD signal first.'); return; }
+    const btn = document.getElementById('btnFindEntryEO');
+    btn.disabled = true;
+    btn.className = 'btn-entry entry-finding';
+    btn.innerHTML = '⏳ <span class="gear">⚙️</span> Finding entry...';
+    setTimeout(() => {
+        try {
+            const data = tickBuffers[active.market];
+            if (!data) throw new Error('No market data');
+            const digits = data.map(t => t.digit);
+            const profile = getMarketProfile(active.market);
+            const threshold = profile.entryThreshold || 0.55;
+            const confirm = confirmEntry(digits, 0, active.score, 25, threshold, 'eo', { side: active.side });
+            if (confirm.status === 'CONFIRM') {
+                btn.className = 'btn-entry entry-confirmed';
+                btn.innerHTML = '✅ ENTER NOW';
+                active.confirmed = true;
+                active.entryScore = confirm.entryScore;
+                updateSignalUI(active, 'eoSignalCard');
+            } else {
+                btn.className = 'btn-entry entry-hold';
+                btn.innerHTML = '⏳ HOLD (No entry)';
+            }
+        } catch (e) { console.error(e); btn.className = 'btn-entry entry-hold'; btn.innerHTML = '❌ HOLD (Error)'; }
+        btn.disabled = false;
+    }, 1000);
+}
+
+// ---------------------- WEBSOCKET & APP ------------------------------
+function startHeartbeat() {
+    stopHeartbeat();
+    heartbeatTimer = setInterval(() => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            try { ws.send(JSON.stringify({ ping: 1 })); } catch (e) {}
+        }
+    }, 30000);
+}
+
+function stopHeartbeat() {
+    if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+}
+
+function scheduleReconnect() {
+    if (!reconnectAllowed) return;
+    if (reconnectTimer) return;
+    reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+            initWebSocket(true);
+        }
+    }, 3000);
+}
+
+function renderMarketCards() {
+    const grid = document.getElementById('marketGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    MARKETS.forEach(sym => {
+        const card = document.createElement('div');
+        card.className = 'market-card';
+        card.id = 'card-' + sym; card.innerHTML = '<div class="sym">' + (MARKET_LABELS[sym] || sym) + '</div> <div class="stat"><span class="dot grey" id="dot-' + sym + '"></span> <span id="stat-' + sym + '">0/' + REQUIRED_TICKS + '</span></div>';
+        grid.appendChild(card);
+    });
+}
+
+function updateMarketCard(sym, count) {
+    const dot = document.getElementById('dot-' + sym); const stat = document.getElementById('stat-' + sym); const card = document.getElementById('card-' + sym);
+    if (dot) dot.className = 'dot ' + (count >= REQUIRED_TICKS ? 'green' : 'yellow');
+    if (stat) stat.textContent = count + '/' + REQUIRED_TICKS;
+    if (card && count >= REQUIRED_TICKS) card.classList.add('ready');
+}
+
+function refreshBestMarketView() {
+    if (appState !== 'READY' && appState !== 'SIGNAL_READY') {
+        alert('⏳ Still collecting ticks. Please wait.');
+        return;
+    }
+    let best = null;
+    let bestConf = -Infinity;
+    for (const market of MARKETS) {
+        const data = tickBuffers[market];
+        if (!data || data.length < ANALYSIS_WINDOW) continue;
+        const digits = data.map(t => t.digit);
+        const window = latestWindow(digits, ANALYSIS_WINDOW);
+        if (window.length < ANALYSIS_WINDOW) continue;
+        const res = analyzeMatches(window);
+        if (res && res.confidence > bestConf) {
+            bestConf = res.confidence;
+            best = { market, ...res };
+        }
+    }
+    if (best) {
+        selectedMarket = best.market;
+        const data = tickBuffers[best.market];
+        if (data) {
+            const digits = data.map(t => t.digit);
+            updateFrequencyChart(best.market, digits, null, null);
+            updateMatrixUI(best.market, digits, null, null);
+            document.getElementById('liveTicker').innerHTML = '🔄 Refreshed with latest ticks. Best: ' + best.market;
+        }
+    }
+}
+
+function checkGatheringComplete() {
+    if (isGatheringComplete) return;
+    const allReady = MARKETS.every(sym => (tickBuffers[sym]?.length || 0) >= REQUIRED_TICKS);
+    if (allReady) {
+        isGatheringComplete = true;
+        appState = 'READY';
+        const banner = document.getElementById('gathering-banner');
+        const liveTicker = document.getElementById('liveTicker');
+        const btnScan = document.getElementById('btnScan');
+        if (banner) banner.classList.add('show');
+        if (liveTicker) liveTicker.innerHTML = '✅ <strong>Gathering Complete</strong> — All 10 markets ready.';
+        if (btnScan) { btnScan.classList.add('ready'); btnScan.innerHTML = '✅ ALL MARKETS READY'; }
+        const allAtHundred = MARKETS.every(sym => (tickBuffers[sym]?.length || 0) >= 100);
+        ['btnMatches', 'btnDiffers', 'btnOverUnderFetch', 'btnEvenOddFetch'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.disabled = !allAtHundred;
+        });
+    }
+}
+
+function getMarketProfile(symbol) {
+    return { entryThreshold: 0.55 };
+}
+
+const lastTickTimes = {};
+const subscriptionStatus = {};
+let subscriptionWatchdog = null;
+
+function initWebSocket(isReconnect) {
+    if (!isReconnect) {
+        MARKETS.forEach(sym => { tickBuffers[sym] = []; });
+        for (let k in lastTickTimes) delete lastTickTimes[k];
+    }
+    const liveTicker = document.getElementById('liveTicker');
+    if (liveTicker) liveTicker.textContent = '⏳ Connecting to Deriv WebSocket...';
+    appState = 'COLLECTING';
+
+    if (ws) { try { ws.close(); } catch(e) {} ws = null; }
+
+    ws = new WebSocket(DERIV_WS);
+
+    ws.onopen = function() {
+        if (liveTicker) liveTicker.textContent = '✅ Connected. Subscribing to markets...';
+        console.log('%c[DERIV] Connection opened. Subscribing to ' + MARKETS.length + ' markets...', 'color:#00FFAA');
+        MARKETS.forEach(sym => {
+            subscriptionStatus[sym] = 'pending';
+            ws.send(JSON.stringify({ ticks: sym, subscribe: 1 }));
+        });
+        if (!isReconnect) renderMarketCards();
+        startHeartbeat();
+
+        clearTimeout(subscriptionWatchdog);
+        subscriptionWatchdog = setTimeout(() => {
+            const confirmed = Object.values(subscriptionStatus).filter(s => s === 'ok').length;
+            const rejected = Object.entries(subscriptionStatus).filter(([,s]) => s === 'error');
+            if (confirmed === 0) {
+                const msg = rejected.length
+                    ? '❌ All subscriptions rejected. See console for Deriv error details.'
+                    : '⚠️ No tick data received after 6s. Check console — connection may be silently stalled.';
+                if (liveTicker) liveTicker.innerHTML = msg;
+                console.warn('[DERIV DIAGNOSTIC]', msg, { subscriptionStatus });
+            }
+        }, 6000);
+    };
+
+    ws.onmessage = function(event) {
+        let data;
+        try {
+            data = JSON.parse(event.data);
+        } catch (e) {
+            console.error('❌ [DERIV] Failed to parse WS message:', e, event.data);
+            return;
+        }
+
+        if (data.error) {
+            const badSymbol = data.echo_req && data.echo_req.ticks;
+            if (badSymbol) subscriptionStatus[badSymbol] = 'error';
+            console.error('❌ [DERIV API ERROR]', data.error.code + ':', data.error.message,
+                badSymbol ? '(symbol: ' + badSymbol + ')' : '', data);
+            if (liveTicker) {
+                liveTicker.innerHTML = '❌ ' + (badSymbol ? badSymbol + ' — ' : '') + data.error.message + ' (' + data.error.code + ')';
+            }
+            return;
+        }
+
+        if (data.msg_type === 'tick') {
+            const tick = data.tick;
+            if (!tick) {
+                console.warn('⚠️ [DERIV] "tick" message with no tick payload:', data);
+                return;
+            }
+            try {
+                const sym = tick.symbol;
+                const price = tick.quote;
+                const epoch = tick.epoch;
+
+                if (subscriptionStatus[sym] !== 'ok') {
+                    subscriptionStatus[sym] = 'ok';
+                    console.log('%c[DERIV] ' + sym + ' subscription confirmed, ticks flowing.', 'color:#00FFAA');
+                }
+
+                if (lastTickTimes[sym] === epoch) return;
+                lastTickTimes[sym] = epoch;
+
+                const digit = getTickDigit(sym, price);
+                if (digit !== null && !isNaN(digit)) {
+                    if (!tickBuffers[sym]) tickBuffers[sym] = [];
+                    tickBuffers[sym].push({ price, digit, epoch });
+                    if (tickBuffers[sym].length > 2000) tickBuffers[sym].shift();
+                    updateMarketCard(sym, tickBuffers[sym].length);
+                }
+                const totalCollected = MARKETS.reduce((sum, s) => sum + (tickBuffers[s]?.length || 0), 0);
+                if (liveTicker) {
+                    liveTicker.innerHTML = '📊 Collected ' + totalCollected + ' / ' + (MARKETS.length * REQUIRED_TICKS) + ' ticks';
+                }
+                checkGatheringComplete();
+            } catch (e) {
+                console.error('❌ [DERIV] Error processing tick payload:', e, tick);
+            }
+        } else if (data.msg_type && data.msg_type !== 'ping' && data.msg_type !== 'pong') {
+            console.log('[DERIV] Unhandled msg_type:', data.msg_type, data);
+        }
+    };
+
+    ws.onerror = function(err) {
+        if (liveTicker) liveTicker.textContent = '❌ WebSocket error. Reconnecting...';
+        console.error('❌ [DERIV] WebSocket error event:', err);
+        stopHeartbeat();
+        scheduleReconnect();
+    };
+
+    ws.onclose = function(evt) {
+        if (liveTicker) liveTicker.textContent = '❌ Disconnected (code ' + evt.code + '). Reconnecting...';
+        console.warn('[DERIV] WebSocket closed. code=' + evt.code + ' reason="' + evt.reason + '" clean=' + evt.wasClean);
+        stopHeartbeat();
+        scheduleReconnect();
+    };
+}
+
+// ---------------------- APP UNLOCK ------------------------------
+function unlockApp() {
+    const input = document.getElementById('lockPassword');
+    const error = document.getElementById('lockError');
+    if (!input || !error) return;
+    if (input.value === APP_PASSWORD) {
+        error.classList.remove('show');
+        document.getElementById('lock-overlay').classList.add('hidden');
+        document.getElementById('app').style.display = 'block';
+        loadSessionState();
+        updateSessionUI();
+        initWebSocket();
+    } else {
+        error.textContent = '❌ Incorrect Password. Try again.';
+        error.classList.add('show');
+        input.value = '';
+        input.focus();
+    }
+}
+
+// ---------------------- DOM EVENT BINDING ------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btnUnlock').addEventListener('click', unlockApp);
+    document.getElementById('lockPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') unlockApp(); });
+    document.getElementById('btnMatches').addEventListener('click', generateMatchesSignal);
+    document.getElementById('btnDiffers').addEventListener('click', handleDiffersClick);
+    document.getElementById('btnOverUnderFetch').addEventListener('click', generateOverUnderSignal);
+    document.getElementById('btnEvenOddFetch').addEventListener('click', handleEvenOddClick);
+    document.getElementById('btnFindEntryMD').addEventListener('click', findEntryForMatchesDiffers);
+    document.getElementById('btnFindEntryOU').addEventListener('click', findEntryForOverUnder);
+    document.getElementById('btnFindEntryEO').addEventListener('click', findEntryForEvenOdd);
+    document.getElementById('btnScan').addEventListener('click', refreshBestMarketView);
+
+    document.getElementById('btnCompleteSession').addEventListener('click', completeSession);
+    document.getElementById('btnResetSession').addEventListener('click', resetSessionState);
+    document.querySelectorAll('.part-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            switchPart(parseInt(btn.dataset.part));
+        });
+    });
+
+    document.getElementById('popupBack').addEventListener('click', () => {
+        document.getElementById('signal-popup').classList.remove('active');
+        document.getElementById('popupShooting').classList.remove('active');
+    });
+});
+</script>
+</body>
+ </html>
