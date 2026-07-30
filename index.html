@@ -6,7 +6,7 @@
 <title>EMBRAZE SOLACE v3.4 – Full Engine</title>
 <style>
 /* ============================================================
-STYLES – Full
+STYLES – Full + Session Planner
 ============================================================ */
 :root {
 --bg-dark: #0A0516;
@@ -114,7 +114,7 @@ justify-content: space-between;
 align-items: center;
 padding-bottom: 1rem;
 border-bottom: 1px solid rgba(168, 85, 247, 0.2);
-margin-bottom: 1.5rem;
+margin-bottom: 1rem;
 }
 header h1 {
 font-size: 1.5rem;
@@ -131,6 +131,217 @@ border-radius: 20px;
 font-size: 0.85rem;
 color: var(--neon-green);
 }
+
+/* ============================================================
+SESSION PLANNER
+============================================================ */
+.session-planner {
+background: var(--bg-card);
+border: 1px solid rgba(168, 85, 247, 0.2);
+border-radius: 12px;
+padding: 1.25rem;
+margin-bottom: 1.5rem;
+position: relative;
+overflow: hidden;
+}
+.session-planner::before {
+content: '';
+position: absolute;
+top: -50%;
+left: -50%;
+width: 200%;
+height: 200%;
+background: radial-gradient(circle at 0% 0%, rgba(168,85,247,0.03) 0%, transparent 70%);
+pointer-events: none;
+}
+.session-planner .planner-title {
+font-size: 1rem;
+font-weight: bold;
+color: var(--neon-purple);
+margin-bottom: 0.75rem;
+display: flex;
+align-items: center;
+gap: 10px;
+}
+.session-planner .planner-title span {
+color: var(--text-grey);
+font-weight: normal;
+font-size: 0.8rem;
+}
+.part-selector {
+display: flex;
+gap: 8px;
+margin-bottom: 1rem;
+flex-wrap: wrap;
+}
+.part-btn {
+padding: 0.5rem 1.2rem;
+background: rgba(255,255,255,0.05);
+border: 1px solid rgba(255,255,255,0.1);
+border-radius: 6px;
+color: var(--text-grey);
+cursor: pointer;
+font-weight: bold;
+font-size: 0.8rem;
+transition: all 0.3s;
+}
+.part-btn:hover {
+background: rgba(168,85,247,0.1);
+border-color: var(--neon-purple);
+}
+.part-btn.active {
+background: rgba(168,85,247,0.2);
+border-color: var(--neon-purple);
+color: white;
+box-shadow: 0 0 20px rgba(168,85,247,0.15);
+}
+.part-btn .part-balance {
+display: block;
+font-size: 0.7rem;
+color: var(--neon-gold);
+font-weight: normal;
+margin-top: 2px;
+}
+.session-grid {
+display: grid;
+grid-template-columns: 1fr 1fr 1fr 1fr;
+gap: 0.5rem;
+margin-bottom: 1rem;
+}
+.session-stat {
+background: rgba(0,0,0,0.2);
+border-radius: 6px;
+padding: 0.5rem 0.75rem;
+text-align: center;
+}
+.session-stat .label {
+font-size: 0.6rem;
+color: var(--text-grey);
+text-transform: uppercase;
+letter-spacing: 1px;
+}
+.session-stat .value {
+font-size: 1.1rem;
+font-weight: bold;
+color: white;
+}
+.session-stat .value.profit {
+color: var(--neon-green);
+}
+.session-stat .value.stake {
+color: var(--neon-gold);
+}
+.session-stat .value.balance {
+color: var(--neon-cyan);
+}
+.session-stat .value.session-num {
+color: var(--neon-purple);
+}
+.progress-container {
+background: rgba(0,0,0,0.2);
+border-radius: 6px;
+height: 8px;
+margin-bottom: 0.75rem;
+overflow: hidden;
+position: relative;
+}
+.progress-fill {
+height: 100%;
+background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
+border-radius: 6px;
+transition: width 0.5s ease;
+width: 0%;
+}
+.progress-text {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+font-size: 0.6rem;
+color: var(--text-grey);
+font-weight: bold;
+}
+.session-actions {
+display: flex;
+gap: 10px;
+align-items: center;
+flex-wrap: wrap;
+}
+.btn-complete {
+padding: 0.6rem 1.5rem;
+background: linear-gradient(135deg, var(--neon-green), #00CC88);
+border: none;
+border-radius: 6px;
+color: #0A0516;
+font-weight: bold;
+font-size: 0.85rem;
+cursor: pointer;
+transition: all 0.3s;
+}
+.btn-complete:hover {
+transform: translateY(-2px);
+box-shadow: 0 0 25px rgba(0,255,170,0.3);
+}
+.btn-complete:disabled {
+opacity: 0.4;
+cursor: not-allowed;
+transform: none;
+box-shadow: none;
+}
+.btn-reset {
+padding: 0.6rem 1.2rem;
+background: rgba(255,255,255,0.05);
+border: 1px solid rgba(255,255,255,0.1);
+border-radius: 6px;
+color: var(--text-grey);
+font-size: 0.8rem;
+cursor: pointer;
+transition: all 0.3s;
+}
+.btn-reset:hover {
+background: rgba(239,68,68,0.1);
+border-color: #EF4444;
+color: #EF4444;
+}
+.session-history {
+margin-top: 0.75rem;
+max-height: 100px;
+overflow-y: auto;
+font-size: 0.7rem;
+color: var(--text-grey);
+border-top: 1px solid rgba(255,255,255,0.05);
+padding-top: 0.5rem;
+}
+.session-history::-webkit-scrollbar {
+width: 4px;
+}
+.session-history::-webkit-scrollbar-thumb {
+background: var(--neon-purple);
+border-radius: 2px;
+}
+.session-history .history-row {
+display: flex;
+justify-content: space-between;
+padding: 2px 0;
+border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.session-history .history-row .h-profit {
+color: var(--neon-green);
+}
+.session-complete-badge {
+display: inline-block;
+background: var(--neon-green);
+color: #0A0516;
+font-size: 0.6rem;
+padding: 1px 8px;
+border-radius: 10px;
+font-weight: bold;
+margin-left: 6px;
+}
+
+/* ============================================================
+REST OF STYLES
+============================================================ */
 .gathering-banner {
 background: rgba(0, 255, 170, 0.1);
 border: 1px solid var(--neon-green);
@@ -195,164 +406,6 @@ padding-bottom: 0.5rem;
 .col-left { grid-column: span 4; }
 .col-mid { grid-column: span 4; }
 .col-right { grid-column: span 4; }
-.col-full { grid-column: span 12; }
-
-/* ============================================================
-SESSION PROFIT PLANNER
-============================================================ */
-.planner-parts {
-display: grid;
-grid-template-columns: repeat(4, 1fr);
-gap: 0.75rem;
-margin-bottom: 1.25rem;
-}
-.part-card {
-background: var(--bg-input);
-border: 1px solid rgba(255, 255, 255, 0.08);
-border-radius: 10px;
-padding: 0.9rem 0.75rem;
-text-align: center;
-cursor: pointer;
-transition: all 0.2s;
-}
-.part-card:hover { border-color: var(--neon-purple); }
-.part-card.active {
-border-color: var(--neon-cyan);
-background: linear-gradient(160deg, rgba(0,255,240,0.08), var(--bg-input));
-box-shadow: 0 0 16px rgba(0,255,240,0.15);
-}
-.part-card .part-name { font-size: 0.85rem; font-weight: bold; color: white; letter-spacing: 0.5px; }
-.part-card .part-balance { font-size: 1.1rem; color: var(--neon-cyan); font-weight: bold; margin-top: 0.35rem; }
-.part-card .part-progress { font-size: 0.7rem; color: var(--text-grey); margin-top: 0.3rem; }
-
-.planner-empty {
-text-align: center;
-color: var(--text-grey);
-font-size: 0.85rem;
-padding: 2rem 0;
-}
-
-.planner-stats {
-display: grid;
-grid-template-columns: repeat(4, 1fr);
-gap: 0.75rem;
-margin-bottom: 1rem;
-}
-.stat-box {
-background: var(--bg-input);
-border-radius: 8px;
-padding: 0.7rem 0.8rem;
-border-left: 3px solid var(--neon-purple);
-}
-.stat-box .stat-label { font-size: 0.68rem; color: var(--text-grey); letter-spacing: 0.5px; text-transform: uppercase; }
-.stat-box .stat-value { font-size: 1.15rem; font-weight: bold; color: white; margin-top: 0.2rem; }
-.stat-box.gold { border-left-color: var(--neon-gold); }
-.stat-box.gold .stat-value { color: var(--neon-gold); }
-.stat-box.green { border-left-color: var(--neon-green); }
-.stat-box.green .stat-value { color: var(--neon-green); }
-.stat-box.pink { border-left-color: var(--neon-pink); }
-.stat-box.pink .stat-value { color: var(--neon-pink); }
-
-.planner-progress-bar {
-width: 100%;
-height: 6px;
-background: rgba(255,255,255,0.06);
-border-radius: 4px;
-overflow: hidden;
-margin-bottom: 1rem;
-}
-.planner-progress-bar .fill {
-height: 100%;
-background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
-transition: width 0.3s ease;
-}
-
-.planner-table-wrap {
-max-height: 420px;
-overflow-y: auto;
-border-radius: 10px;
-border: 1px solid rgba(255,255,255,0.06);
-}
-table.planner-table {
-width: 100%;
-border-collapse: collapse;
-font-size: 0.82rem;
-}
-table.planner-table thead th {
-position: sticky;
-top: 0;
-background: #1B1135;
-color: var(--text-grey);
-text-transform: uppercase;
-font-size: 0.68rem;
-letter-spacing: 0.5px;
-padding: 0.6rem 0.6rem;
-text-align: left;
-border-bottom: 1px solid rgba(255,255,255,0.08);
-z-index: 1;
-}
-table.planner-table tbody td {
-padding: 0.55rem 0.6rem;
-border-bottom: 1px solid rgba(255,255,255,0.04);
-color: var(--text-main);
-}
-table.planner-table tbody tr.row-done { opacity: 0.45; }
-table.planner-table tbody tr.row-current { background: rgba(0, 255, 240, 0.06); }
-table.planner-table tbody tr.row-current td { color: white; }
-table.planner-table tbody tr.row-future td.cell-profit,
-table.planner-table tbody tr.row-future td.cell-stake { color: var(--text-grey); }
-.session-badge {
-display: inline-block;
-padding: 0.15rem 0.5rem;
-border-radius: 6px;
-font-size: 0.7rem;
-font-weight: bold;
-}
-.session-badge.done { background: rgba(0,255,170,0.12); color: var(--neon-green); }
-.session-badge.current { background: rgba(0,255,240,0.15); color: var(--neon-cyan); }
-.session-badge.future { background: rgba(255,255,255,0.05); color: var(--text-grey); }
-.btn-complete {
-padding: 0.4rem 0.8rem;
-background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
-border: none;
-color: white;
-font-size: 0.72rem;
-font-weight: bold;
-border-radius: 6px;
-cursor: pointer;
-white-space: nowrap;
-}
-.btn-complete:hover { box-shadow: 0 0 12px rgba(236,72,153,0.4); }
-.btn-complete:disabled { opacity: 0.25; cursor: not-allowed; box-shadow: none; }
-.btn-reset-part {
-padding: 0.35rem 0.75rem;
-background: rgba(255,255,255,0.05);
-border: 1px solid rgba(255,255,255,0.15);
-color: var(--text-grey);
-font-size: 0.72rem;
-border-radius: 6px;
-cursor: pointer;
-margin-left: 0.6rem;
-}
-.btn-reset-part:hover { border-color: var(--neon-pink); color: var(--neon-pink); }
-.planner-header-row {
-display: flex;
-justify-content: space-between;
-align-items: center;
-margin-bottom: 1rem;
-flex-wrap: wrap;
-gap: 0.5rem;
-}
-.planner-complete-banner {
-text-align: center;
-padding: 1.2rem;
-background: linear-gradient(135deg, rgba(0,255,170,0.1), rgba(0,255,240,0.05));
-border: 1px solid rgba(0,255,170,0.3);
-border-radius: 10px;
-color: var(--neon-green);
-font-weight: bold;
-margin-bottom: 1rem;
-}
 
 .btn-scan {
 width: 100%;
@@ -736,6 +789,9 @@ z-index: 1001;
 
 @media (max-width: 1024px) {
 .col-left, .col-mid, .col-right { grid-column: span 12; }
+.session-grid {
+grid-template-columns: 1fr 1fr;
+}
 }
 </style>
 </head>
@@ -756,6 +812,67 @@ z-index: 1001;
 <h1>EMBRAZE SOLACE v3.4 // DAIE‑V4 FULL</h1>
 <div class="live-ticker-container" id="liveTicker">⏳ Gateway offline. Terminal standby.</div>
 </header>
+
+<!-- ============================================================
+SESSION PLANNER
+============================================================ -->
+<div class="session-planner" id="sessionPlanner">
+<div class="planner-title">
+📊 SESSION PLANNER
+<span>— Track your profit sessions</span>
+</div>
+
+<div class="part-selector" id="partSelector">
+<button class="part-btn active" data-part="1">
+Part 1 <span class="part-balance">$20 Balance</span>
+</button>
+<button class="part-btn" data-part="2">
+Part 2 <span class="part-balance">$100 Balance</span>
+</button>
+<button class="part-btn" data-part="3">
+Part 3 <span class="part-balance">$400 Balance</span>
+</button>
+<button class="part-btn" data-part="4">
+Part 4 <span class="part-balance">$1600 Balance</span>
+</button>
+</div>
+
+<div class="session-grid">
+<div class="session-stat">
+<div class="label">Session</div>
+<div class="value session-num" id="currentSession">1 / 30</div>
+</div>
+<div class="session-stat">
+<div class="label">Target Profit</div>
+<div class="value profit" id="targetProfit">$1.00</div>
+</div>
+<div class="session-stat">
+<div class="label">Balance</div>
+<div class="value balance" id="currentBalance">$20.00</div>
+</div>
+<div class="session-stat">
+<div class="label">Stake (Balance/12.5)</div>
+<div class="value stake" id="currentStake">$1.60</div>
+</div>
+</div>
+
+<div class="progress-container">
+<div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+<div class="progress-text" id="progressText">0 / 30</div>
+</div>
+
+<div class="session-actions">
+<button class="btn-complete" id="btnCompleteSession">✅ Complete Session</button>
+<button class="btn-reset" id="btnResetSession">↺ Reset</button>
+<span style="font-size:0.7rem; color:var(--text-grey); margin-left:auto;" id="sessionStatus">Ready</span>
+</div>
+
+<div class="session-history" id="sessionHistory">
+<div style="color:var(--text-grey); font-size:0.7rem; text-align:center; padding:4px 0;">No sessions completed yet</div>
+</div>
+</div>
+
+<!-- ============================================================ -->
 
 <div class="gathering-banner" id="gathering-banner">
 🚀 QUANTUM STREAM SYNC COMPLETE: All 10 markets compiled.
@@ -860,18 +977,6 @@ z-index: 1001;
 </div>
 </div>
 
-<div class="workspace" style="margin-top: 1.5rem;">
-<div class="panel col-full">
-<div class="panel-title">SESSION PROFIT PLANNER <span class="m-label" id="plannerPartLabel"></span></div>
-
-<div class="planner-parts" id="plannerParts"></div>
-
-<div id="plannerBody">
-<div class="planner-empty">⏳ Select a Part above to begin your session plan</div>
-</div>
-</div>
-</div>
-
 <div class="popup-backdrop" id="popupBack"></div>
 <div class="signal-popup" id="signal-popup">
 <div class="shooting-ray" id="popupShooting"></div>
@@ -889,21 +994,15 @@ z-index: 1001;
 
 <script>
 // ================================================================
-// DAIE‑V4 ENGINE – V14 LOGIC (relaxed thresholds for consistent signals)
+// DAIE‑V4 ENGINE – V14 LOGIC + SESSION PLANNER
 // ================================================================
 
 // ---------------------- CONSTANTS ------------------------------
 const APP_PASSWORD = 'SUCCESSV12';
-// Deriv migrated off the legacy wss://ws.derivws.com/websockets/v3?app_id=... endpoint.
-// Current public (no-auth) market-data endpoint per developers.deriv.com:
 const DERIV_WS = 'wss://api.derivws.com/trading/v1/options/ws/public';
-const REQUIRED_TICKS = 300; // was 100 — need enough sample size for real deviations to be statistically detectable
-const ANALYSIS_WINDOW = 300; // was 100 — larger window = more statistical power at the same confidence level
-// TUNABLE DIAL: one-tailed z-score required for a signal to be considered real (not noise).
-// Lower this  -> more frequent signals, more false positives.
-// Raise this  -> rarer signals, higher reliability.
-// Reference:  z=1.28 ~ 90% confidence | z=1.64 ~ 95% | z=2.0 ~ 97.7% | z=2.33 ~ 99%
-const SIGNIFICANCE_Z = 1.5; // ~93.3% one-tailed confidence — a reasonable middle ground, not the extreme strictness that returned nothing for two days
+const REQUIRED_TICKS = 300;
+const ANALYSIS_WINDOW = 300;
+const SIGNIFICANCE_Z = 1.5;
 const SIGNAL_DELAY_MS = 10000;
 
 // Full 10 markets
@@ -924,6 +1023,210 @@ const MARKET_LABELS = {
 'JD100': 'Jump 100'
 };
 
+// ---------------------- SESSION PLANNER DATA ------------------------------
+const SESSION_PROFITS = {
+    1: [1.00, 1.10, 1.21, 1.33, 1.46, 1.61, 1.77, 1.95, 2.14, 2.36, 2.59, 2.85, 3.14, 3.45, 3.80, 4.18, 4.59, 5.05, 5.56, 6.12, 6.73, 7.40, 8.14, 8.95, 9.85, 10.83, 11.92, 13.11, 14.42, 15.86],
+    2: [5.00, 5.50, 6.05, 6.66, 7.32, 8.05, 8.86, 9.74, 10.72, 11.79, 12.97, 14.27, 15.69, 17.26, 18.99, 20.89, 22.97, 25.27, 27.80, 30.58, 33.64, 37.00, 40.70, 44.77, 49.25, 54.17, 59.59, 65.55, 72.10, 79.32],
+    3: [20.00, 22.00, 24.20, 26.62, 29.28, 32.21, 35.43, 38.97, 42.87, 47.16, 51.88, 57.07, 62.78, 69.06, 75.97, 83.57, 91.93, 101.12, 111.23, 122.35, 134.59, 148.05, 162.86, 179.15, 197.07, 216.78, 238.46, 262.31, 288.54, 317.39],
+    4: [80.00, 88.00, 96.80, 106.48, 117.13, 128.84, 141.72, 155.89, 171.48, 188.63, 207.49, 228.24, 251.06, 276.17, 303.79, 334.17, 367.59, 404.35, 444.79, 489.27, 538.20, 592.02, 651.22, 716.34, 787.97, 866.77, 953.45, 1048.80, 1153.68, 1269.05]
+};
+
+const PART_CONFIG = {
+    1: { startingBalance: 20, label: 'Part 1', balanceLabel: '$20 Balance' },
+    2: { startingBalance: 100, label: 'Part 2', balanceLabel: '$100 Balance' },
+    3: { startingBalance: 400, label: 'Part 3', balanceLabel: '$400 Balance' },
+    4: { startingBalance: 1600, label: 'Part 4', balanceLabel: '$1600 Balance' }
+};
+
+// ---------------------- SESSION STATE ------------------------------
+let sessionState = {
+    part: 1,
+    balance: 20,
+    currentSession: 1,
+    completedSessions: [],
+    history: []
+};
+
+// Load from localStorage
+function loadSessionState() {
+    try {
+        const saved = localStorage.getItem('embraze_session_state');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            sessionState = parsed;
+            // Ensure all fields exist
+            if (!sessionState.history) sessionState.history = [];
+            if (!sessionState.completedSessions) sessionState.completedSessions = [];
+            return true;
+        }
+    } catch(e) {}
+    return false;
+}
+
+function saveSessionState() {
+    try {
+        localStorage.setItem('embraze_session_state', JSON.stringify(sessionState));
+    } catch(e) {}
+}
+
+function resetSessionState() {
+    sessionState = {
+        part: 1,
+        balance: PART_CONFIG[1].startingBalance,
+        currentSession: 1,
+        completedSessions: [],
+        history: []
+    };
+    saveSessionState();
+    updateSessionUI();
+}
+
+// ---------------------- SESSION UI FUNCTIONS ------------------------------
+function getProfitForSession(part, sessionNum) {
+    const profits = SESSION_PROFITS[part];
+    if (!profits) return 0;
+    if (sessionNum < 1 || sessionNum > profits.length) return 0;
+    return profits[sessionNum - 1];
+}
+
+function getStake(balance) {
+    return Math.round((balance / 12.5) * 100) / 100;
+}
+
+function updateSessionUI() {
+    const part = sessionState.part;
+    const currentSession = sessionState.currentSession;
+    const balance = sessionState.balance;
+    const totalSessions = SESSION_PROFITS[part].length;
+    const targetProfit = getProfitForSession(part, currentSession);
+    const stake = getStake(balance);
+    const completed = sessionState.completedSessions.length;
+
+    document.getElementById('currentSession').textContent = currentSession + ' / ' + totalSessions;
+    document.getElementById('targetProfit').textContent = '$' + targetProfit.toFixed(2);
+    document.getElementById('currentBalance').textContent = '$' + balance.toFixed(2);
+    document.getElementById('currentStake').textContent = '$' + stake.toFixed(2);
+
+    const progress = Math.min(100, (completed / totalSessions) * 100);
+    document.getElementById('progressFill').style.width = progress + '%';
+    document.getElementById('progressText').textContent = completed + ' / ' + totalSessions;
+
+    // Update part buttons
+    document.querySelectorAll('.part-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.part) === part);
+    });
+
+    // Update history
+    const historyContainer = document.getElementById('sessionHistory');
+    if (sessionState.history.length === 0) {
+        historyContainer.innerHTML = '<div style="color:var(--text-grey); font-size:0.7rem; text-align:center; padding:4px 0;">No sessions completed yet</div>';
+    } else {
+        let html = '';
+        const reversed = [...sessionState.history].reverse();
+        for (const entry of reversed) {
+            html += `<div class="history-row">
+                <span>Session ${entry.session} — ${entry.part === 1 ? 'Part 1' : entry.part === 2 ? 'Part 2' : entry.part === 3 ? 'Part 3' : 'Part 4'}</span>
+                <span class="h-profit">+$${entry.profit.toFixed(2)}</span>
+            </div>`;
+        }
+        historyContainer.innerHTML = html;
+    }
+
+    // Check if all sessions complete
+    if (completed >= totalSessions) {
+        document.getElementById('btnCompleteSession').disabled = true;
+        document.getElementById('btnCompleteSession').textContent = '🎯 All Complete!';
+        document.getElementById('sessionStatus').textContent = '✅ Completed!';
+        document.getElementById('sessionStatus').style.color = 'var(--neon-green)';
+    } else {
+        document.getElementById('btnCompleteSession').disabled = false;
+        document.getElementById('btnCompleteSession').textContent = '✅ Complete Session';
+        document.getElementById('sessionStatus').textContent = 'Ready';
+        document.getElementById('sessionStatus').style.color = 'var(--text-grey)';
+    }
+
+    saveSessionState();
+}
+
+function completeSession() {
+    const part = sessionState.part;
+    const currentSession = sessionState.currentSession;
+    const totalSessions = SESSION_PROFITS[part].length;
+
+    if (currentSession > totalSessions) {
+        alert('All sessions completed for this part!');
+        return;
+    }
+
+    const profit = getProfitForSession(part, currentSession);
+    const stake = getStake(sessionState.balance);
+
+    // Record the session
+    sessionState.completedSessions.push(currentSession);
+    sessionState.history.push({
+        session: currentSession,
+        part: part,
+        profit: profit,
+        stake: stake,
+        balanceBefore: sessionState.balance,
+        balanceAfter: sessionState.balance + profit,
+        timestamp: Date.now()
+    });
+
+    // Update balance
+    sessionState.balance = Math.round((sessionState.balance + profit) * 100) / 100;
+
+    // Move to next session
+    sessionState.currentSession++;
+
+    // Check if all sessions complete
+    if (sessionState.completedSessions.length >= totalSessions) {
+        const btn = document.getElementById('btnCompleteSession');
+        btn.disabled = true;
+        btn.textContent = '🎯 All Complete!';
+        document.getElementById('sessionStatus').textContent = '✅ Part ' + part + ' Complete!';
+        document.getElementById('sessionStatus').style.color = 'var(--neon-green)';
+    }
+
+    saveSessionState();
+    updateSessionUI();
+}
+
+function switchPart(part) {
+    // Check if we have an active session in progress
+    const currentPart = sessionState.part;
+    const currentSession = sessionState.currentSession;
+    const totalSessions = SESSION_PROFITS[currentPart].length;
+
+    // If the current part is not complete and we're switching, warn
+    if (sessionState.completedSessions.length < totalSessions && currentPart !== part) {
+        if (!confirm('You have an active session in Part ' + currentPart + '. Switching will reset progress. Continue?')) {
+            return;
+        }
+    }
+
+    // Reset to the selected part
+    sessionState.part = part;
+    sessionState.balance = PART_CONFIG[part].startingBalance;
+    sessionState.currentSession = 1;
+    sessionState.completedSessions = [];
+    sessionState.history = [];
+
+    saveSessionState();
+    updateSessionUI();
+
+    // Update part buttons
+    document.querySelectorAll('.part-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.part) === part);
+    });
+
+    // Re-enable complete button
+    document.getElementById('btnCompleteSession').disabled = false;
+    document.getElementById('btnCompleteSession').textContent = '✅ Complete Session';
+    document.getElementById('sessionStatus').textContent = 'Ready';
+    document.getElementById('sessionStatus').style.color = 'var(--text-grey)';
+}
+
 // ---------------------- GLOBALS --------------------------------
 let tickBuffers = {};
 let appState = 'IDLE';
@@ -934,7 +1237,7 @@ let heartbeatTimer = null;
 let isGatheringComplete = false;
 let selectedMarket = null;
 let adaptiveProfiles = {};
-let sessionState = {
+let tradeSession = {
 tradesToday: 0,
 maxTradesPerDay: 30,
 maxTradesPerSession: 10,
@@ -954,35 +1257,23 @@ let lastSignalMarket = null;
 let lastEntryDigit = null;
 let lastDifferDigit = null;
 
-// ---------------------- HELPER: confidence to percent -------------------------
+// ---------------------- HELPER FUNCTIONS ------------------------------
 function confidenceToPercent(conf) {
     return Math.round(Math.max(0, Math.min(100, conf * 100)));
 }
 
-// ---------------------- HELPER: z-score -> one-tailed confidence -------------------------
-// Standard normal CDF approximation (Zelen & Severo). Converts a z-score into
-// an honest probability that the observed deviation is NOT just random noise.
 function zToConfidence(z) {
     const absZ = Math.abs(z);
     const t = 1 / (1 + 0.2316419 * absZ);
     const d = 0.3989423 * Math.exp(-absZ * absZ / 2);
     const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
-    return Math.max(0, Math.min(0.999, 1 - p)); // one-tailed cumulative confidence
+    return Math.max(0, Math.min(0.999, 1 - p));
 }
 
-// Standard error for a binomial proportion test at sample size n against baseline p0
 function binomialSE(p0, n) {
     return Math.sqrt(p0 * (1 - p0) / n);
 }
 
-// MATCH and DIFFER don't test one fixed hypothesis — they pick the MOST (or LEAST)
-// frequent digit out of 10 candidates every time. That "pick the best of 10" step is
-// itself a multiple-comparisons problem, separate from the 10-market scan. Left
-// uncorrected, this makes the dominant digit in a random window look "significant"
-// most of the time by pure arithmetic (verified: ~60% false-positive rate on random
-// data at the plain SIGNIFICANCE_Z). This corrects for it via a Bonferroni-style
-// adjustment so a MATCH/DIFFER signal means the same confidence level as an
-// EVEN/ODD or OVER/UNDER signal, not a much weaker one dressed up the same way.
 function bonferroniZ(targetZ, numComparisons) {
     const targetAlpha = 1 - zToConfidence(targetZ);
     const correctedAlpha = targetAlpha / numComparisons;
@@ -996,18 +1287,15 @@ function bonferroniZ(targetZ, numComparisons) {
 }
 const DIGIT_SIGNIFICANCE_Z = bonferroniZ(SIGNIFICANCE_Z, 10);
 
-// ---------------------- ENGINE 1: OVER/UNDER (z-score against true 50% baseline) ---------------------
+// ---------------------- SIGNAL ENGINES ------------------------------
 function overUnderSignal(window) {
     const n = window.length;
     const over = window.filter(d => d >= 5).length;
     const overProb = over / n;
     const underProb = 1 - overProb;
-
-    const se = binomialSE(0.5, n); // true baseline: 5 of 10 digits are "over" under uniform randomness
-    const z = (overProb - 0.5) / se; // positive = OVER leaning, negative = UNDER leaning
-
+    const se = binomialSE(0.5, n);
+    const z = (overProb - 0.5) / se;
     if (Math.abs(z) < SIGNIFICANCE_Z) return null;
-
     const confidence = zToConfidence(z);
     if (z > 0) {
         return { type: 'OVER', confidence, overProb, underProb, z };
@@ -1016,29 +1304,21 @@ function overUnderSignal(window) {
     }
 }
 
-// ---------------------- ENGINE 2: DIGIT DIFFERS (z-score rarity test against true 10% baseline) ---------------------
 function analyzeDiffer(sequence) {
     const freq = Array(10).fill(0);
     for (let d of sequence) freq[d]++;
     const n = sequence.length;
     const se = binomialSE(0.1, n);
-
-    let rareDigit = 0;
-    let minFreq = Infinity;
-    let dominantDigit = 0;
-    let maxFreq = 0;
+    let rareDigit = 0, minFreq = Infinity;
+    let dominantDigit = 0, maxFreq = 0;
     for (let i = 0; i < 10; i++) {
         if (freq[i] < minFreq) { minFreq = freq[i]; rareDigit = i; }
         if (freq[i] > maxFreq) { maxFreq = freq[i]; dominantDigit = i; }
     }
-
     const rarity = minFreq / n;
     const dominance = maxFreq / n;
-    // z is negative because we're testing how far BELOW the 10% baseline the rare digit sits
     const z = (rarity - 0.1) / se;
-
     if (Math.abs(z) < DIGIT_SIGNIFICANCE_Z) return null;
-
     const confidence = zToConfidence(z);
     return {
         type: "DIFFER",
@@ -1049,32 +1329,23 @@ function analyzeDiffer(sequence) {
     };
 }
 
-// ---------------------- ENGINE 3: DIGIT MATCHES (z-score dominance test against true 10% baseline) ---------------------
 function analyzeMatches(sequence) {
     const freq = Array(10).fill(0);
     for (let d of sequence) freq[d]++;
     const n = sequence.length;
     const se = binomialSE(0.1, n);
-
-    let dominantDigit = 0;
-    let maxFreq = 0;
+    let dominantDigit = 0, maxFreq = 0;
     for (let i = 0; i < 10; i++) {
         if (freq[i] > maxFreq) { maxFreq = freq[i]; dominantDigit = i; }
     }
-
     const dominance = maxFreq / n;
     const z = (dominance - 0.1) / se;
     if (z < DIGIT_SIGNIFICANCE_Z) return null;
-
-    // Clustering (repeats) is kept as informational metadata only — it's a
-    // useful descriptive stat but not statistically validated as predictive,
-    // so it no longer gates whether a signal fires.
     let repeats = 0;
     for (let i = 1; i < sequence.length; i++) {
         if (sequence[i] === dominantDigit && sequence[i - 1] === dominantDigit) repeats++;
     }
     const repeatRate = repeats / n;
-
     const confidence = zToConfidence(z);
     return {
         type: "MATCH",
@@ -1084,28 +1355,22 @@ function analyzeMatches(sequence) {
     };
 }
 
-// ---------------------- ENGINE 4: EVEN/ODD (z-score against true 50% baseline) ---------------------
 function analyzeEvenOdd(sequence) {
     let even = 0, odd = 0;
     for (let d of sequence) { if (d % 2 === 0) even++; else odd++; }
     const n = sequence.length;
     const evenRatio = even / n;
-
     let streak = 1;
     let lastType = sequence[sequence.length - 1] % 2;
     for (let i = sequence.length - 2; i >= 0; i--) {
         if ((sequence[i] % 2) === lastType) streak++;
         else break;
     }
-
     const se = binomialSE(0.5, n);
-    const z = (evenRatio - 0.5) / se; // positive = EVEN leaning, negative = ODD leaning
-
+    const z = (evenRatio - 0.5) / se;
     if (Math.abs(z) < SIGNIFICANCE_Z) return null;
-
     const signal = z > 0 ? "EVEN" : "ODD";
     const confidence = zToConfidence(z);
-
     return {
         type: "EVEN_ODD",
         signal,
@@ -1114,7 +1379,7 @@ function analyzeEvenOdd(sequence) {
     };
 }
 
-// ---------------------- CORE UTILITIES -------------------------
+// ---------------------- CORE UTILITIES ------------------------------
 function extractLastDigit(price, decimals) {
     if (price === null || price === undefined || isNaN(price)) return null;
     const normalized = Number(price).toFixed(decimals);
@@ -1155,32 +1420,16 @@ function frequency(arr) {
 
 function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
 
-// ---------------------- ENTRY CONFIRMATION (uses the new engines) ---------------------
+// ---------------------- ENTRY CONFIRMATION ------------------------------
 function confirmEntry(digits, selectedDigit, signalScore, liveWindowSize = 25, threshold = 0.55, strategy = 'match', additionalData = null) {
     const live = latestWindow(digits, liveWindowSize);
     if (!live || live.length < 5) return { status: 'HOLD', entryScore: 0, liveScore: 0, drift: 0 };
     let liveScore = 0;
     switch (strategy) {
-        case 'match': {
-            const res = analyzeMatches(live);
-            liveScore = res ? res.confidence : 0;
-            break;
-        }
-        case 'differ': {
-            const res = analyzeDiffer(live);
-            liveScore = res ? res.confidence : 0;
-            break;
-        }
-        case 'ou': {
-            const res = overUnderSignal(live);
-            liveScore = res ? res.confidence : 0;
-            break;
-        }
-        case 'eo': {
-            const res = analyzeEvenOdd(live);
-            liveScore = res ? res.confidence : 0;
-            break;
-        }
+        case 'match': { const res = analyzeMatches(live); liveScore = res ? res.confidence : 0; break; }
+        case 'differ': { const res = analyzeDiffer(live); liveScore = res ? res.confidence : 0; break; }
+        case 'ou': { const res = overUnderSignal(live); liveScore = res ? res.confidence : 0; break; }
+        case 'eo': { const res = analyzeEvenOdd(live); liveScore = res ? res.confidence : 0; break; }
         default: liveScore = signalScore * 0.9;
     }
     const drift = Math.abs(signalScore - liveScore);
@@ -1190,11 +1439,9 @@ function confirmEntry(digits, selectedDigit, signalScore, liveWindowSize = 25, t
     return { status, entryScore, liveScore, drift };
 }
 
-// ---------------------- SIGNAL GENERATORS (using new engines) ---------------------
-
+// ---------------------- SIGNAL GENERATORS ------------------------------
 function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
-    let best = null;
-    let bestConf = -Infinity;
+    let best = null, bestConf = -Infinity;
     for (const market of markets) {
         const data = tickBuffers[market];
         if (!data || data.length < windowSize) continue;
@@ -1207,11 +1454,7 @@ function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
             best = { market, ...result };
         }
     }
-    if (!best) {
-        // No market cleared the significance bar — say so honestly instead of
-        // fabricating a low-confidence guess and calling it a signal.
-        return { success: false, strategy: 'MATCH' };
-    }
+    if (!best) return { success: false, strategy: 'MATCH' };
     return {
         success: true,
         market: best.market,
@@ -1234,8 +1477,7 @@ function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
 }
 
 function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
-    let best = null;
-    let bestConf = -Infinity;
+    let best = null, bestConf = -Infinity;
     for (const market of markets) {
         const data = tickBuffers[market];
         if (!data || data.length < windowSize) continue;
@@ -1248,9 +1490,7 @@ function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
             best = { market, ...result };
         }
     }
-    if (!best) {
-        return { success: false, strategy: 'DIFFERS' };
-    }
+    if (!best) return { success: false, strategy: 'DIFFERS' };
     return {
         success: true,
         market: best.market,
@@ -1267,7 +1507,7 @@ function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
             actionText: 'DIFFER ON ' + best.digit,
             confidence: confidenceToPercent(best.confidence),
             market: best.market,
-            entryDigit: null,   // no relationship display
+            entryDigit: null,
             differDigit: best.digit,
             isMatch: false
         }
@@ -1275,8 +1515,7 @@ function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
 }
 
 function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
-    let best = null;
-    let bestConf = -Infinity;
+    let best = null, bestConf = -Infinity;
     for (const market of markets) {
         const data = tickBuffers[market];
         if (!data || data.length < windowSize) continue;
@@ -1289,9 +1528,7 @@ function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
             best = { market, ...result };
         }
     }
-    if (!best) {
-        return { success: false };
-    }
+    if (!best) return { success: false };
     const barrier = best.type === 'OVER' ? 5 : 4;
     return {
         success: true,
@@ -1317,8 +1554,7 @@ function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
 }
 
 function generateEvenOddSignal(tickBuffers, markets, windowSize = 100) {
-    let best = null;
-    let bestConf = -Infinity;
+    let best = null, bestConf = -Infinity;
     for (const market of markets) {
         const data = tickBuffers[market];
         if (!data || data.length < windowSize) continue;
@@ -1331,9 +1567,7 @@ function generateEvenOddSignal(tickBuffers, markets, windowSize = 100) {
             best = { market, ...result };
         }
     }
-    if (!best) {
-        return { success: false, strategy: 'EVEN/ODD' };
-    }
+    if (!best) return { success: false, strategy: 'EVEN/ODD' };
     return {
         success: true,
         market: best.market,
@@ -1358,57 +1592,51 @@ function generateEvenOddSignal(tickBuffers, markets, windowSize = 100) {
     };
 }
 
-// ---------------------- SESSION MANAGEMENT (unchanged) ---------------------
+// ---------------------- SESSION MANAGEMENT (Trading) ------------------------------
 function canTrade() {
-    if (sessionState.tradesToday >= sessionState.maxTradesPerDay) return false;
-    if (sessionState.burstsPerSession >= sessionState.maxBurstsPerSession) return false;
-    if (sessionState.consecutiveLosses >= sessionState.maxConsecutiveLosses) return false;
+    if (tradeSession.tradesToday >= tradeSession.maxTradesPerDay) return false;
+    if (tradeSession.burstsPerSession >= tradeSession.maxBurstsPerSession) return false;
+    if (tradeSession.consecutiveLosses >= tradeSession.maxConsecutiveLosses) return false;
     return true;
 }
 
 function startBurst() {
     if (!canTrade()) return null;
-    sessionState.burstsPerSession++;
-    return { burstId: sessionState.burstsPerSession, burstSize: 5, tradesRemaining: 5 };
+    tradeSession.burstsPerSession++;
+    return { burstId: tradeSession.burstsPerSession, burstSize: 5, tradesRemaining: 5 };
 }
 
 function recordTrade(outcome, stake, profit) {
-    sessionState.tradesToday++;
-    if (outcome === 'win') sessionState.consecutiveLosses = 0;
-    else sessionState.consecutiveLosses++;
-    sessionState.tradeHistory.push({ tradeNumber: sessionState.tradesToday, sessionType: sessionState.currentSessionType, outcome, stake, profit, timestamp: Date.now() });
-    return { tradesRemaining: sessionState.maxTradesPerSession - (sessionState.tradesToday % sessionState.maxTradesPerSession), consecutiveLosses: sessionState.consecutiveLosses };
+    tradeSession.tradesToday++;
+    if (outcome === 'win') tradeSession.consecutiveLosses = 0;
+    else tradeSession.consecutiveLosses++;
+    tradeSession.tradeHistory.push({ tradeNumber: tradeSession.tradesToday, sessionType: tradeSession.currentSessionType, outcome, stake, profit, timestamp: Date.now() });
+    return { tradesRemaining: tradeSession.maxTradesPerSession - (tradeSession.tradesToday % tradeSession.maxTradesPerSession), consecutiveLosses: tradeSession.consecutiveLosses };
 }
 
 function getStake(baseStake = 1, lossMultiplier = 1.2) {
-    return baseStake * Math.pow(lossMultiplier, sessionState.consecutiveLosses);
+    return baseStake * Math.pow(lossMultiplier, tradeSession.consecutiveLosses);
 }
 
-// ---------------------- UI UPDATE FUNCTIONS ---------------------
+// ---------------------- UI UPDATE FUNCTIONS ------------------------------
 function updateSignalUI(signal, containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
-
     if (!container.querySelector('.card-glow')) {
         const glow = document.createElement('div');
         glow.className = 'card-glow';
         container.prepend(glow);
     }
-
     if (!signal || !signal.success) {
         container.innerHTML = '<div class="card-glow"></div><div class="placeholder-text" style="z-index:1;position:relative;">📊 No statistically significant deviation found across any of the 10 markets right now. This is the honest result, not an error — try again shortly.</div>';
         return;
     }
-
     const display = signal.display;
     const confidenceLevel = display.confidence > 75 ? 'HIGH' : display.confidence > 60 ? 'MEDIUM' : 'LOW';
     const levelColor = confidenceLevel === 'HIGH' ? '#00FFAA' : confidenceLevel === 'MEDIUM' ? '#FFD700' : '#FF6B00';
-
     let extraInfo = '';
-    let relationshipHTML = '';  // removed for DIFFERS
-
+    let relationshipHTML = '';
     if (signal.strategy === 'DIFFERS') {
-        // Only show the differ digit, no relationship
         extraInfo = '<div class="bottom-row"><span>Rarity: ' + ((signal.features.rarity || 0) * 100).toFixed(1) + '%</span><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span></div>';
     } else if (signal.strategy === 'MATCH') {
         extraInfo = '<div class="bottom-row"><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span><span>Repeat: ' + ((signal.features.repeatRate || 0) * 100).toFixed(1) + '%</span></div>';
@@ -1417,21 +1645,16 @@ function updateSignalUI(signal, containerId) {
     } else if (signal.strategy === 'EVEN/ODD') {
         extraInfo = '<div class="bottom-row"><span>Imbalance: ' + (signal.features.imbalance * 100).toFixed(1) + '%</span><span>Streak: ' + signal.features.streak + '</span></div>';
     }
-
     let bigClass = '';
     if (signal.strategy === 'MATCH') bigClass = 'matches';
     else if (signal.strategy === 'DIFFERS') bigClass = 'differs';
-
     let actionStyle = '';
     if (signal.strategy === 'OVER/UNDER') actionStyle = 'color:var(--neon-gold);';
     else if (signal.strategy === 'EVEN/ODD') actionStyle = 'color:#00BFFF;';
-
     let actionClass = '';
     if (signal.strategy === 'MATCH') actionClass = 'matches';
     else if (signal.strategy === 'DIFFERS') actionClass = 'differs';
-
     let bigDigitDisplay = display.bigDigit;
-
     container.innerHTML = `
         <div class="card-glow"></div>
         <div class="row" style="z-index:1;position:relative;">
@@ -1456,7 +1679,6 @@ function updateSignalUI(signal, containerId) {
     `;
 }
 
-// ---------------------- CHART & MATRIX UPDATES (only highlight differ if present) ---------------------
 function updateFrequencyChart(market, digits, highlightEntry, highlightDiffer) {
     const container = document.getElementById('chartBars');
     const placeholder = document.getElementById('chartPlaceholder');
@@ -1479,7 +1701,6 @@ function updateFrequencyChart(market, digits, highlightEntry, highlightDiffer) {
     baseline.className = 'chart-baseline';
     baseline.innerHTML = '<span class="chart-baseline-label">Baseline: 10%</span>';
     container.appendChild(baseline);
-
     for (let i = 0; i < 10; i++) {
         const pct = (freq[i] || 0) * 100;
         const height = Math.max((pct / 15) * maxHeight, 4);
@@ -1525,16 +1746,13 @@ function updateMatrixUI(market, digits, entryDigit, differDigit) {
     container.style.gridTemplateColumns = 'repeat(10, 1fr)';
     container.style.gap = '3px';
     container.innerHTML = '';
-
     const freq = frequency(digits);
     const hasDiffer = differDigit !== undefined && differDigit !== null;
-
-    // Simple heatmap matrix (no transition)
     for (let i = 0; i < 10; i++) {
         for (let j = 0; j < 10; j++) {
             const cell = document.createElement('div');
             cell.className = 'matrix-cell';
-            const isDiffer = hasDiffer && j === differDigit;  // highlight column
+            const isDiffer = hasDiffer && j === differDigit;
             if (isDiffer) {
                 cell.classList.add('differ-highlight');
                 cell.textContent = 'D';
@@ -1547,7 +1765,6 @@ function updateMatrixUI(market, digits, entryDigit, differDigit) {
             container.appendChild(cell);
         }
     }
-
     if (legend) legend.style.display = 'flex';
     if (seesaw) seesaw.style.display = 'flex';
     if (seesawLabel) seesawLabel.style.display = 'block';
@@ -1556,8 +1773,6 @@ function updateMatrixUI(market, digits, entryDigit, differDigit) {
         if (hasDiffer) hl += ' Differ:' + differDigit;
         label.textContent = '(' + market + ')' + hl;
     }
-
-    // Seesaw: show min/max frequency digits
     let topDigit = 0, topPct = 0, bottomDigit = 0, bottomPct = 100;
     for (let i = 0; i < 10; i++) {
         const pct = (freq[i] || 0) * 100;
@@ -1570,7 +1785,7 @@ function updateMatrixUI(market, digits, entryDigit, differDigit) {
     document.getElementById('bottomPct').textContent = bottomPct.toFixed(1) + '%';
 }
 
-// ---------------------- POPUP HELPERS ---------------------
+// ---------------------- POPUP HELPERS ------------------------------
 function beginSignalLoading(key, title, subtitle) {
     if (signalBusy[key]) return false;
     signalBusy[key] = true;
@@ -1601,7 +1816,7 @@ function failSignalLoading(key, message) {
     console.warn(message || 'Signal generation returned null (no edge).');
 }
 
-// ---------------------- SIGNAL WRAPPERS ---------------------
+// ---------------------- SIGNAL WRAPPERS ------------------------------
 function generateMatchesSignal() {
     if (!beginSignalLoading('md', 'GENERATING MATCH SIGNAL...', '⏳ Analyzing latest ticks for Matches...')) return;
     setTimeout(() => {
@@ -1742,7 +1957,7 @@ function handleEvenOddClick() {
     }, SIGNAL_DELAY_MS);
 }
 
-// ---------------------- ENTRY FINDERS (unchanged) ---------------------
+// ---------------------- ENTRY FINDERS ------------------------------
 function findEntryForMatchesDiffers() {
     const active = currentSignals.match || currentSignals.differ;
     if (!active || !active.success) { alert('⚠️ Please generate a MATCH or DIFFER signal first.'); return; }
@@ -1833,7 +2048,7 @@ function findEntryForEvenOdd() {
     }, 1000);
 }
 
-// ---------------------- WEBSOCKET & APP (fixed for reliable tick gathering) ---------------------
+// ---------------------- WEBSOCKET & APP ------------------------------
 function startHeartbeat() {
     stopHeartbeat();
     heartbeatTimer = setInterval(() => {
@@ -1855,7 +2070,7 @@ function scheduleReconnect() {
         if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
             initWebSocket(true);
         }
-    }, 3000); // faster reconnect
+    }, 3000);
 }
 
 function renderMarketCards() {
@@ -1932,18 +2147,13 @@ function getMarketProfile(symbol) {
     return { entryThreshold: 0.55 };
 }
 
-// Tick deduplication: store last tick timestamp per market
 const lastTickTimes = {};
-
-// NEW: per-market subscription state ('pending' | 'ok' | 'error') and a
-// watchdog timer so a stalled/rejected connection is reported, not silent.
 const subscriptionStatus = {};
 let subscriptionWatchdog = null;
 
 function initWebSocket(isReconnect) {
     if (!isReconnect) {
         MARKETS.forEach(sym => { tickBuffers[sym] = []; });
-        // clear dedup cache
         for (let k in lastTickTimes) delete lastTickTimes[k];
     }
     const liveTicker = document.getElementById('liveTicker');
@@ -1964,8 +2174,6 @@ function initWebSocket(isReconnect) {
         if (!isReconnect) renderMarketCards();
         startHeartbeat();
 
-        // Diagnostic watchdog: if no market confirms a successful subscription
-        // within 6s of connecting, surface that clearly instead of sitting silent.
         clearTimeout(subscriptionWatchdog);
         subscriptionWatchdog = setTimeout(() => {
             const confirmed = Object.values(subscriptionStatus).filter(s => s === 'ok').length;
@@ -1989,8 +2197,6 @@ function initWebSocket(isReconnect) {
             return;
         }
 
-        // Deriv returns errors with the SAME msg_type as the request (e.g. "tick"),
-        // so this MUST be checked before assuming a successful payload.
         if (data.error) {
             const badSymbol = data.echo_req && data.echo_req.ticks;
             if (badSymbol) subscriptionStatus[badSymbol] = 'error';
@@ -2011,14 +2217,13 @@ function initWebSocket(isReconnect) {
             try {
                 const sym = tick.symbol;
                 const price = tick.quote;
-                const epoch = tick.epoch; // unique tick id
+                const epoch = tick.epoch;
 
                 if (subscriptionStatus[sym] !== 'ok') {
                     subscriptionStatus[sym] = 'ok';
                     console.log('%c[DERIV] ' + sym + ' subscription confirmed, ticks flowing.', 'color:#00FFAA');
                 }
 
-                // Deduplicate using epoch
                 if (lastTickTimes[sym] === epoch) return;
                 lastTickTimes[sym] = epoch;
 
@@ -2026,7 +2231,6 @@ function initWebSocket(isReconnect) {
                 if (digit !== null && !isNaN(digit)) {
                     if (!tickBuffers[sym]) tickBuffers[sym] = [];
                     tickBuffers[sym].push({ price, digit, epoch });
-                    // Keep buffer size manageable (2000 ticks)
                     if (tickBuffers[sym].length > 2000) tickBuffers[sym].shift();
                     updateMarketCard(sym, tickBuffers[sym].length);
                 }
@@ -2039,7 +2243,6 @@ function initWebSocket(isReconnect) {
                 console.error('❌ [DERIV] Error processing tick payload:', e, tick);
             }
         } else if (data.msg_type && data.msg_type !== 'ping' && data.msg_type !== 'pong') {
-            // Not an error, not a tick, not a heartbeat reply — log it so nothing is invisible.
             console.log('[DERIV] Unhandled msg_type:', data.msg_type, data);
         }
     };
@@ -2059,7 +2262,7 @@ function initWebSocket(isReconnect) {
     };
 }
 
-// ---------------------- APP UNLOCK ----------------------------
+// ---------------------- APP UNLOCK ------------------------------
 function unlockApp() {
     const input = document.getElementById('lockPassword');
     const error = document.getElementById('lockError');
@@ -2068,6 +2271,9 @@ function unlockApp() {
         error.classList.remove('show');
         document.getElementById('lock-overlay').classList.add('hidden');
         document.getElementById('app').style.display = 'block';
+        // Load session state from localStorage
+        loadSessionState();
+        updateSessionUI();
         initWebSocket();
     } else {
         error.textContent = '❌ Incorrect Password. Try again.';
@@ -2077,188 +2283,7 @@ function unlockApp() {
     }
 }
 
-// ---------------------- SESSION PROFIT PLANNER ----------------
-const SESSIONS_PER_PART = 30;
-const SESSIONS_PER_DAY = 3;
-const STAKE_DIVISOR = 12.5;
-
-const PLANNER_PARTS = {
-    1: { label: 'PART 1', startBalance: 20 },
-    2: { label: 'PART 2', startBalance: 100 },
-    3: { label: 'PART 3', startBalance: 400 },
-    4: { label: 'PART 4', startBalance: 1600 }
-};
-
-// Target profit for session n (1-indexed): 5% of the part's starting balance, compounding 10% per session.
-function plannerSessionProfit(startBalance, sessionNumber) {
-    const base = startBalance * 0.05;
-    return base * Math.pow(1.1, sessionNumber - 1);
-}
-
-function plannerStakeFor(balance) {
-    return balance / STAKE_DIVISOR;
-}
-
-function fmtMoney(n) {
-    return '$' + n.toFixed(2);
-}
-
-// Per-part runtime state (in-memory only, resets on reload)
-const plannerState = {
-    activePart: null,
-    parts: {
-        1: { balance: PLANNER_PARTS[1].startBalance, completed: 0 },
-        2: { balance: PLANNER_PARTS[2].startBalance, completed: 0 },
-        3: { balance: PLANNER_PARTS[3].startBalance, completed: 0 },
-        4: { balance: PLANNER_PARTS[4].startBalance, completed: 0 }
-    }
-};
-
-function renderPlannerParts() {
-    const wrap = document.getElementById('plannerParts');
-    if (!wrap) return;
-    wrap.innerHTML = '';
-    Object.keys(PLANNER_PARTS).forEach(key => {
-        const partNum = Number(key);
-        const cfg = PLANNER_PARTS[partNum];
-        const st = plannerState.parts[partNum];
-        const card = document.createElement('div');
-        card.className = 'part-card' + (plannerState.activePart === partNum ? ' active' : '');
-        card.innerHTML =
-            '<div class="part-name">' + cfg.label + '</div>' +
-            '<div class="part-balance">' + fmtMoney(cfg.startBalance) + ' start</div>' +
-            '<div class="part-progress">Session ' + st.completed + '/' + SESSIONS_PER_PART + (st.completed >= SESSIONS_PER_PART ? ' · COMPLETE' : '') + '</div>';
-        card.addEventListener('click', () => selectPlannerPart(partNum));
-        wrap.appendChild(card);
-    });
-}
-
-function selectPlannerPart(partNum) {
-    plannerState.activePart = partNum;
-    renderPlannerParts();
-    renderPlannerBody();
-}
-
-function resetPlannerPart(partNum) {
-    plannerState.parts[partNum] = { balance: PLANNER_PARTS[partNum].startBalance, completed: 0 };
-    renderPlannerParts();
-    renderPlannerBody();
-}
-
-function completePlannerSession(partNum) {
-    const st = plannerState.parts[partNum];
-    if (st.completed >= SESSIONS_PER_PART) return;
-    const sessionNumber = st.completed + 1;
-    const profit = plannerSessionProfit(PLANNER_PARTS[partNum].startBalance, sessionNumber);
-    st.balance += profit;
-    st.completed += 1;
-    renderPlannerParts();
-    renderPlannerBody();
-}
-
-function renderPlannerBody() {
-    const label = document.getElementById('plannerPartLabel');
-    const body = document.getElementById('plannerBody');
-    if (!body) return;
-
-    const partNum = plannerState.activePart;
-    if (!partNum) {
-        if (label) label.textContent = '';
-        body.innerHTML = '<div class="planner-empty">⏳ Select a Part above to begin your session plan</div>';
-        return;
-    }
-
-    const cfg = PLANNER_PARTS[partNum];
-    const st = plannerState.parts[partNum];
-    if (label) label.textContent = cfg.label;
-
-    // Compute the balance at the start of each session by replaying completed profits.
-    let runningBalance = cfg.startBalance;
-    const rows = [];
-    for (let i = 1; i <= SESSIONS_PER_PART; i++) {
-        const isDone = i <= st.completed;
-        const isCurrent = i === st.completed + 1;
-        const day = Math.floor((i - 1) / SESSIONS_PER_DAY) + 1;
-        const sessionInDay = ((i - 1) % SESSIONS_PER_DAY) + 1;
-        const profit = plannerSessionProfit(cfg.startBalance, i);
-        const stakeBalance = runningBalance; // balance BEFORE this session's stake is placed
-        rows.push({ i, day, sessionInDay, profit, stakeBalance, isDone, isCurrent });
-        if (isDone) runningBalance += profit;
-    }
-
-    const totalProfitSoFar = st.balance - cfg.startBalance;
-    const nextRow = rows.find(r => r.isCurrent);
-    const partComplete = st.completed >= SESSIONS_PER_PART;
-
-    let html = '';
-    html += '<div class="planner-header-row">';
-    html += '<div class="planner-stats" style="flex:1;">';
-    html += '<div class="stat-box"><div class="stat-label">Current Balance</div><div class="stat-value">' + fmtMoney(st.balance) + '</div></div>';
-    html += '<div class="stat-box green"><div class="stat-label">Profit So Far</div><div class="stat-value">' + fmtMoney(totalProfitSoFar) + '</div></div>';
-    html += '<div class="stat-box gold"><div class="stat-label">' + (partComplete ? 'Status' : 'Next Stake') + '</div><div class="stat-value">' + (partComplete ? 'COMPLETE' : fmtMoney(plannerStakeFor(nextRow.stakeBalance))) + '</div></div>';
-    html += '<div class="stat-box pink"><div class="stat-label">Progress</div><div class="stat-value">' + (partComplete ? 'Day 10 / 10' : ('Day ' + nextRow.day + ' / 10 · S' + nextRow.sessionInDay + '/3')) + '</div></div>';
-    html += '</div></div>';
-
-    html += '<div class="planner-progress-bar"><div class="fill" style="width:' + ((st.completed / SESSIONS_PER_PART) * 100) + '%;"></div></div>';
-
-    if (partComplete) {
-        html += '<div class="planner-complete-banner">🏁 ' + cfg.label + ' COMPLETE — Balance grew from ' + fmtMoney(cfg.startBalance) + ' to ' + fmtMoney(st.balance) + '</div>';
-    }
-
-    html += '<div style="text-align:right; margin-bottom:0.6rem;"><button class="btn-reset-part" data-reset="' + partNum + '">↺ RESET ' + cfg.label + '</button></div>';
-
-    html += '<div class="planner-table-wrap"><table class="planner-table"><thead><tr>';
-    html += '<th>Day</th><th>Session</th><th>Profit Target</th><th>Stake</th><th>Status</th><th>Action</th>';
-    html += '</tr></thead><tbody>';
-
-    rows.forEach(r => {
-        let rowClass = r.isDone ? 'row-done' : (r.isCurrent ? 'row-current' : 'row-future');
-        let badge, action;
-        if (r.isDone) {
-            badge = '<span class="session-badge done">✓ DONE</span>';
-            action = '—';
-        } else if (r.isCurrent) {
-            badge = '<span class="session-badge current">ACTIVE</span>';
-            action = '<button class="btn-complete" data-complete="' + partNum + '">COMPLETE SESSION</button>';
-        } else {
-            badge = '<span class="session-badge future">PENDING</span>';
-            action = '<button class="btn-complete" disabled>LOCKED</button>';
-        }
-        const stakeDisplay = (r.isCurrent || r.isDone) ? fmtMoney(plannerStakeFor(r.stakeBalance)) : '—';
-        html += '<tr class="' + rowClass + '">';
-        html += '<td>Day ' + r.day + '</td>';
-        html += '<td>Session ' + r.sessionInDay + ' (#' + r.i + ')</td>';
-        html += '<td class="cell-profit">' + fmtMoney(r.profit) + '</td>';
-        html += '<td class="cell-stake">' + stakeDisplay + '</td>';
-        html += '<td>' + badge + '</td>';
-        html += '<td>' + action + '</td>';
-        html += '</tr>';
-    });
-
-    html += '</tbody></table></div>';
-
-    body.innerHTML = html;
-
-    const completeBtn = body.querySelector('[data-complete]');
-    if (completeBtn) {
-        completeBtn.addEventListener('click', () => completePlannerSession(partNum));
-    }
-    const resetBtn = body.querySelector('[data-reset]');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => resetPlannerPart(partNum));
-    }
-
-    // Auto-scroll the table to keep the active row in view
-    const activeRow = body.querySelector('tr.row-current');
-    if (activeRow) activeRow.scrollIntoView({ block: 'nearest' });
-}
-
-function initPlanner() {
-    renderPlannerParts();
-    renderPlannerBody();
-}
-
-// ---------------------- DOM EVENT BINDING --------------------
+// ---------------------- DOM EVENT BINDING ------------------------------
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnUnlock').addEventListener('click', unlockApp);
     document.getElementById('lockPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') unlockApp(); });
@@ -2271,13 +2296,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnFindEntryEO').addEventListener('click', findEntryForEvenOdd);
     document.getElementById('btnScan').addEventListener('click', refreshBestMarketView);
 
+    // Session planner events
+    document.getElementById('btnCompleteSession').addEventListener('click', completeSession);
+    document.getElementById('btnResetSession').addEventListener('click', resetSessionState);
+    document.querySelectorAll('.part-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            switchPart(parseInt(btn.dataset.part));
+        });
+    });
+
     document.getElementById('popupBack').addEventListener('click', () => {
         document.getElementById('signal-popup').classList.remove('active');
         document.getElementById('popupShooting').classList.remove('active');
     });
-
-    initPlanner();
 });
 </script>
 </body>
-</html>
+ </html>
