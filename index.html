@@ -1089,8 +1089,12 @@ function getProfitForSession(part, sessionNum) {
     return profits[sessionNum - 1];
 }
 
-function getStake(balance) {
-    return Math.round((balance / 12.5) * 100) / 100;
+// 🔥 FIXED: STAKE CALCULATION — BALANCE DIVIDED BY 12.5
+function calculateStake(balance) {
+    // This MUST return balance / 12.5
+    const stake = balance / 12.5;
+    // Round to 2 decimal places
+    return Math.round(stake * 100) / 100;
 }
 
 function updateSessionUI() {
@@ -1099,7 +1103,10 @@ function updateSessionUI() {
     const balance = sessionState.balance;
     const totalSessions = SESSION_PROFITS[part].length;
     const targetProfit = getProfitForSession(part, currentSession);
-    const stake = getStake(balance);
+    
+    // 🔥 CRITICAL: Calculate stake from balance
+    const stake = calculateStake(balance);
+    
     const completed = sessionState.completedSessions.length;
 
     document.getElementById('currentSession').textContent = currentSession + ' / ' + totalSessions;
@@ -1159,7 +1166,7 @@ function completeSession() {
     }
 
     const profit = getProfitForSession(part, currentSession);
-    const stake = getStake(sessionState.balance);
+    const stake = calculateStake(sessionState.balance);
 
     // Record the session
     sessionState.completedSessions.push(currentSession);
