@@ -1054,7 +1054,6 @@ function loadSessionState() {
         if (saved) {
             const parsed = JSON.parse(saved);
             sessionState = parsed;
-            // Ensure all fields exist
             if (!sessionState.history) sessionState.history = [];
             if (!sessionState.completedSessions) sessionState.completedSessions = [];
             return true;
@@ -1070,9 +1069,10 @@ function saveSessionState() {
 }
 
 function resetSessionState() {
+    const part = sessionState.part;
     sessionState = {
-        part: 1,
-        balance: PART_CONFIG[1].startingBalance,
+        part: part,
+        balance: PART_CONFIG[part].startingBalance,
         currentSession: 1,
         completedSessions: [],
         history: []
@@ -1198,7 +1198,6 @@ function switchPart(part) {
     const currentSession = sessionState.currentSession;
     const totalSessions = SESSION_PROFITS[currentPart].length;
 
-    // If the current part is not complete and we're switching, warn
     if (sessionState.completedSessions.length < totalSessions && currentPart !== part) {
         if (!confirm('You have an active session in Part ' + currentPart + '. Switching will reset progress. Continue?')) {
             return;
@@ -1215,12 +1214,10 @@ function switchPart(part) {
     saveSessionState();
     updateSessionUI();
 
-    // Update part buttons
     document.querySelectorAll('.part-btn').forEach(btn => {
         btn.classList.toggle('active', parseInt(btn.dataset.part) === part);
     });
 
-    // Re-enable complete button
     document.getElementById('btnCompleteSession').disabled = false;
     document.getElementById('btnCompleteSession').textContent = '✅ Complete Session';
     document.getElementById('sessionStatus').textContent = 'Ready';
@@ -2271,7 +2268,6 @@ function unlockApp() {
         error.classList.remove('show');
         document.getElementById('lock-overlay').classList.add('hidden');
         document.getElementById('app').style.display = 'block';
-        // Load session state from localStorage
         loadSessionState();
         updateSessionUI();
         initWebSocket();
@@ -2296,7 +2292,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnFindEntryEO').addEventListener('click', findEntryForEvenOdd);
     document.getElementById('btnScan').addEventListener('click', refreshBestMarketView);
 
-    // Session planner events
     document.getElementById('btnCompleteSession').addEventListener('click', completeSession);
     document.getElementById('btnResetSession').addEventListener('click', resetSessionState);
     document.querySelectorAll('.part-btn').forEach(btn => {
