@@ -995,19 +995,25 @@ Part 4 <span class="part-balance">$1600 Balance</span>
 <script>
 // ================================================================
 // DAIE‑V4 ENGINE – V14 LOGIC + SESSION PLANNER
-// ✅ REQUIRED_TICKS = 100 (was 300)
-// ✅ ANALYSIS_WINDOW = 100 (was 300)
+// 🔥 STATISTICAL ENGINE: z-score based, no arbitrary thresholds
+// 🔥 REQUIRED_TICKS = 100 (unchanged per user request)
 // ================================================================
 
 // ---------------------- CONSTANTS ------------------------------
 const APP_PASSWORD = 'SUCCESSV12';
 const DERIV_WS = 'wss://api.derivws.com/trading/v1/options/ws/public';
 
-// 🔥 FIXED: Back to 100 ticks as originally designed
+// 🔥 WINDOW: 100 ticks (unchanged)
 const REQUIRED_TICKS = 100;
 const ANALYSIS_WINDOW = 100;
 
+// 🔥 SINGLE TUNABLE DIAL: z-score threshold for significance
+// Lower → more signals, more false positives
+// Higher → fewer signals, more reliable
+// Reference: z=1.28 ~ 90% confidence, z=1.64 ~ 95%, z=2.0 ~ 97.7%
+// Default: 1.5 ~ 93.3% confidence
 const SIGNIFICANCE_Z = 1.5;
+
 const SIGNAL_DELAY_MS = 10000;
 
 // Full 10 markets
@@ -1249,11 +1255,13 @@ let lastSignalMarket = null;
 let lastEntryDigit = null;
 let lastDifferDigit = null;
 
-// ---------------------- HELPER FUNCTIONS ------------------------------
+// ---------------------- STATISTICAL HELPERS ------------------------------
 function confidenceToPercent(conf) {
     return Math.round(Math.max(0, Math.min(100, conf * 100)));
 }
 
+// Standard normal CDF approximation (Zelen & Severo)
+// Converts z-score to one-tailed confidence probability
 function zToConfidence(z) {
     const absZ = Math.abs(z);
     const t = 1 / (1 + 0.2316419 * absZ);
@@ -1262,10 +1270,13 @@ function zToConfidence(z) {
     return Math.max(0, Math.min(0.999, 1 - p));
 }
 
+// Standard error for binomial proportion test
 function binomialSE(p0, n) {
     return Math.sqrt(p0 * (1 - p0) / n);
 }
 
+// 🔥 Bonferroni correction for MATCH/DIFFER (selecting best of 10 digits)
+// This ensures MATCH/DIFFER have the same false-positive rate as EVEN/ODD and OVER/UNDER
 function bonferroniZ(targetZ, numComparisons) {
     const targetAlpha = 1 - zToConfidence(targetZ);
     const correctedAlpha = targetAlpha / numComparisons;
@@ -1279,38 +1290,44 @@ function bonferroniZ(targetZ, numComparisons) {
 }
 const DIGIT_SIGNIFICANCE_Z = bonferroniZ(SIGNIFICANCE_Z, 10);
 
-// ---------------------- SIGNAL ENGINES ------------------------------
+// ---------------------- SIGNAL ENGINES (z-score based) ------------------------------
+
+// OVER/UNDER — z-score against true 50% baseline
 function overUnderSignal(window) {
     const n = window.length;
     const over = window.filter(d => d >= 5).length;
     const overProb = over / n;
-    const underProb = 1 - overProb;
     const se = binomialSE(0.5, n);
     const z = (overProb - 0.5) / se;
     if (Math.abs(z) < SIGNIFICANCE_Z) return null;
     const confidence = zToConfidence(z);
     if (z > 0) {
-        return { type: 'OVER', confidence, overProb, underProb, z };
+        return { type: 'OVER', confidence, overProb, underProb: 1 - overProb, z };
     } else {
-        return { type: 'UNDER', confidence, overProb, underProb, z };
+        return { type: 'UNDER', confidence, overProb, underProb: 1 - overProb, z };
     }
 }
 
+// DIFFERS — z-score rarity test against true 10% baseline with Bonferroni correction
 function analyzeDiffer(sequence) {
     const freq = Array(10).fill(0);
     for (let d of sequence) freq[d]++;
     const n = sequence.length;
     const se = binomialSE(0.1, n);
+
     let rareDigit = 0, minFreq = Infinity;
     let dominantDigit = 0, maxFreq = 0;
     for (let i = 0; i < 10; i++) {
         if (freq[i] < minFreq) { minFreq = freq[i]; rareDigit = i; }
         if (freq[i] > maxFreq) { maxFreq = freq[i]; dominantDigit = i; }
     }
+
     const rarity = minFreq / n;
     const dominance = maxFreq / n;
-    const z = (rarity - 0.1) / se;
+    const z = (rarity - 0.1) / se; // negative = rarer than expected
+
     if (Math.abs(z) < DIGIT_SIGNIFICANCE_Z) return null;
+
     const confidence = zToConfidence(z);
     return {
         type: "DIFFER",
@@ -1321,23 +1338,30 @@ function analyzeDiffer(sequence) {
     };
 }
 
+// MATCHES — z-score dominance test against true 10% baseline with Bonferroni correction
 function analyzeMatches(sequence) {
     const freq = Array(10).fill(0);
     for (let d of sequence) freq[d]++;
     const n = sequence.length;
     const se = binomialSE(0.1, n);
+
     let dominantDigit = 0, maxFreq = 0;
     for (let i = 0; i < 10; i++) {
         if (freq[i] > maxFreq) { maxFreq = freq[i]; dominantDigit = i; }
     }
+
     const dominance = maxFreq / n;
     const z = (dominance - 0.1) / se;
+
     if (z < DIGIT_SIGNIFICANCE_Z) return null;
+
+    // Repeat rate is informational only — not used as a gate
     let repeats = 0;
     for (let i = 1; i < sequence.length; i++) {
         if (sequence[i] === dominantDigit && sequence[i - 1] === dominantDigit) repeats++;
     }
     const repeatRate = repeats / n;
+
     const confidence = zToConfidence(z);
     return {
         type: "MATCH",
@@ -1347,22 +1371,29 @@ function analyzeMatches(sequence) {
     };
 }
 
+// EVEN/ODD — z-score against true 50% baseline
 function analyzeEvenOdd(sequence) {
     let even = 0, odd = 0;
     for (let d of sequence) { if (d % 2 === 0) even++; else odd++; }
     const n = sequence.length;
     const evenRatio = even / n;
+
+    // Streak is informational only — not used as a gate
     let streak = 1;
     let lastType = sequence[sequence.length - 1] % 2;
     for (let i = sequence.length - 2; i >= 0; i--) {
         if ((sequence[i] % 2) === lastType) streak++;
         else break;
     }
+
     const se = binomialSE(0.5, n);
     const z = (evenRatio - 0.5) / se;
+
     if (Math.abs(z) < SIGNIFICANCE_Z) return null;
+
     const signal = z > 0 ? "EVEN" : "ODD";
     const confidence = zToConfidence(z);
+
     return {
         type: "EVEN_ODD",
         signal,
@@ -1431,9 +1462,11 @@ function confirmEntry(digits, selectedDigit, signalScore, liveWindowSize = 25, t
     return { status, entryScore, liveScore, drift };
 }
 
-// ---------------------- SIGNAL GENERATORS ------------------------------
+// ---------------------- SIGNAL GENERATORS (honest — no fake fallbacks) ------------------------------
+
 function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
-    let best = null, bestConf = -Infinity;
+    let best = null;
+    let bestConf = -Infinity;
     for (const market of markets) {
         const data = tickBuffers[market];
         if (!data || data.length < windowSize) continue;
@@ -1446,14 +1479,17 @@ function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
             best = { market, ...result };
         }
     }
-    if (!best) return { success: false, strategy: 'MATCH' };
+    if (!best) {
+        // Honest "no signal" — no fake fallback
+        return { success: false, strategy: 'MATCH' };
+    }
     return {
         success: true,
         market: best.market,
         digit: best.digit,
         score: best.confidence,
         confidence: confidenceToPercent(best.confidence),
-        features: { dominance: best.meta.dominance, repeatRate: best.meta.repeatRate },
+        features: { dominance: best.meta.dominance, repeatRate: best.meta.repeatRate, z: best.meta.z },
         strategy: 'MATCH',
         recommendation: 'MATCH ' + best.digit,
         display: {
@@ -1469,7 +1505,8 @@ function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
 }
 
 function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
-    let best = null, bestConf = -Infinity;
+    let best = null;
+    let bestConf = -Infinity;
     for (const market of markets) {
         const data = tickBuffers[market];
         if (!data || data.length < windowSize) continue;
@@ -1482,7 +1519,10 @@ function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
             best = { market, ...result };
         }
     }
-    if (!best) return { success: false, strategy: 'DIFFERS' };
+    if (!best) {
+        // Honest "no signal" — no fake fallback
+        return { success: false, strategy: 'DIFFERS' };
+    }
     return {
         success: true,
         market: best.market,
@@ -1490,7 +1530,7 @@ function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
         anchor: best.dominantDigit,
         score: best.confidence,
         confidence: confidenceToPercent(best.confidence),
-        features: { rarity: best.meta.rarity, dominance: best.meta.dominance },
+        features: { rarity: best.meta.rarity, dominance: best.meta.dominance, z: best.meta.z },
         strategy: 'DIFFERS',
         tier: best.confidence > 0.85 ? 'STRONG' : best.confidence > 0.7 ? 'MEDIUM' : 'WEAK',
         recommendation: 'DIFFERS ' + best.digit,
@@ -1507,7 +1547,8 @@ function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
 }
 
 function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
-    let best = null, bestConf = -Infinity;
+    let best = null;
+    let bestConf = -Infinity;
     for (const market of markets) {
         const data = tickBuffers[market];
         if (!data || data.length < windowSize) continue;
@@ -1520,7 +1561,9 @@ function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
             best = { market, ...result };
         }
     }
-    if (!best) return { success: false };
+    if (!best) {
+        return { success: false };
+    }
     const barrier = best.type === 'OVER' ? 5 : 4;
     return {
         success: true,
@@ -1529,7 +1572,7 @@ function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
         barrier: barrier,
         score: best.confidence,
         confidence: confidenceToPercent(best.confidence),
-        features: { overProb: best.overProb, underProb: best.underProb },
+        features: { overProb: best.overProb, underProb: best.underProb, z: best.z },
         strategy: 'OVER/UNDER',
         recommendation: best.type + ' ' + barrier,
         display: {
@@ -1546,7 +1589,8 @@ function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
 }
 
 function generateEvenOddSignal(tickBuffers, markets, windowSize = 100) {
-    let best = null, bestConf = -Infinity;
+    let best = null;
+    let bestConf = -Infinity;
     for (const market of markets) {
         const data = tickBuffers[market];
         if (!data || data.length < windowSize) continue;
@@ -1559,14 +1603,17 @@ function generateEvenOddSignal(tickBuffers, markets, windowSize = 100) {
             best = { market, ...result };
         }
     }
-    if (!best) return { success: false, strategy: 'EVEN/ODD' };
+    if (!best) {
+        // Honest "no signal" — no fake fallback
+        return { success: false, strategy: 'EVEN/ODD' };
+    }
     return {
         success: true,
         market: best.market,
         side: best.signal,
         score: best.confidence,
         confidence: confidenceToPercent(best.confidence),
-        features: { imbalance: best.meta.imbalance, streak: best.meta.streak },
+        features: { imbalance: best.meta.imbalance, streak: best.meta.streak, z: best.meta.z },
         gap: 0.02,
         strategy: 'EVEN/ODD',
         recommendation: best.signal,
@@ -1629,13 +1676,13 @@ function updateSignalUI(signal, containerId) {
     let extraInfo = '';
     let relationshipHTML = '';
     if (signal.strategy === 'DIFFERS') {
-        extraInfo = '<div class="bottom-row"><span>Rarity: ' + ((signal.features.rarity || 0) * 100).toFixed(1) + '%</span><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span></div>';
+        extraInfo = '<div class="bottom-row"><span>Rarity: ' + ((signal.features.rarity || 0) * 100).toFixed(1) + '%</span><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span><span>z: ' + (signal.features.z || 0).toFixed(2) + '</span></div>';
     } else if (signal.strategy === 'MATCH') {
-        extraInfo = '<div class="bottom-row"><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span><span>Repeat: ' + ((signal.features.repeatRate || 0) * 100).toFixed(1) + '%</span></div>';
+        extraInfo = '<div class="bottom-row"><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span><span>Repeat: ' + ((signal.features.repeatRate || 0) * 100).toFixed(1) + '%</span><span>z: ' + (signal.features.z || 0).toFixed(2) + '</span></div>';
     } else if (signal.strategy === 'OVER/UNDER') {
-        extraInfo = '<div class="bottom-row"><span>Observed: ' + (signal.features.mass * 100).toFixed(1) + '%</span><span>Edge: ' + ((signal.features.mass - 0.5) * 100).toFixed(1) + '%</span></div>';
+        extraInfo = '<div class="bottom-row"><span>Observed: ' + (signal.features.mass * 100).toFixed(1) + '%</span><span>Edge: ' + ((signal.features.mass - 0.5) * 100).toFixed(1) + '%</span><span>z: ' + (signal.features.z || 0).toFixed(2) + '</span></div>';
     } else if (signal.strategy === 'EVEN/ODD') {
-        extraInfo = '<div class="bottom-row"><span>Imbalance: ' + (signal.features.imbalance * 100).toFixed(1) + '%</span><span>Streak: ' + signal.features.streak + '</span></div>';
+        extraInfo = '<div class="bottom-row"><span>Imbalance: ' + (signal.features.imbalance * 100).toFixed(1) + '%</span><span>Streak: ' + signal.features.streak + '</span><span>z: ' + (signal.features.z || 0).toFixed(2) + '</span></div>';
     }
     let bigClass = '';
     if (signal.strategy === 'MATCH') bigClass = 'matches';
@@ -1939,7 +1986,7 @@ function handleEvenOddClick() {
             document.getElementById('eoMarket').textContent = result.market;
             document.getElementById('eoConfidenceValue').textContent = result.confidence.toFixed(1) + '%';
             document.getElementById('eoPMR').textContent = result.score.toFixed(3);
-            document.getElementById('eoZScore').textContent = ((result.score - 0.5) / 0.05).toFixed(2);
+            document.getElementById('eoZScore').textContent = (result.features.z || 0).toFixed(2);
             const data2 = tickBuffers[result.market];
             updateFrequencyChart(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
             updateMatrixUI(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
@@ -2127,10 +2174,9 @@ function checkGatheringComplete() {
         if (banner) banner.classList.add('show');
         if (liveTicker) liveTicker.innerHTML = '✅ <strong>Gathering Complete</strong> — All 10 markets ready.';
         if (btnScan) { btnScan.classList.add('ready'); btnScan.innerHTML = '✅ ALL MARKETS READY'; }
-        const allAtHundred = MARKETS.every(sym => (tickBuffers[sym]?.length || 0) >= 100);
         ['btnMatches', 'btnDiffers', 'btnOverUnderFetch', 'btnEvenOddFetch'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.disabled = !allAtHundred;
+            if (el) el.disabled = false;
         });
     }
 }
