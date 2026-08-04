@@ -2434,5 +2434,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
+
+<!-- DIAGNOSTIC PANEL — temporary, for mobile debugging. Safe to remove later. -->
+<div id="debugPanel" style="position:fixed; bottom:0; left:0; right:0; max-height:40vh; overflow-y:auto; background:rgba(5,2,12,0.97); border-top:2px solid #A855F7; z-index:99999; font-family:monospace; font-size:11px; padding:8px; display:block;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+    <strong style="color:#00FFAA;">🔍 DEBUG LOG</strong>
+    <div>
+      <button onclick="document.getElementById('debugLogLines').innerHTML='';" style="background:#333;color:#fff;border:none;padding:4px 8px;border-radius:4px;margin-right:6px;">Clear</button>
+      <button onclick="document.getElementById('debugPanel').style.display='none';" style="background:#7F1D1D;color:#fff;border:none;padding:4px 8px;border-radius:4px;">Hide</button>
+    </div>
+  </div>
+  <div id="debugLogLines" style="color:#ccc; line-height:1.4;"></div>
+</div>
+<script>
+(function() {
+    const logEl = document.getElementById('debugLogLines');
+    function addLine(color, prefix, args) {
+        const line = document.createElement('div');
+        line.style.color = color;
+        line.style.borderBottom = '1px solid #222';
+        line.style.padding = '2px 0';
+        const text = args.map(a => {
+            try { return typeof a === 'string' ? a : JSON.stringify(a); }
+            catch(e) { return String(a); }
+        }).join(' ');
+        line.textContent = prefix + text;
+        logEl.appendChild(line);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+    const origLog = console.log, origWarn = console.warn, origError = console.error;
+    console.log = function(...args) { addLine('#00FFAA', '[LOG] ', args); origLog.apply(console, args); };
+    console.warn = function(...args) { addLine('#FFD700', '[WARN] ', args); origWarn.apply(console, args); };
+    console.error = function(...args) { addLine('#FF4444', '[ERROR] ', args); origError.apply(console, args); };
+    window.addEventListener('error', function(e) {
+        addLine('#FF4444', '[UNCAUGHT] ', [e.message + ' @ ' + e.filename + ':' + e.lineno]);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+        addLine('#FF4444', '[PROMISE REJECTED] ', [String(e.reason)]);
+    });
+    addLine('#00FFAA', '[DEBUG PANEL] ', ['Ready. Waiting for events...']);
+})();
+</script>
 </body>
 </html>
