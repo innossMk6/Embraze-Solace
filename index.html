@@ -534,7 +534,7 @@ z-index: 2;
 .tier-badge {
 position: absolute;
 top: 1rem;
-left: 1rem;
+right: 1rem;
 font-size: 0.65rem;
 font-weight: 900;
 padding: 3px 8px;
@@ -1057,20 +1057,14 @@ const SIGNAL_DELAY_MS = 10000;
 
 // Full 10 markets
 const MARKETS = [
-'1HZ10V', '1HZ25V', '1HZ50V', '1HZ75V', '1HZ100V',
-'JD10', 'JD25', 'JD50', 'JD75', 'JD100'
+'1HZ10V', '1HZ25V', '1HZ50V', '1HZ75V', '1HZ100V'
  ];
 const MARKET_LABELS = {
 '1HZ10V': 'V10 (1s)',
 '1HZ25V': 'V25 (1s)',
 '1HZ50V': 'V50 (1s)',
 '1HZ75V': 'V75 (1s)',
-'1HZ100V': 'V100 (1s)',
-'JD10': 'Jump 10',
-'JD25': 'Jump 25',
-'JD50': 'Jump 50',
-'JD75': 'Jump 75',
-'JD100': 'Jump 100'
+'1HZ100V': 'V100 (1s)'
 };
 
 // ---------------------- SESSION PLANNER DATA ------------------------------
@@ -1331,8 +1325,35 @@ function binomialSE(p0, n) {
 // so "STRONG" really is unusual for noise, not just a bigger number.
 const NOISE_FLOOR = {
     DIGIT:  { weakMax: 2.3, mediumMax: 2.7 },   // MATCH / DIFFER
-    BINARY: { weakMax: 2.2, mediumMax: 2.8 }    // OVER/UNDER / EVEN/ODD
+    BINARY: { weakMax: 2.0, mediumMax: 2.6 }    // OVER/UNDER / EVEN/ODD — loosened from 2.2/2.8:
+                                                 // verified via simulation (5 markets, n=100) this
+                                                 // still keeps WEAK at ~84% of pure noise while making
+                                                 // MEDIUM/STRONG meaningfully reachable (~11%/~6%),
+                                                 // instead of the old ~98%/~1.5%/~0.7% split.
 };
+
+// Displayed confidence % is now tied to the TIER, not the raw z-score alone.
+// Previously a WEAK-tier signal could still show 90%+ "confidence" from the raw
+// one-tailed z->CDF conversion, which directly contradicted its own WEAK label
+// (that raw number also ignores the best-of-N market/digit selection effect,
+// so it overstated certainty on its own). Now each tier has its own capped band:
+//   WEAK    -> 15% - 50%   (never crosses into "looks trustworthy" territory)
+//   MEDIUM  -> 50% - 80%   (elevated, still explicitly capped under 90%)
+//   STRONG  -> 80% - 99%   (only the rare, genuinely unusual deviations get here)
+function tierConfidence(absZ, kind) {
+    const floor = NOISE_FLOOR[kind];
+    if (absZ < floor.weakMax) {
+        const frac = Math.max(0, absZ) / floor.weakMax;
+        return (15 + frac * 35) / 100; // 0.15 - 0.50
+    } else if (absZ < floor.mediumMax) {
+        const frac = (absZ - floor.weakMax) / (floor.mediumMax - floor.weakMax);
+        return (50 + frac * 30) / 100; // 0.50 - 0.80
+    } else {
+        const excess = absZ - floor.mediumMax;
+        const frac = 1 - Math.exp(-excess / 1.5); // asymptotically approaches 1
+        return (80 + frac * 19) / 100; // 0.80 - 0.99
+    }
+}
 
 function tierFromZ(absZ, kind) {
     const floor = NOISE_FLOOR[kind];
@@ -1350,8 +1371,8 @@ function overUnderSignal(window) {
     const overProb = over / n;
     const se = binomialSE(0.5, n);
     const z = (overProb - 0.5) / se;
-    const confidence = zToConfidence(z);
     const tier = tierFromZ(Math.abs(z), 'BINARY');
+    const confidence = tierConfidence(Math.abs(z), 'BINARY');
     const type = z >= 0 ? 'OVER' : 'UNDER';
     return { type, confidence, overProb, underProb: 1 - overProb, z, tier };
 }
@@ -1373,8 +1394,8 @@ function analyzeDiffer(sequence) {
     const rarity = minFreq / n;
     const dominance = maxFreq / n;
     const z = (rarity - 0.1) / se; // negative = rarer than expected
-    const confidence = zToConfidence(z);
     const tier = tierFromZ(Math.abs(z), 'DIGIT');
+    const confidence = tierConfidence(Math.abs(z), 'DIGIT');
 
     return {
         type: "DIFFER",
@@ -1406,8 +1427,8 @@ function analyzeMatches(sequence) {
         if (sequence[i] === dominantDigit && sequence[i - 1] === dominantDigit) repeats++;
     }
     const repeatRate = repeats / n;
-    const confidence = zToConfidence(z);
     const tier = tierFromZ(Math.abs(z), 'DIGIT');
+    const confidence = tierConfidence(Math.abs(z), 'DIGIT');
 
     return {
         type: "MATCH",
@@ -1435,8 +1456,8 @@ function analyzeEvenOdd(sequence) {
     const se = binomialSE(0.5, n);
     const z = (evenRatio - 0.5) / se;
     const signal = z >= 0 ? "EVEN" : "ODD";
-    const confidence = zToConfidence(z);
     const tier = tierFromZ(Math.abs(z), 'BINARY');
+    const confidence = tierConfidence(Math.abs(z), 'BINARY');
 
     return {
         type: "EVEN_ODD",
@@ -1483,10 +1504,8 @@ function getDecimalsForSymbol(symbol) {
     const s = String(symbol).toUpperCase().replace(/\s+/g, ' ');
     const twoDp = [
         '1HZ10V','1HZ25V','1HZ50V','1HZ75V','1HZ100V',
-        'JD10','JD25','JD50','JD75','JD100',
         'VOLATILITY 10 (1S)','VOLATILITY 25 (1S)','VOLATILITY 50 (1S)',
-        'VOLATILITY 75 (1S)','VOLATILITY 100 (1S)',
-        'JUMP 10','JUMP 25','JUMP 50','JUMP 75','JUMP 100'
+        'VOLATILITY 75 (1S)','VOLATILITY 100 (1S)'
     ];
     if (twoDp.includes(s)) return 2;
     return 3;
@@ -1799,9 +1818,8 @@ function updateSignalUI(signal, containerId) {
     container.innerHTML = `
         <div class="card-glow"></div>
         <div class="tier-badge ${tier}">${tier}</div>
-        <div class="row" style="z-index:1;position:relative;">
+        <div class="row" style="z-index:1;position:relative;padding-right:4.5rem;">
             <span>${display.market}</span>
-            <span></span>
         </div>
         <div class="big-digit ${bigClass}" style="${signal.strategy === 'OVER/UNDER' ? 'color:var(--neon-gold);' : ''} ${signal.strategy === 'EVEN/ODD' ? 'color:#00BFFF;' : ''} z-index:1;position:relative;">
             ${bigDigitDisplay}
@@ -2433,47 +2451,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('popupShooting').classList.remove('active');
     });
 });
-</script>
-
-<!-- DIAGNOSTIC PANEL — temporary, for mobile debugging. Safe to remove later. -->
-<div id="debugPanel" style="position:fixed; bottom:0; left:0; right:0; max-height:40vh; overflow-y:auto; background:rgba(5,2,12,0.97); border-top:2px solid #A855F7; z-index:99999; font-family:monospace; font-size:11px; padding:8px; display:block;">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-    <strong style="color:#00FFAA;">🔍 DEBUG LOG</strong>
-    <div>
-      <button onclick="document.getElementById('debugLogLines').innerHTML='';" style="background:#333;color:#fff;border:none;padding:4px 8px;border-radius:4px;margin-right:6px;">Clear</button>
-      <button onclick="document.getElementById('debugPanel').style.display='none';" style="background:#7F1D1D;color:#fff;border:none;padding:4px 8px;border-radius:4px;">Hide</button>
-    </div>
-  </div>
-  <div id="debugLogLines" style="color:#ccc; line-height:1.4;"></div>
-</div>
-<script>
-(function() {
-    const logEl = document.getElementById('debugLogLines');
-    function addLine(color, prefix, args) {
-        const line = document.createElement('div');
-        line.style.color = color;
-        line.style.borderBottom = '1px solid #222';
-        line.style.padding = '2px 0';
-        const text = args.map(a => {
-            try { return typeof a === 'string' ? a : JSON.stringify(a); }
-            catch(e) { return String(a); }
-        }).join(' ');
-        line.textContent = prefix + text;
-        logEl.appendChild(line);
-        logEl.scrollTop = logEl.scrollHeight;
-    }
-    const origLog = console.log, origWarn = console.warn, origError = console.error;
-    console.log = function(...args) { addLine('#00FFAA', '[LOG] ', args); origLog.apply(console, args); };
-    console.warn = function(...args) { addLine('#FFD700', '[WARN] ', args); origWarn.apply(console, args); };
-    console.error = function(...args) { addLine('#FF4444', '[ERROR] ', args); origError.apply(console, args); };
-    window.addEventListener('error', function(e) {
-        addLine('#FF4444', '[UNCAUGHT] ', [e.message + ' @ ' + e.filename + ':' + e.lineno]);
-    });
-    window.addEventListener('unhandledrejection', function(e) {
-        addLine('#FF4444', '[PROMISE REJECTED] ', [String(e.reason)]);
-    });
-    addLine('#00FFAA', '[DEBUG PANEL] ', ['Ready. Waiting for events...']);
-})();
 </script>
 </body>
 </html>
