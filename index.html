@@ -1325,11 +1325,11 @@ function binomialSE(p0, n) {
 // so "STRONG" really is unusual for noise, not just a bigger number.
 const NOISE_FLOOR = {
     DIGIT:  { weakMax: 2.3, mediumMax: 2.7 },   // MATCH / DIFFER
-    BINARY: { weakMax: 2.0, mediumMax: 2.6 }    // OVER/UNDER / EVEN/ODD — loosened from 2.2/2.8:
-                                                 // verified via simulation (5 markets, n=100) this
-                                                 // still keeps WEAK at ~84% of pure noise while making
-                                                 // MEDIUM/STRONG meaningfully reachable (~11%/~6%),
-                                                 // instead of the old ~98%/~1.5%/~0.7% split.
+    BINARY: { weakMax: 2.05, mediumMax: 2.6 }   // OVER/UNDER (Over 3 / Under 6, two barrier tests
+                                                 // per market) / EVEN/ODD — re-verified via simulation
+                                                 // after switching OVER/UNDER to the 60%-baseline
+                                                 // Over-3/Under-6 barriers: still ~86% WEAK / ~10%
+                                                 // MEDIUM / ~4.5% STRONG on pure noise.
 };
 
 // Displayed confidence % is now tied to the TIER, not the raw z-score alone.
@@ -1365,16 +1365,37 @@ function tierFromZ(absZ, kind) {
 // ---------------------- SIGNAL ENGINES (always return, honestly tiered) ------------------------------
 
 // OVER/UNDER — z-score against true 50% baseline. Always returns a side; tiered.
+// OVER/UNDER — tests OVER 3 (digit > 3, baseline 60%) and UNDER 6 (digit < 6,
+// baseline 60%) as two separate one-tailed hypotheses, and reports whichever
+// barrier is currently showing the stronger favorable deviation from its own
+// true baseline. Always returns a side; tiered.
 function overUnderSignal(window) {
     const n = window.length;
-    const over = window.filter(d => d >= 5).length;
-    const overProb = over / n;
-    const se = binomialSE(0.5, n);
-    const z = (overProb - 0.5) / se;
+    const BARRIER_BASELINE = 0.6; // 6 of 10 digits qualify for either Over 3 or Under 6
+    const se = binomialSE(BARRIER_BASELINE, n);
+
+    const over3Count = window.filter(d => d > 3).length;   // digits 4-9
+    const under6Count = window.filter(d => d < 6).length;  // digits 0-5
+    const over3Prob = over3Count / n;
+    const under6Prob = under6Count / n;
+
+    const zOver3 = (over3Prob - BARRIER_BASELINE) / se;
+    const zUnder6 = (under6Prob - BARRIER_BASELINE) / se;
+
+    let type, z, prob, barrier;
+    if (zOver3 >= zUnder6) {
+        type = 'OVER'; z = zOver3; prob = over3Prob; barrier = 3;
+    } else {
+        type = 'UNDER'; z = zUnder6; prob = under6Prob; barrier = 6;
+    }
+
     const tier = tierFromZ(Math.abs(z), 'BINARY');
     const confidence = tierConfidence(Math.abs(z), 'BINARY');
-    const type = z >= 0 ? 'OVER' : 'UNDER';
-    return { type, confidence, overProb, underProb: 1 - overProb, z, tier };
+    return {
+        type, barrier, confidence, prob,
+        overProb: over3Prob, underProb: under6Prob,
+        z, tier
+    };
 }
 
 // DIFFERS — rarest digit vs true 10% baseline. Always returns a digit; tiered.
@@ -1667,7 +1688,7 @@ function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
     if (!best) {
         return { success: false, insufficientData: true, strategy: 'OVER/UNDER' };
     }
-    const barrier = best.type === 'OVER' ? 5 : 4;
+    const barrier = best.barrier; // now comes straight from the engine: 3 for OVER, 6 for UNDER
     return {
         success: true,
         market: best.market,
@@ -1676,7 +1697,7 @@ function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
         score: best.confidence,
         confidence: confidenceToPercent(best.confidence),
         tier: best.tier,
-        features: { overProb: best.overProb, underProb: best.underProb, z: best.z, mass: best.type === 'OVER' ? best.overProb : best.underProb },
+        features: { overProb: best.overProb, underProb: best.underProb, z: best.z, mass: best.prob },
         strategy: 'OVER/UNDER',
         recommendation: best.type + ' ' + barrier,
         display: {
@@ -1684,7 +1705,7 @@ function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
             actionText: best.type + ' ' + barrier,
             confidence: confidenceToPercent(best.confidence),
             market: best.market,
-            mass: best.type === 'OVER' ? best.overProb : best.underProb,
+            mass: best.prob,
             entryDigit: null,
             differDigit: null,
             isMatch: false
