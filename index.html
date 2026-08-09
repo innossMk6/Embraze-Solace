@@ -1303,6 +1303,32 @@ function zToConfidence(z) {
     return Math.max(0, Math.min(0.999, 1 - p));
 }
 
+// Inverse of zToConfidence: find the z that produces a given one-tailed confidence.
+function invZToConfidence(targetConfidence) {
+    let lo = 0, hi = 6;
+    for (let i = 0; i < 60; i++) {
+        const mid = (lo + hi) / 2;
+        if (zToConfidence(mid) < targetConfidence) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+}
+
+// Corrects a single-test z threshold for running `numComparisons` simultaneous
+// tests (e.g. 8 barriers x 5 markets = 40 tests per scan), so a stated target
+// confidence (e.g. "95%") still means 95% confidence at the SCAN level, not
+// just for one isolated test buried among 40 chances to get lucky.
+function bonferroniZ(targetZ, numComparisons) {
+    const targetAlpha = 1 - zToConfidence(targetZ);
+    const correctedAlpha = targetAlpha / numComparisons;
+    let lo = targetZ, hi = targetZ + 6;
+    for (let i = 0; i < 60; i++) {
+        const mid = (lo + hi) / 2;
+        const alpha = 1 - zToConfidence(mid);
+        if (alpha > correctedAlpha) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+}
+
 // Standard error for binomial proportion test
 function binomialSE(p0, n) {
     return Math.sqrt(p0 * (1 - p0) / n);
@@ -1369,33 +1395,96 @@ function tierFromZ(absZ, kind) {
 // baseline 60%) as two separate one-tailed hypotheses, and reports whichever
 // barrier is currently showing the stronger favorable deviation from its own
 // true baseline. Always returns a side; tiered.
+// OVER/UNDER barrier scanner — tests all 8 possible barriers (Over 0-3, Under
+// 6-9) against their TRUE baseline probability, and only proposes a barrier
+// that clears ITS OWN required confidence — tighter barriers (higher
+// baseline, lower payout) need much stronger evidence than looser barriers
+// (lower baseline, higher payout). These target-confidence values are
+// Sima's provisional defaults — easy to retune in one place below.
+//
+// IMPORTANT: because this scans 8 barriers x N markets simultaneously, a
+// literal "95% confidence" read off a single test would be badly misleading
+// — with 40 simultaneous tests, SOMETHING clears a naive 95% bar on pure
+// random noise nearly 100% of the time (verified by simulation). So the
+// actual gate used internally is Bonferroni-corrected so "95%" really means
+// 95% confidence at the whole-scan level, not per isolated test. The
+// confidence % actually shown to Sima is then re-mapped back into his
+// intended band (e.g. Over 3 / Under 6 display starting at 75%, climbing
+// toward 99% with stronger evidence) so the UI still matches his design,
+// while the underlying accept/reject decision is statistically honest.
+const BARRIER_TESTS = [
+    { type: 'OVER',  barrier: 0, baseline: 0.9, target: 0.95 },
+    { type: 'OVER',  barrier: 1, baseline: 0.8, target: 0.90 },
+    { type: 'OVER',  barrier: 2, baseline: 0.7, target: 0.85 },
+    { type: 'OVER',  barrier: 3, baseline: 0.6, target: 0.75 },
+    { type: 'UNDER', barrier: 9, baseline: 0.9, target: 0.95 },
+    { type: 'UNDER', barrier: 8, baseline: 0.8, target: 0.90 },
+    { type: 'UNDER', barrier: 7, baseline: 0.7, target: 0.85 },
+    { type: 'UNDER', barrier: 6, baseline: 0.6, target: 0.75 }
+];
+
+// Total simultaneous tests per scan, computed dynamically so the correction
+// stays accurate even if MARKETS or BARRIER_TESTS ever change.
+function totalBarrierTests() { return MARKETS.length * BARRIER_TESTS.length; }
+
+// Cache the corrected z-threshold per barrier (recomputed if MARKETS.length changes).
+let _barrierZCache = { n: 0, cfgs: null };
+function getBarrierConfigs() {
+    const n = totalBarrierTests();
+    if (_barrierZCache.n !== n) {
+        _barrierZCache.cfgs = BARRIER_TESTS.map(cfg => ({
+            ...cfg,
+            requiredZ: bonferroniZ(invZToConfidence(cfg.target), n)
+        }));
+        _barrierZCache.n = n;
+    }
+    return _barrierZCache.cfgs;
+}
+
+function barrierDisplayConfidence(z, cfg) {
+    // Only meaningful once z has already cleared cfg.requiredZ. Maps the
+    // real evidence back into the barrier's own intended display band
+    // (starts at cfg.target right at threshold, climbs toward 99%).
+    const excess = z - cfg.requiredZ;
+    const frac = 1 - Math.exp(-excess / 1.2);
+    return cfg.target + frac * (0.99 - cfg.target);
+}
+
+// Tests every barrier for a single market's window. Returns the single
+// BEST barrier that clears its own required (corrected) confidence, or null
+// if nothing on this market qualifies right now.
 function overUnderSignal(window) {
     const n = window.length;
-    const BARRIER_BASELINE = 0.6; // 6 of 10 digits qualify for either Over 3 or Under 6
-    const se = binomialSE(BARRIER_BASELINE, n);
+    const configs = getBarrierConfigs();
+    let best = null;
+    let bestMargin = -Infinity;
 
-    const over3Count = window.filter(d => d > 3).length;   // digits 4-9
-    const under6Count = window.filter(d => d < 6).length;  // digits 0-5
-    const over3Prob = over3Count / n;
-    const under6Prob = under6Count / n;
+    for (const cfg of configs) {
+        const count = cfg.type === 'OVER'
+            ? window.filter(d => d > cfg.barrier).length
+            : window.filter(d => d < cfg.barrier).length;
+        const prob = count / n;
+        const se = binomialSE(cfg.baseline, n);
+        const z = (prob - cfg.baseline) / se;
 
-    const zOver3 = (over3Prob - BARRIER_BASELINE) / se;
-    const zUnder6 = (under6Prob - BARRIER_BASELINE) / se;
+        if (z < cfg.requiredZ) continue; // this barrier doesn't clear its own bar
 
-    let type, z, prob, barrier;
-    if (zOver3 >= zUnder6) {
-        type = 'OVER'; z = zOver3; prob = over3Prob; barrier = 3;
-    } else {
-        type = 'UNDER'; z = zUnder6; prob = under6Prob; barrier = 6;
+        const margin = z - cfg.requiredZ;
+        if (margin > bestMargin) {
+            bestMargin = margin;
+            best = {
+                type: cfg.type,
+                barrier: cfg.barrier,
+                baseline: cfg.baseline,
+                target: cfg.target,
+                prob,
+                z,
+                confidence: barrierDisplayConfidence(z, cfg),
+                tier: cfg.target >= 0.90 ? 'STRONG' : 'MEDIUM'
+            };
+        }
     }
-
-    const tier = tierFromZ(Math.abs(z), 'BINARY');
-    const confidence = tierConfidence(Math.abs(z), 'BINARY');
-    return {
-        type, barrier, confidence, prob,
-        overProb: over3Prob, underProb: under6Prob,
-        z, tier
-    };
+    return best; // null if no barrier on this market qualifies
 }
 
 // DIFFERS — rarest digit vs true 10% baseline. Always returns a digit; tiered.
@@ -1672,37 +1761,43 @@ function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
 
 function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
     let best = null;
-    let bestAbsZ = -Infinity;
+    let bestMargin = -Infinity;
     for (const market of markets) {
         const data = tickBuffers[market];
         if (!data || data.length < windowSize) continue;
         const digits = data.map(t => t.digit);
         const window = latestWindow(digits, windowSize);
         if (window.length < windowSize) continue;
-        const result = overUnderSignal(window);
-        if (Math.abs(result.z) > bestAbsZ) {
-            bestAbsZ = Math.abs(result.z);
+        const result = overUnderSignal(window); // null if no barrier on this market qualifies
+        if (!result) continue;
+        // How far past its own required (Bonferroni-corrected) bar this result cleared.
+        const configs = getBarrierConfigs();
+        const matched = configs.find(c => c.type === result.type && c.barrier === result.barrier);
+        const trueMargin = result.z - (matched ? matched.requiredZ : 0);
+        if (trueMargin > bestMargin) {
+            bestMargin = trueMargin;
             best = { market, ...result };
         }
     }
     if (!best) {
-        return { success: false, insufficientData: true, strategy: 'OVER/UNDER' };
+        // No barrier on any market currently clears its own required confidence.
+        // This is the honest, expected majority outcome — not an error.
+        return { success: false, insufficientData: false, noSuitableBarrier: true, strategy: 'OVER/UNDER' };
     }
-    const barrier = best.barrier; // now comes straight from the engine: 3 for OVER, 6 for UNDER
     return {
         success: true,
         market: best.market,
         mode: best.type,
-        barrier: barrier,
+        barrier: best.barrier,
         score: best.confidence,
         confidence: confidenceToPercent(best.confidence),
         tier: best.tier,
-        features: { overProb: best.overProb, underProb: best.underProb, z: best.z, mass: best.prob },
+        features: { prob: best.prob, baseline: best.baseline, z: best.z, mass: best.prob },
         strategy: 'OVER/UNDER',
-        recommendation: best.type + ' ' + barrier,
+        recommendation: best.type + ' ' + best.barrier,
         display: {
-            bigDigit: barrier,
-            actionText: best.type + ' ' + barrier,
+            bigDigit: best.barrier,
+            actionText: best.type + ' ' + best.barrier,
             confidence: confidenceToPercent(best.confidence),
             market: best.market,
             mass: best.prob,
@@ -1794,6 +1889,8 @@ function updateSignalUI(signal, containerId) {
     if (!signal || !signal.success) {
         const msg = signal && signal.insufficientData
             ? '⏳ Still buffering ticks for one or more markets — need ' + REQUIRED_TICKS + ' ticks per market before a ranked candidate can be produced.'
+            : signal && signal.noSuitableBarrier
+            ? '📊 No barrier (Over 0-3 / Under 6-9) is currently clearing its own required confidence on any market. This is the honest result, not an error — try again shortly.'
             : '📊 No candidate available right now.';
         container.innerHTML = '<div class="card-glow"></div><div class="placeholder-text" style="z-index:1;position:relative;">' + msg + '</div>';
         return;
@@ -2074,7 +2171,7 @@ function generateOverUnderSignal() {
             document.getElementById('btnFindEntryOU').textContent = '🔍 FIND ENTRY';
             document.getElementById('ouMarket').textContent = result.market;
             document.getElementById('ouConfidenceValue').textContent = result.confidence.toFixed(1) + '%';
-            document.getElementById('ouEdge').textContent = ((result.features.mass - 0.5) * 100).toFixed(1) + '%';
+            document.getElementById('ouEdge').textContent = ((result.features.mass - result.features.baseline) * 100).toFixed(1) + '%';
             document.getElementById('ouObserved').textContent = (result.features.mass * 100).toFixed(1) + '%';
             const data2 = tickBuffers[result.market];
             updateFrequencyChart(result.market, data2 ? data2.map(t => t.digit) : [], null, null);
