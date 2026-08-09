@@ -1388,71 +1388,55 @@ function tierFromZ(absZ, kind) {
     return 'STRONG';
 }
 
-// ---------------------- SIGNAL ENGINES (always return, honestly tiered) ------------------------------
-
-// OVER/UNDER — z-score against true 50% baseline. Always returns a side; tiered.
-// OVER/UNDER — tests OVER 3 (digit > 3, baseline 60%) and UNDER 6 (digit < 6,
-// baseline 60%) as two separate one-tailed hypotheses, and reports whichever
-// barrier is currently showing the stronger favorable deviation from its own
-// true baseline. Always returns a side; tiered.
-// OVER/UNDER barrier scanner — tests all 8 possible barriers (Over 0-3, Under
-// 6-9) against their TRUE baseline probability, and only proposes a barrier
-// that clears ITS OWN required confidence — tighter barriers (higher
-// baseline, lower payout) need much stronger evidence than looser barriers
-// (lower baseline, higher payout). These target-confidence values are
-// Sima's provisional defaults — easy to retune in one place below.
-//
-// IMPORTANT: because this scans 8 barriers x N markets simultaneously, a
-// literal "95% confidence" read off a single test would be badly misleading
-// — with 40 simultaneous tests, SOMETHING clears a naive 95% bar on pure
-// random noise nearly 100% of the time (verified by simulation). So the
-// actual gate used internally is Bonferroni-corrected so "95%" really means
-// 95% confidence at the whole-scan level, not per isolated test. The
-// confidence % actually shown to Sima is then re-mapped back into his
-// intended band (e.g. Over 3 / Under 6 display starting at 75%, climbing
-// toward 99% with stronger evidence) so the UI still matches his design,
-// while the underlying accept/reject decision is statistically honest.
+// ---------------------- OVER/UNDER BARRIER SCANNER ------------------------------
+// Always scans every barrier on every market and returns the single best
+// candidate — same "always return the best, honestly tiered" pattern used by
+// Match / Differ / Even-Odd. Each barrier is judged against its OWN target
+// confidence (tight barriers like Over 0 / Under 9 need much stronger evidence
+// than loose barriers like Over 3 / Under 6), so nothing gets an unfair bar.
 const BARRIER_TESTS = [
-    { type: 'OVER',  barrier: 0, baseline: 0.9, target: 0.95 },
-    { type: 'OVER',  barrier: 1, baseline: 0.8, target: 0.90 },
-    { type: 'OVER',  barrier: 2, baseline: 0.7, target: 0.85 },
-    { type: 'OVER',  barrier: 3, baseline: 0.6, target: 0.75 },
-    { type: 'UNDER', barrier: 9, baseline: 0.9, target: 0.95 },
-    { type: 'UNDER', barrier: 8, baseline: 0.8, target: 0.90 },
-    { type: 'UNDER', barrier: 7, baseline: 0.7, target: 0.85 },
-    { type: 'UNDER', barrier: 6, baseline: 0.6, target: 0.75 }
+    { type: 'OVER',  barrier: 0, baseline: 0.9,  target: 0.95 },
+    { type: 'OVER',  barrier: 1, baseline: 0.8,  target: 0.90 },
+    { type: 'OVER',  barrier: 2, baseline: 0.7,  target: 0.85 },
+    { type: 'OVER',  barrier: 3, baseline: 0.6,  target: 0.65 },
+    { type: 'UNDER', barrier: 9, baseline: 0.9,  target: 0.95 },
+    { type: 'UNDER', barrier: 8, baseline: 0.8,  target: 0.90 },
+    { type: 'UNDER', barrier: 7, baseline: 0.7,  target: 0.85 },
+    { type: 'UNDER', barrier: 6, baseline: 0.6,  target: 0.65 }
 ];
 
-// Total simultaneous tests per scan, computed dynamically so the correction
-// stays accurate even if MARKETS or BARRIER_TESTS ever change.
-function totalBarrierTests() { return MARKETS.length * BARRIER_TESTS.length; }
-
-// Cache the corrected z-threshold per barrier (recomputed if MARKETS.length changes).
-let _barrierZCache = { n: 0, cfgs: null };
+// Precompute, per barrier, the raw z that corresponds to its own target
+// confidence, plus a "medium" checkpoint z partway there.
+let _barrierZCache = null;
 function getBarrierConfigs() {
-    const n = totalBarrierTests();
-    if (_barrierZCache.n !== n) {
-        _barrierZCache.cfgs = BARRIER_TESTS.map(cfg => ({
-            ...cfg,
-            requiredZ: bonferroniZ(invZToConfidence(cfg.target), n)
-        }));
-        _barrierZCache.n = n;
+    if (_barrierZCache) return _barrierZCache;
+    _barrierZCache = BARRIER_TESTS.map(cfg => {
+        const zStrong = invZToConfidence(cfg.target);
+        const zMedium = invZToConfidence(Math.max(0.5, cfg.target - 0.15));
+        return { ...cfg, zStrong, zMedium };
+    });
+    return _barrierZCache;
+}
+
+// Tiers + confidence-bands a barrier's z relative to ITS OWN target/medium
+// checkpoints, so a tight barrier and a loose barrier are each judged fairly.
+function barrierTierAndConfidence(z, cfg) {
+    if (z >= cfg.zStrong) {
+        const excess = z - cfg.zStrong;
+        const frac = 1 - Math.exp(-excess / 1.2);
+        return { tier: 'STRONG', confidence: (80 + frac * 19) / 100, margin: excess };
+    } else if (z >= cfg.zMedium) {
+        const frac = (z - cfg.zMedium) / Math.max(0.0001, (cfg.zStrong - cfg.zMedium));
+        return { tier: 'MEDIUM', confidence: (50 + frac * 30) / 100, margin: z - cfg.zStrong };
+    } else {
+        const frac = Math.max(0, z) / Math.max(0.0001, cfg.zMedium);
+        return { tier: 'WEAK', confidence: (15 + frac * 35) / 100, margin: z - cfg.zStrong };
     }
-    return _barrierZCache.cfgs;
 }
 
-function barrierDisplayConfidence(z, cfg) {
-    // Only meaningful once z has already cleared cfg.requiredZ. Maps the
-    // real evidence back into the barrier's own intended display band
-    // (starts at cfg.target right at threshold, climbs toward 99%).
-    const excess = z - cfg.requiredZ;
-    const frac = 1 - Math.exp(-excess / 1.2);
-    return cfg.target + frac * (0.99 - cfg.target);
-}
-
-// Tests every barrier for a single market's window. Returns the single
-// BEST barrier that clears its own required (corrected) confidence, or null
-// if nothing on this market qualifies right now.
+// Scans every barrier on ONE market's window, always returns the best one
+// (highest margin past its own target — can be negative, meaning "closest
+// to qualifying" when nothing fully clears yet).
 function overUnderSignal(window) {
     const n = window.length;
     const configs = getBarrierConfigs();
@@ -1466,25 +1450,14 @@ function overUnderSignal(window) {
         const prob = count / n;
         const se = binomialSE(cfg.baseline, n);
         const z = (prob - cfg.baseline) / se;
+        const { tier, confidence, margin } = barrierTierAndConfidence(z, cfg);
 
-        if (z < cfg.requiredZ) continue; // this barrier doesn't clear its own bar
-
-        const margin = z - cfg.requiredZ;
         if (margin > bestMargin) {
             bestMargin = margin;
-            best = {
-                type: cfg.type,
-                barrier: cfg.barrier,
-                baseline: cfg.baseline,
-                target: cfg.target,
-                prob,
-                z,
-                confidence: barrierDisplayConfidence(z, cfg),
-                tier: cfg.target >= 0.90 ? 'STRONG' : 'MEDIUM'
-            };
+            best = { type: cfg.type, barrier: cfg.barrier, baseline: cfg.baseline, target: cfg.target, prob, z, confidence, tier };
         }
     }
-    return best; // null if no barrier on this market qualifies
+    return best; // always non-null
 }
 
 // DIFFERS — rarest digit vs true 10% baseline. Always returns a digit; tiered.
@@ -1768,21 +1741,17 @@ function generateOvernUnderSignal(tickBuffers, markets, windowSize = 100) {
         const digits = data.map(t => t.digit);
         const window = latestWindow(digits, windowSize);
         if (window.length < windowSize) continue;
-        const result = overUnderSignal(window); // null if no barrier on this market qualifies
-        if (!result) continue;
-        // How far past its own required (Bonferroni-corrected) bar this result cleared.
+        const result = overUnderSignal(window);
         const configs = getBarrierConfigs();
         const matched = configs.find(c => c.type === result.type && c.barrier === result.barrier);
-        const trueMargin = result.z - (matched ? matched.requiredZ : 0);
-        if (trueMargin > bestMargin) {
-            bestMargin = trueMargin;
+        const margin = result.z - (matched ? matched.zStrong : 0);
+        if (margin > bestMargin) {
+            bestMargin = margin;
             best = { market, ...result };
         }
     }
     if (!best) {
-        // No barrier on any market currently clears its own required confidence.
-        // This is the honest, expected majority outcome — not an error.
-        return { success: false, insufficientData: false, noSuitableBarrier: true, strategy: 'OVER/UNDER' };
+        return { success: false, insufficientData: true, strategy: 'OVER/UNDER' };
     }
     return {
         success: true,
@@ -1889,8 +1858,6 @@ function updateSignalUI(signal, containerId) {
     if (!signal || !signal.success) {
         const msg = signal && signal.insufficientData
             ? '⏳ Still buffering ticks for one or more markets — need ' + REQUIRED_TICKS + ' ticks per market before a ranked candidate can be produced.'
-            : signal && signal.noSuitableBarrier
-            ? '📊 No barrier (Over 0-3 / Under 6-9) is currently clearing its own required confidence on any market. This is the honest result, not an error — try again shortly.'
             : '📊 No candidate available right now.';
         container.innerHTML = '<div class="card-glow"></div><div class="placeholder-text" style="z-index:1;position:relative;">' + msg + '</div>';
         return;
@@ -1903,7 +1870,7 @@ function updateSignalUI(signal, containerId) {
     } else if (signal.strategy === 'MATCH') {
         extraInfo = '<div class="bottom-row"><span>Dominance: ' + ((signal.features.dominance || 0) * 100).toFixed(1) + '%</span><span>Repeat: ' + ((signal.features.repeatRate || 0) * 100).toFixed(1) + '%</span><span>z: ' + (signal.features.z || 0).toFixed(2) + '</span></div>';
     } else if (signal.strategy === 'OVER/UNDER') {
-        extraInfo = '<div class="bottom-row"><span>Observed: ' + (signal.features.mass * 100).toFixed(1) + '%</span><span>Edge: ' + ((signal.features.mass - 0.5) * 100).toFixed(1) + '%</span><span>z: ' + (signal.features.z || 0).toFixed(2) + '</span></div>';
+        extraInfo = '<div class="bottom-row"><span>Observed: ' + (signal.features.mass * 100).toFixed(1) + '%</span><span>Edge: ' + ((signal.features.mass - signal.features.baseline) * 100).toFixed(1) + '%</span><span>z: ' + (signal.features.z || 0).toFixed(2) + '</span></div>';
     } else if (signal.strategy === 'EVEN/ODD') {
         extraInfo = '<div class="bottom-row"><span>Imbalance: ' + (signal.features.imbalance * 100).toFixed(1) + '%</span><span>Streak: ' + signal.features.streak + '</span><span>z: ' + (signal.features.z || 0).toFixed(2) + '</span></div>';
     }
