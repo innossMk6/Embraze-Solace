@@ -1059,33 +1059,17 @@ Part 4 <span class="part-balance">$1600 Balance</span>
 <script>
 // ================================================================
 // DAIE‑V4 ENGINE – V15 LOGIC + SESSION PLANNER
-// 🔥 STATISTICAL ENGINE: z-score based, calibrated against the ACTUAL
-//    "best-of-10-markets" null distribution (not a naive single-test z)
-// 🔥 REQUIRED_TICKS = 100 (fixed, per user request — never changes)
-// 🔥 Every scan ALWAYS returns a ranked candidate (no more blank
-//    "no signal" screens) but every candidate is honestly tiered
-//    WEAK / MEDIUM / STRONG against the real noise floor, so a
-//    tier label always tells you whether it's worth acting on.
-// 🔥 DIFFERS engine has NO 25-tick re-confirmation step anymore —
-//    it is designed to hand its output straight to the
-//    "Embraze Solace Differs" DBot, which does its own live gap
-//    confirmation (TicksSinceMatch / PrevEpisodeLength) once you
-//    paste the digit into PredictionDigit. This app now computes
-//    and displays those exact two numbers so you can see, before
-//    you paste, whether the bot would already be armed to fire.
 // ================================================================
 
 // ---------------------- CONSTANTS ------------------------------
 const APP_PASSWORD = 'SUCCESSV12';
 const DERIV_WS = 'wss://api.derivws.com/trading/v1/options/ws/public';
 
-// 🔥 WINDOW: 100 ticks (fixed, unchanged)
 const REQUIRED_TICKS = 100;
 const ANALYSIS_WINDOW = 100;
 
 const SIGNAL_DELAY_MS = 10000;
 
-// Full 10 markets
 const MARKETS = [
 '1HZ10V', '1HZ25V', '1HZ50V', '1HZ75V', '1HZ100V'
  ];
@@ -1121,7 +1105,6 @@ let sessionState = {
     history: []
 };
 
-// Load from localStorage
 function loadSessionState() {
     try {
         const saved = localStorage.getItem('embraze_session_state');
@@ -1197,10 +1180,10 @@ function updateSessionUI() {
         let html = '';
         const reversed = [...sessionState.history].reverse();
         for (const entry of reversed) {
-            html += `<div class="history-row">
-                <span>Session ${entry.session} — ${entry.part === 1 ? 'Part 1' : entry.part === 2 ? 'Part 2' : entry.part === 3 ? 'Part 3' : 'Part 4'}</span>
-                <span class="h-profit">+$${entry.profit.toFixed(2)}</span>
-            </div>`;
+            html += '<div class="history-row">' +
+                '<span>Session ' + entry.session + ' — ' + (entry.part === 1 ? 'Part 1' : entry.part === 2 ? 'Part 2' : entry.part === 3 ? 'Part 3' : 'Part 4') + '</span>' +
+                '<span class="h-profit">+$' + entry.profit.toFixed(2) + '</span>' +
+                '</div>';
         }
         historyContainer.innerHTML = html;
     }
@@ -1288,16 +1271,9 @@ function switchPart(part) {
     document.getElementById('sessionStatus').style.color = 'var(--text-grey)';
 }
 
-// ---------------------- DIFFERS RISK STATE (frequency dial + circuit breaker) ------------------------------
-// Since there's no real predictive edge on a fair RNG, "frequency" and "safety"
-// are handled as two SEPARATE, honest knobs instead of pretending a looser
-// statistical gate means a better signal:
-//   - frequencyMode controls how strict the noise filter is (trade cadence only —
-//     it does NOT change win probability, since none of the tiers reflect a real edge).
-//   - consecutiveLosses/maxConsecutiveLosses is a real bankroll circuit breaker:
-//     once tripped, the engine refuses to arm regardless of tier/gap, full stop.
+// ---------------------- DIFFERS RISK STATE ------------------------------
 let differsRiskState = {
-    frequencyMode: 'BALANCED', // CONSERVATIVE | BALANCED | FREQUENT
+    frequencyMode: 'BALANCED',
     consecutiveLosses: 0,
     maxConsecutiveLosses: 5
 };
@@ -1384,8 +1360,6 @@ function confidenceToPercent(conf) {
     return Math.round(Math.max(0, Math.min(100, conf * 100)));
 }
 
-// Standard normal CDF approximation (Zelen & Severo)
-// Converts z-score to one-tailed confidence probability
 function zToConfidence(z) {
     const absZ = Math.abs(z);
     const t = 1 / (1 + 0.2316419 * absZ);
@@ -1394,7 +1368,6 @@ function zToConfidence(z) {
     return Math.max(0, Math.min(0.999, 1 - p));
 }
 
-// Inverse of zToConfidence: find the z that produces a given one-tailed confidence.
 function invZToConfidence(targetConfidence) {
     let lo = 0, hi = 6;
     for (let i = 0; i < 60; i++) {
@@ -1404,10 +1377,6 @@ function invZToConfidence(targetConfidence) {
     return (lo + hi) / 2;
 }
 
-// Corrects a single-test z threshold for running `numComparisons` simultaneous
-// tests (e.g. 8 barriers x 5 markets = 40 tests per scan), so a stated target
-// confidence (e.g. "95%") still means 95% confidence at the SCAN level, not
-// just for one isolated test buried among 40 chances to get lucky.
 function bonferroniZ(targetZ, numComparisons) {
     const targetAlpha = 1 - zToConfidence(targetZ);
     const correctedAlpha = targetAlpha / numComparisons;
@@ -1420,55 +1389,27 @@ function bonferroniZ(targetZ, numComparisons) {
     return (lo + hi) / 2;
 }
 
-// Standard error for binomial proportion test
 function binomialSE(p0, n) {
     return Math.sqrt(p0 * (1 - p0) / n);
 }
 
-// ---------------------- HONEST NULL-CALIBRATED TIERING ------------------------------
-// Every scan takes the BEST candidate out of 10 markets. For MATCH/DIFFER it is
-// ALSO the most extreme of 10 digits within that market. That double selection
-// inflates the raw z-score even when the tick stream is pure noise — a naive
-// z>1.5 "significant" cutoff will look busy but is mostly reporting randomness.
-//
-// These thresholds are NOT arbitrary: they come from a 200,000-run Monte Carlo
-// simulation of the exact "pick the most extreme of N candidates" procedure this
-// app performs, under a TRUE null (fair digits / fair 50-50 split), at n=100 ticks.
-//   - MATCH/DIFFER (best-of-10-digits, best-of-10-markets): pure noise alone
-//     routinely produces |z| ~2.3 (median), ~2.7 (90th pct), ~3.0 (99th pct).
-//   - OVER/UNDER & EVEN/ODD (best-of-10-markets only, no digit selection): pure
-//     noise produces |z| ~1.8 (median), ~2.6 (90th pct), ~3.2 (99th pct).
-// Tiers below are set at roughly the 80th / 95th percentile of each null curve,
-// so "STRONG" really is unusual for noise, not just a bigger number.
 const NOISE_FLOOR = {
-    DIGIT:  { weakMax: 2.3, mediumMax: 2.7 },   // MATCH / DIFFER
-    BINARY: { weakMax: 2.05, mediumMax: 2.6 }   // OVER/UNDER (Over 3 / Under 6, two barrier tests
-                                                 // per market) / EVEN/ODD — re-verified via simulation
-                                                 // after switching OVER/UNDER to the 60%-baseline
-                                                 // Over-3/Under-6 barriers: still ~86% WEAK / ~10%
-                                                 // MEDIUM / ~4.5% STRONG on pure noise.
+    DIGIT:  { weakMax: 2.3, mediumMax: 2.7 },
+    BINARY: { weakMax: 2.05, mediumMax: 2.6 }
 };
 
-// Displayed confidence % is now tied to the TIER, not the raw z-score alone.
-// Previously a WEAK-tier signal could still show 90%+ "confidence" from the raw
-// one-tailed z->CDF conversion, which directly contradicted its own WEAK label
-// (that raw number also ignores the best-of-N market/digit selection effect,
-// so it overstated certainty on its own). Now each tier has its own capped band:
-//   WEAK    -> 15% - 50%   (never crosses into "looks trustworthy" territory)
-//   MEDIUM  -> 50% - 80%   (elevated, still explicitly capped under 90%)
-//   STRONG  -> 80% - 99%   (only the rare, genuinely unusual deviations get here)
 function tierConfidence(absZ, kind) {
     const floor = NOISE_FLOOR[kind];
     if (absZ < floor.weakMax) {
         const frac = Math.max(0, absZ) / floor.weakMax;
-        return (15 + frac * 35) / 100; // 0.15 - 0.50
+        return (15 + frac * 35) / 100;
     } else if (absZ < floor.mediumMax) {
         const frac = (absZ - floor.weakMax) / (floor.mediumMax - floor.weakMax);
-        return (50 + frac * 30) / 100; // 0.50 - 0.80
+        return (50 + frac * 30) / 100;
     } else {
         const excess = absZ - floor.mediumMax;
-        const frac = 1 - Math.exp(-excess / 1.5); // asymptotically approaches 1
-        return (80 + frac * 19) / 100; // 0.80 - 0.99
+        const frac = 1 - Math.exp(-excess / 1.5);
+        return (80 + frac * 19) / 100;
     }
 }
 
@@ -1479,23 +1420,9 @@ function tierFromZ(absZ, kind) {
     return 'STRONG';
 }
 
-// ---------------------- DIFFERS ARM GATE ------------------------------
-// Previously "BOT WOULD BE ARMED" was driven ENTIRELY by gap timing
-// (TicksSinceMatch/PrevEpisodeLength >= 2), which is true almost always
-// regardless of digit rarity — so a WEAK-tier digit could still show
-// "armed," which looked contradictory. Arming is now gated by BOTH the
-// statistical tier AND the gap timing, so "armed" actually means "this is
-// both a real edge and correctly timed," not just "enough ticks passed."
 const TIER_RANK = { WEAK: 0, MEDIUM: 1, STRONG: 2 };
-// (Superseded by the FREQUENCY_TIER_GATE dial below — the fixed gate is gone,
-// the person now controls how strict the noise filter is.)
 
 // ---------------------- OVER/UNDER BARRIER SCANNER ------------------------------
-// Always scans every barrier on every market and returns the single best
-// candidate — same "always return the best, honestly tiered" pattern used by
-// Match / Differ / Even-Odd. Each barrier is judged against its OWN target
-// confidence (tight barriers like Over 0 / Under 9 need much stronger evidence
-// than loose barriers like Over 3 / Under 6), so nothing gets an unfair bar.
 const BARRIER_TESTS = [
     { type: 'OVER',  barrier: 0, baseline: 0.9,  target: 0.95 },
     { type: 'OVER',  barrier: 1, baseline: 0.8,  target: 0.90 },
@@ -1507,8 +1434,6 @@ const BARRIER_TESTS = [
     { type: 'UNDER', barrier: 6, baseline: 0.6,  target: 0.65 }
 ];
 
-// Precompute, per barrier, the raw z that corresponds to its own target
-// confidence, plus a "medium" checkpoint z partway there.
 let _barrierZCache = null;
 function getBarrierConfigs() {
     if (_barrierZCache) return _barrierZCache;
@@ -1520,8 +1445,6 @@ function getBarrierConfigs() {
     return _barrierZCache;
 }
 
-// Tiers + confidence-bands a barrier's z relative to ITS OWN target/medium
-// checkpoints, so a tight barrier and a loose barrier are each judged fairly.
 function barrierTierAndConfidence(z, cfg) {
     if (z >= cfg.zStrong) {
         const excess = z - cfg.zStrong;
@@ -1536,9 +1459,6 @@ function barrierTierAndConfidence(z, cfg) {
     }
 }
 
-// Scans every barrier on ONE market's window, always returns the best one
-// (highest margin past its own target — can be negative, meaning "closest
-// to qualifying" when nothing fully clears yet).
 function overUnderSignal(window) {
     const n = window.length;
     const configs = getBarrierConfigs();
@@ -1559,10 +1479,9 @@ function overUnderSignal(window) {
             best = { type: cfg.type, barrier: cfg.barrier, baseline: cfg.baseline, target: cfg.target, prob, z, confidence, tier };
         }
     }
-    return best; // always non-null
+    return best;
 }
 
-// DIFFERS — rarest digit vs true 10% baseline. Always returns a digit; tiered.
 function analyzeDiffer(sequence) {
     const freq = Array(10).fill(0);
     for (let d of sequence) freq[d]++;
@@ -1578,7 +1497,7 @@ function analyzeDiffer(sequence) {
 
     const rarity = minFreq / n;
     const dominance = maxFreq / n;
-    const z = (rarity - 0.1) / se; // negative = rarer than expected
+    const z = (rarity - 0.1) / se;
     const tier = tierFromZ(Math.abs(z), 'DIGIT');
     const confidence = tierConfidence(Math.abs(z), 'DIGIT');
 
@@ -1592,7 +1511,6 @@ function analyzeDiffer(sequence) {
     };
 }
 
-// MATCHES — dominant digit vs true 10% baseline. Always returns a digit; tiered.
 function analyzeMatches(sequence) {
     const freq = Array(10).fill(0);
     for (let d of sequence) freq[d]++;
@@ -1624,7 +1542,6 @@ function analyzeMatches(sequence) {
     };
 }
 
-// EVEN/ODD — z-score against true 50% baseline. Always returns a side; tiered.
 function analyzeEvenOdd(sequence) {
     let even = 0, odd = 0;
     for (let d of sequence) { if (d % 2 === 0) even++; else odd++; }
@@ -1653,10 +1570,6 @@ function analyzeEvenOdd(sequence) {
     };
 }
 
-// ---------------------- DBOT GAP METRICS (mirrors Embraze Solace Differs DBot) ------------------------------
-// Replicates the DBot's own TicksSinceMatch / PrevEpisodeLength bookkeeping exactly,
-// so you can see — before pasting PredictionDigit into the bot — whether it would
-// already be armed under its default MinGapTicks=2 / MinPrevGap=2 settings.
 function computeGapMetrics(fullDigitSeries, digit) {
     const occurrences = [];
     for (let i = 0; i < fullDigitSeries.length; i++) {
@@ -1677,7 +1590,6 @@ function computeGapMetrics(fullDigitSeries, digit) {
     return { ticksSinceMatch, prevEpisodeLength };
 }
 
-// ---------------------- CORE UTILITIES ------------------------------
 function extractLastDigit(price, decimals) {
     if (price === null || price === undefined || isNaN(price)) return null;
     const normalized = Number(price).toFixed(decimals);
@@ -1716,9 +1628,6 @@ function frequency(arr) {
 
 function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
 
-// ---------------------- ENTRY CONFIRMATION (Match / OU / EO only) ------------------------------
-// NOTE: Differs no longer uses this. Its "confirmation" is now the DBot's own
-// live gap logic (see computeGapMetrics above and generateDiffersSignal below).
 function confirmEntry(digits, selectedDigit, signalScore, liveWindowSize = 25, threshold = 0.55, strategy = 'match', additionalData = null) {
     const live = latestWindow(digits, liveWindowSize);
     if (!live || live.length < 5) return { status: 'HOLD', entryScore: 0, liveScore: 0, drift: 0 };
@@ -1736,8 +1645,6 @@ function confirmEntry(digits, selectedDigit, signalScore, liveWindowSize = 25, t
     return { status, entryScore, liveScore, drift };
 }
 
-// ---------------------- SIGNAL GENERATORS (always return a ranked best candidate) ------------------------------
-
 function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
     let best = null;
     let bestAbsZ = -Infinity;
@@ -1754,7 +1661,6 @@ function generateMatchSignal(tickBuffers, markets, windowSize = 100) {
         }
     }
     if (!best) {
-        // Only happens if buffers simply aren't full yet — not a "no edge" case.
         return { success: false, insufficientData: true, strategy: 'MATCH' };
     }
     return {
@@ -1798,13 +1704,10 @@ function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
         return { success: false, insufficientData: true, strategy: 'DIFFERS' };
     }
 
-    // Gap metrics computed on the FULL buffer for this market (not just the 100-tick
-    // analysis window) so they mean exactly what the DBot's TicksSinceMatch /
-    // PrevEpisodeLength mean once you paste this digit into PredictionDigit.
     const fullDigits = tickBuffers[best.market].map(t => t.digit);
     const gap = computeGapMetrics(fullDigits, best.digit);
-    const MIN_GAP_TICKS = 2;   // mirrors DBot default MinGapTicks
-    const MIN_PREV_GAP = 2;    // mirrors DBot default MinPrevGap
+    const MIN_GAP_TICKS = 2;
+    const MIN_PREV_GAP = 2;
     const gapReady = gap.ticksSinceMatch >= MIN_GAP_TICKS &&
                       gap.prevEpisodeLength !== null &&
                       gap.prevEpisodeLength >= MIN_PREV_GAP;
@@ -1812,8 +1715,6 @@ function generateDiffersSignal(tickBuffers, markets, windowSize = 100) {
     const tierReady = TIER_RANK[best.tier] >= TIER_RANK[requiredTier];
     const circuitTripped = differsRiskState.consecutiveLosses >= differsRiskState.maxConsecutiveLosses;
     const botArmed = tierReady && gapReady && !circuitTripped;
-    // Which gate is actually blocking, so the UI can say something honest
-    // instead of a flat yes/no (e.g. "timing's right but the filter is too strict").
     let armStatus;
     if (circuitTripped) armStatus = 'COOLDOWN';
     else if (botArmed) armStatus = 'ARMED';
@@ -1935,7 +1836,6 @@ function generateEvenOddSignal(tickBuffers, markets, windowSize = 100) {
     };
 }
 
-// ---------------------- SESSION MANAGEMENT (Trading) ------------------------------
 function canTrade() {
     if (tradeSession.tradesToday >= tradeSession.maxTradesPerDay) return false;
     if (tradeSession.burstsPerSession >= tradeSession.maxBurstsPerSession) return false;
@@ -1961,7 +1861,6 @@ function getStake(baseStake = 1, lossMultiplier = 1.2) {
     return baseStake * Math.pow(lossMultiplier, tradeSession.consecutiveLosses);
 }
 
-// ---------------------- UI UPDATE FUNCTIONS ------------------------------
 function updateSignalUI(signal, containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -2000,7 +1899,6 @@ function updateSignalUI(signal, containerId) {
     else if (signal.strategy === 'DIFFERS') actionClass = 'differs';
     let bigDigitDisplay = display.bigDigit;
 
-    // DBot alignment panel — only for DIFFERS, replaces the old 25-tick confirmation
     let dbotPanelHTML = '';
     if (signal.strategy === 'DIFFERS' && signal.gap) {
         const g = signal.gap;
@@ -2020,14 +1918,11 @@ function updateSignalUI(signal, containerId) {
             statusClass = 'wait';
             statusText = '⏳ Signal strength qualifies (' + signal.tier + '), but still waiting on gap timing — digit is valid, timing is not there yet.';
         }
-        dbotPanelHTML = `
-        <div class="dbot-panel">
-            <div class="dbot-row"><span>Current gap (TicksSinceMatch)</span><strong>${g.ticksSinceMatch}</strong></div>
-            <div class="dbot-row"><span>Previous gap (PrevEpisodeLength)</span><strong>${prevText}</strong></div>
-            <div class="dbot-status ${statusClass}">
-                ${statusText}
-            </div>
-        </div>`;
+        dbotPanelHTML = '<div class="dbot-panel">' +
+            '<div class="dbot-row"><span>Current gap (TicksSinceMatch)</span><strong>' + g.ticksSinceMatch + '</strong></div>' +
+            '<div class="dbot-row"><span>Previous gap (PrevEpisodeLength)</span><strong>' + prevText + '</strong></div>' +
+            '<div class="dbot-status ' + statusClass + '">' + statusText + '</div>' +
+            '</div>';
     }
 
     container.innerHTML = `
@@ -2159,7 +2054,6 @@ function updateMatrixUI(market, digits, entryDigit, differDigit) {
     document.getElementById('bottomPct').textContent = bottomPct.toFixed(1) + '%';
 }
 
-// ---------------------- POPUP HELPERS ------------------------------
 function beginSignalLoading(key, title, subtitle) {
     if (signalBusy[key]) return false;
     signalBusy[key] = true;
@@ -2190,7 +2084,6 @@ function failSignalLoading(key, message) {
     console.warn(message || 'Signal generation failed.');
 }
 
-// ---------------------- SIGNAL WRAPPERS ------------------------------
 function generateMatchesSignal() {
     if (!beginSignalLoading('md', 'GENERATING MATCH SIGNAL...', '⏳ Analyzing latest ticks for Matches...')) return;
     setTimeout(() => {
@@ -2227,14 +2120,10 @@ function handleDiffersClick() {
             }
             currentSignals.differ = result;
             updateSignalUI(result, 'oracleSignalCard');
-            // No 25-tick "Find Entry" step for Differs anymore — the DBot itself is
-            // the live-confirmation stage. Button becomes an informational marker.
             const btn = document.getElementById('btnFindEntryMD');
             btn.disabled = true;
             btn.className = 'btn-entry entry-info';
             btn.textContent = '➡️ Paste digit ' + result.digit + ' into your DBot\'s PredictionDigit';
-            // Only offer outcome logging when there's an actual actionable (armed) trade —
-            // logging a WEAK_SIGNAL or WAIT_GAP result would corrupt the loss-streak count.
             const outcomeButtons = document.getElementById('outcomeButtons');
             if (outcomeButtons) outcomeButtons.style.display = (result.armStatus === 'ARMED') ? 'flex' : 'none';
             const data2 = tickBuffers[result.market];
@@ -2320,7 +2209,6 @@ function handleEvenOddClick() {
     }, SIGNAL_DELAY_MS);
 }
 
-// ---------------------- ENTRY FINDERS (Match / OU / EO only — Differs handled above) ------------------------------
 function findEntryForMatchesDiffers() {
     const active = currentSignals.match;
     if (!active || !active.success) { alert('⚠️ Please generate a MATCH signal first. (Differs no longer uses this button — see the DBot panel on the signal card instead.)'); return; }
@@ -2411,7 +2299,6 @@ function findEntryForEvenOdd() {
     }, 1000);
 }
 
-// ---------------------- WEBSOCKET & APP ------------------------------
 function startHeartbeat() {
     stopHeartbeat();
     heartbeatTimer = setInterval(() => {
@@ -2571,4 +2458,127 @@ function initWebSocket(isReconnect) {
         }
 
         if (data.msg_type === 'tick') {
-         
+            const tick = data.tick;
+            if (!tick) {
+                console.warn('⚠️ [DERIV] "tick" message with no tick payload:', data);
+                return;
+            }
+            try {
+                const sym = tick.symbol;
+                const price = tick.quote;
+                const epoch = tick.epoch;
+
+                if (subscriptionStatus[sym] !== 'ok') {
+                    subscriptionStatus[sym] = 'ok';
+                    console.log('%c[DERIV] ' + sym + ' subscription confirmed, ticks flowing.', 'color:#00FFAA');
+                }
+
+                if (lastTickTimes[sym] === epoch) return;
+                lastTickTimes[sym] = epoch;
+
+                const digit = getTickDigit(sym, price);
+                if (digit !== null && !isNaN(digit)) {
+                    if (!tickBuffers[sym]) tickBuffers[sym] = [];
+                    tickBuffers[sym].push({ price, digit, epoch });
+                    if (tickBuffers[sym].length > 2000) tickBuffers[sym].shift();
+                    updateMarketCard(sym, tickBuffers[sym].length);
+                }
+                const totalCollected = MARKETS.reduce((sum, s) => sum + (tickBuffers[s]?.length || 0), 0);
+                if (liveTicker) {
+                    liveTicker.innerHTML = '📊 Collected ' + totalCollected + ' / ' + (MARKETS.length * REQUIRED_TICKS) + ' ticks';
+                }
+                checkGatheringComplete();
+            } catch (e) {
+                console.error('❌ [DERIV] Error processing tick payload:', e, tick);
+            }
+        } else if (data.msg_type && data.msg_type !== 'ping' && data.msg_type !== 'pong') {
+            console.log('[DERIV] Unhandled msg_type:', data.msg_type, data);
+        }
+    };
+
+    ws.onerror = function(err) {
+        if (liveTicker) liveTicker.textContent = '❌ WebSocket error. Reconnecting...';
+        console.error('❌ [DERIV] WebSocket error event:', err);
+        stopHeartbeat();
+        scheduleReconnect();
+    };
+
+    ws.onclose = function(evt) {
+        if (liveTicker) liveTicker.textContent = '❌ Disconnected (code ' + evt.code + '). Reconnecting...';
+        console.warn('[DERIV] WebSocket closed. code=' + evt.code + ' reason="' + evt.reason + '" clean=' + evt.wasClean);
+        stopHeartbeat();
+        scheduleReconnect();
+    };
+}
+
+// ---------------------- APP UNLOCK ----------------------------
+function unlockApp() {
+    const input = document.getElementById('lockPassword');
+    const error = document.getElementById('lockError');
+    if (!input || !error) return;
+    if (input.value === APP_PASSWORD) {
+        error.classList.remove('show');
+        document.getElementById('lock-overlay').classList.add('hidden');
+        document.getElementById('app').style.display = 'block';
+        initWebSocket();
+    } else {
+        error.textContent = '❌ Incorrect Password. Try again.';
+        error.classList.add('show');
+        input.value = '';
+        input.focus();
+    }
+}
+
+// ---------------------- DOM EVENT BINDING --------------------
+document.addEventListener('DOMContentLoaded', () => {
+    // Session planner + differs risk state can initialize immediately —
+    // neither depends on the WebSocket connection or unlocking.
+    loadSessionState();
+    updateSessionUI();
+    loadDiffersRiskState();
+    updateDiffersRiskUI();
+
+    document.getElementById('btnUnlock').addEventListener('click', unlockApp);
+    document.getElementById('lockPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') unlockApp(); });
+
+    document.getElementById('btnMatches').addEventListener('click', generateMatchesSignal);
+    document.getElementById('btnDiffers').addEventListener('click', handleDiffersClick);
+    document.getElementById('btnOverUnderFetch').addEventListener('click', generateOverUnderSignal);
+    document.getElementById('btnEvenOddFetch').addEventListener('click', handleEvenOddClick);
+    document.getElementById('btnFindEntryMD').addEventListener('click', findEntryForMatchesDiffers);
+    document.getElementById('btnFindEntryOU').addEventListener('click', findEntryForOverUnder);
+    document.getElementById('btnFindEntryEO').addEventListener('click', findEntryForEvenOdd);
+    document.getElementById('btnScan').addEventListener('click', refreshBestMarketView);
+
+    document.getElementById('popupBack').addEventListener('click', () => {
+        document.getElementById('signal-popup').classList.remove('active');
+        document.getElementById('popupShooting').classList.remove('active');
+    });
+
+    // Session Planner controls
+    document.getElementById('partSelector').addEventListener('click', (e) => {
+        const btn = e.target.closest('.part-btn');
+        if (!btn) return;
+        switchPart(parseInt(btn.dataset.part));
+    });
+    document.getElementById('btnCompleteSession').addEventListener('click', completeSession);
+    document.getElementById('btnResetSession').addEventListener('click', () => {
+        if (confirm('Reset progress for this part back to session 1?')) {
+            resetSessionState();
+        }
+    });
+
+    // Differs risk controls (frequency dial + circuit breaker)
+    document.getElementById('freqToggle').addEventListener('click', (e) => {
+        const btn = e.target.closest('.freq-btn');
+        if (!btn) return;
+        differsRiskState.frequencyMode = btn.dataset.mode;
+        saveDiffersRiskState();
+        updateDiffersRiskUI();
+    });
+    document.getElementById('btnLogWin').addEventListener('click', () => logDifferOutcome(true));
+    document.getElementById('btnLogLoss').addEventListener('click', () => logDifferOutcome(false));
+});
+</script>
+</body>
+</html>
